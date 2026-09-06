@@ -1436,7 +1436,140 @@ body.modeVisualizer #backgroundImage {
     filter: blur(8px);
   }
 }
+/* =========================
+   DISPLAY MODE MENU
+========================= */
 
+#displayModeMenu {
+  position: fixed;
+
+  top: 70px;
+  right: max(25px, env(safe-area-inset-right));
+
+  width: min(220px, calc(100vw - 36px));
+
+  padding: 10px;
+
+  background: rgba(20,20,20,0.94);
+
+  border: 1px solid rgba(255,255,255,0.12);
+
+  border-radius: 16px;
+
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+
+  box-shadow:
+    0 25px 80px rgba(0,0,0,0.55);
+
+  z-index: 200;
+
+  opacity: 0;
+  visibility: hidden;
+
+  transform:
+    translateY(-10px)
+    scale(0.97);
+
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease,
+    transform 0.2s ease;
+}
+
+#displayModeMenu.open {
+  opacity: 1;
+  visibility: visible;
+
+  transform:
+    translateY(0)
+    scale(1);
+}
+
+.displayModeTitle {
+  padding:
+    7px
+    10px
+    8px;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+
+  opacity: 0.42;
+}
+
+.displayModeOption {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 10px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: white;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.displayModeOption:hover {
+  background: rgba(255,255,255,0.09);
+}
+
+.displayModeOption:active {
+  transform: scale(0.98);
+}
+
+.displayModeOption.active {
+  background: rgba(255,255,255,0.12);
+}
+
+.displayModeCheck {
+  opacity: 0;
+  color: #58d68d;
+}
+
+.displayModeOption.active
+.displayModeCheck {
+  opacity: 1;
+}
+
+.settingsCredit {
+  margin-top: 22px;
+  padding-top: 14px;
+
+  border-top:
+    1px solid
+    rgba(255,255,255,0.08);
+
+  text-align: center;
+
+  font-size: 9px;
+  font-weight: 500;
+
+  letter-spacing: 0.3px;
+
+  color:
+    rgba(255,255,255,0.28);
+}
 /* =========================
    SETTINGS PANEL
 ========================= */
@@ -2388,7 +2521,62 @@ body.ambientScreensaver #backgroundImage {
   </div>
 
 </div>
+<!-- =========================
+     DISPLAY MODE MENU
+========================= -->
 
+<div id="displayModeMenu">
+
+  <div class="displayModeTitle">
+    Display
+  </div>
+
+  <button
+    class="displayModeOption"
+    data-mode="normal"
+    type="button"
+  >
+    <span>Normal</span>
+    <span class="displayModeCheck">✓</span>
+  </button>
+
+  <button
+    class="displayModeOption"
+    data-mode="minimal"
+    type="button"
+  >
+    <span>Minimal</span>
+    <span class="displayModeCheck">✓</span>
+  </button>
+
+  <button
+    class="displayModeOption"
+    data-mode="clock"
+    type="button"
+  >
+    <span>Clock</span>
+    <span class="displayModeCheck">✓</span>
+  </button>
+
+  <button
+    class="displayModeOption"
+    data-mode="artwork"
+    type="button"
+  >
+    <span>Artwork</span>
+    <span class="displayModeCheck">✓</span>
+  </button>
+
+  <button
+    class="displayModeOption"
+    data-mode="visualizer"
+    type="button"
+  >
+    <span>Visualizer</span>
+    <span class="displayModeCheck">✓</span>
+  </button>
+
+</div>
 <div id="connectScreen">
 
   <div id="connectBox">
@@ -2579,28 +2767,6 @@ body.ambientScreensaver #backgroundImage {
 
     <div class="settingRow">
 
-      <div>
-        Display Mode
-        <div class="settingDescription">
-          Change the entire layout
-        </div>
-      </div>
-
-      <select
-        id="displayModeSelect"
-        class="settingSelect"
-      >
-        <option value="normal">Normal</option>
-        <option value="minimal">Minimal</option>
-        <option value="clock">Clock</option>
-        <option value="artwork">Artwork</option>
-        <option value="visualizer">Visualizer</option>
-      </select>
-
-    </div>
-
-  </div>
-
   <div class="settingsSection">
 
     <div class="settingsSectionTitle">
@@ -2761,7 +2927,15 @@ body.ambientScreensaver #backgroundImage {
 
   </div>
 
+  <div class="settingsCredit">
+    Made by whatuwantsohai
+  </div>
+
 </div>
+
+<!-- =========================
+     HISTORY
+========================= -->
 
 <!-- =========================
      HISTORY
@@ -2954,9 +3128,20 @@ const settingsButton =
 const settingsPanel =
   document.getElementById("settingsPanel");
 
+const displayModeButton =
+  document.getElementById("displayModeButton");
+
+const displayModeMenu =
+  document.getElementById("displayModeMenu");
+
+const displayModeOptions =
+  document.querySelectorAll(
+    ".displayModeOption"
+  );
+
 const historyButton =
   document.getElementById("historyButton");
-
+  
 const historyPanel =
   document.getElementById("historyPanel");
 
@@ -2965,9 +3150,6 @@ const historyClose =
 
 const fullscreenButton =
   document.getElementById("fullscreenButton");
-
-const displayModeSelect =
-  document.getElementById("displayModeSelect");
 
 const ambientToggle =
   document.getElementById("ambientToggle");
@@ -5379,9 +5561,17 @@ function applySettings() {
 
   }
 
-  displayModeSelect.value =
-    appSettings.displayMode;
+displayModeOptions.forEach(
+  option => {
 
+    option.classList.toggle(
+      "active",
+      option.dataset.mode ===
+        appSettings.displayMode
+    );
+
+  }
+);
   ambientToggle.checked =
     appSettings.ambient;
 
@@ -5425,18 +5615,71 @@ function applySettings() {
 }
 
 
-displayModeSelect.addEventListener(
-  "change",
-  () => {
+/* =========================
+   DISPLAY MODE MENU
+========================= */
 
-    appSettings.displayMode =
-      displayModeSelect.value;
+function closeDisplayModeMenu() {
 
-    saveSettings();
+  displayModeMenu.classList.remove(
+    "open"
+  );
 
-    applySettings();
+}
+
+
+displayModeButton.addEventListener(
+  "click",
+  event => {
+
+    event.stopPropagation();
+
+    closeSettings();
+
+    historyPanel.classList.remove(
+      "open"
+    );
+
+    displayModeMenu.classList.toggle(
+      "open"
+    );
 
     wakeDisplay();
+
+  }
+);
+
+
+displayModeMenu.addEventListener(
+  "click",
+  event => {
+
+    event.stopPropagation();
+
+  }
+);
+
+
+displayModeOptions.forEach(
+  option => {
+
+    option.addEventListener(
+      "click",
+      () => {
+
+        appSettings.displayMode =
+          option.dataset.mode;
+
+        saveSettings();
+
+        applySettings();
+
+        closeDisplayModeMenu();
+
+        wakeDisplay();
+
+      }
+    );
 
   }
 );
@@ -5846,13 +6089,14 @@ document.addEventListener(
 
     closeSettings();
 
+    closeDisplayModeMenu();
+
     historyPanel.classList.remove(
       "open"
     );
 
   }
 );
-
 
 /* =========================
    CLEAR HISTORY
