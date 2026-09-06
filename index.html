@@ -275,14 +275,179 @@ body {
   opacity: 0.82;
 }
 
-#playlistName {
+/* =========================
+   PLAYLIST
+========================= */
+
+#playlistSelector {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+
   margin-top: 7px;
+}
 
+#playlistButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 0;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: white;
+
+  font-family: inherit;
   font-size: 16px;
-
   font-weight: 500;
 
   opacity: 0.55;
+
+  cursor: pointer;
+
+  transition:
+    opacity 0.2s ease;
+}
+
+#playlistButton:hover {
+  opacity: 0.9;
+}
+
+#playlistArrow {
+  width: 7px;
+  height: 7px;
+
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+
+  transform:
+    rotate(45deg)
+    translateY(-2px);
+
+  transition:
+    transform 0.2s ease;
+}
+
+#playlistSelector.open #playlistArrow {
+  transform:
+    rotate(225deg)
+    translateY(-2px);
+}
+
+#playlistDropdown {
+  position: absolute;
+
+  left: 0;
+  top: calc(100% + 10px);
+
+  min-width: 230px;
+  max-width: 320px;
+  max-height: 260px;
+
+  padding: 7px;
+
+  overflow-y: auto;
+
+  border-radius: 13px;
+
+  background:
+    rgba(20,20,20,0.96);
+
+  border:
+    1px solid rgba(255,255,255,0.12);
+
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.55);
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
+
+  opacity: 0;
+  visibility: hidden;
+
+  transform:
+    translateY(-6px)
+    scale(0.98);
+
+  transform-origin:
+    top left;
+
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    visibility 0.18s ease;
+
+  z-index: 30;
+}
+
+#playlistSelector.open #playlistDropdown {
+  opacity: 1;
+  visibility: visible;
+
+  transform:
+    translateY(0)
+    scale(1);
+}
+
+.playlistOption {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding:
+    9px 11px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: white;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease;
+}
+
+.playlistOption:hover {
+  background:
+    rgba(255,255,255,0.10);
+}
+
+.playlistOption.current {
+  background:
+    rgba(255,255,255,0.07);
+}
+
+.playlistCheck {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+#playlistLoading {
+  padding:
+    12px;
+
+  color: rgba(255,255,255,0.55);
+
+  font-size: 12px;
 }
 
 /* =========================
@@ -524,6 +689,8 @@ body {
 }
 
 #volumeIcon {
+  position: relative;
+
   width: 25px;
   height: 25px;
 
@@ -534,6 +701,162 @@ body {
   cursor: pointer;
 
   opacity: 0.8;
+
+  transition:
+    opacity 0.2s ease;
+}
+
+#volumeIcon:hover {
+  opacity: 1;
+}
+
+/* Speaker body */
+
+.icon-volume {
+  position: relative;
+
+  width: 17px;
+  height: 17px;
+}
+
+.icon-volume::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  top: 5px;
+
+  width: 5px;
+  height: 7px;
+
+  background: currentColor;
+
+  border-radius: 1px;
+}
+
+.icon-volume::after {
+  content: "";
+
+  position: absolute;
+
+  left: 4px;
+  top: 2px;
+
+  width: 9px;
+  height: 13px;
+
+  background: currentColor;
+
+  clip-path: polygon(
+    0 32%,
+    38% 32%,
+    100% 0,
+    100% 100%,
+    38% 68%,
+    0 68%
+  );
+}
+
+/* Sound waves */
+
+.icon-volume-wave {
+  position: absolute;
+
+  right: -2px;
+  top: 2px;
+
+  width: 8px;
+  height: 13px;
+
+  border-right:
+    1.8px solid currentColor;
+
+  border-radius:
+    0 50% 50% 0;
+}
+
+.icon-volume-wave::after {
+  content: "";
+
+  position: absolute;
+
+  right: -5px;
+  top: -2px;
+
+  width: 11px;
+  height: 17px;
+
+  border-right:
+    1.6px solid currentColor;
+
+  border-radius:
+    0 50% 50% 0;
+}
+
+/* Muted speaker */
+
+.icon-muted {
+  position: relative;
+
+  width: 17px;
+  height: 17px;
+}
+
+.icon-muted::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  top: 5px;
+
+  width: 5px;
+  height: 7px;
+
+  background: currentColor;
+
+  border-radius: 1px;
+}
+
+.icon-muted::after {
+  content: "";
+
+  position: absolute;
+
+  left: 4px;
+  top: 2px;
+
+  width: 9px;
+  height: 13px;
+
+  background: currentColor;
+
+  clip-path: polygon(
+    0 32%,
+    38% 32%,
+    100% 0,
+    100% 100%,
+    38% 68%,
+    0 68%
+  );
+}
+
+.icon-muted-line {
+  position: absolute;
+
+  left: 8px;
+  top: 1px;
+
+  width: 2px;
+  height: 18px;
+
+  background: currentColor;
+
+  transform:
+    rotate(-45deg);
+
+  border-radius: 2px;
 }
 
 #volumeSlider {
@@ -735,8 +1058,14 @@ body {
     font-size: 18px;
   }
 
-  #playlistName {
+  #playlistButton {
     font-size: 14px;
+  }
+
+  #playlistDropdown {
+    min-width: 210px;
+    max-width: 280px;
+    max-height: 220px;
   }
 
   #progressContainer {
@@ -807,10 +1136,12 @@ body {
     margin-top: 8px;
   }
 
-  #playlistName {
+  #playlistButton {
     font-size: 13px;
+  }
 
-    margin-top: 5px;
+  #playlistDropdown {
+    min-width: 220px;
   }
 
   #progressContainer {
@@ -860,7 +1191,16 @@ body {
     font-size: 14px;
   }
 
-  #playlistName {
+  #playlistButton {
+    font-size: 11px;
+  }
+
+  #playlistDropdown {
+    min-width: 210px;
+    max-height: 210px;
+  }
+
+  #playlistOption {
     font-size: 11px;
   }
 
@@ -909,7 +1249,7 @@ body {
   <div id="statusArea">
 
     <div id="clock">
-      00:00
+      00:00:00
     </div>
 
     <div id="deviceName">
@@ -964,8 +1304,29 @@ body {
           —
         </div>
 
-        <div id="playlistName">
-          No playlist
+        <div id="playlistSelector">
+
+          <button
+            id="playlistButton"
+            type="button"
+            aria-label="Select playlist"
+            aria-expanded="false"
+          >
+            <span id="playlistName">
+              No playlist
+            </span>
+
+            <span id="playlistArrow"></span>
+          </button>
+
+          <div id="playlistDropdown">
+
+            <div id="playlistLoading">
+              Loading playlists...
+            </div>
+
+          </div>
+
         </div>
 
       </div>
@@ -1033,7 +1394,8 @@ body {
           title="Mute / Unmute"
           aria-label="Mute or unmute"
         >
-          🔊
+          <span class="icon-volume"></span>
+          <span class="icon-volume-wave"></span>
         </div>
 
         <input
@@ -1110,8 +1472,17 @@ const trackName =
 const artistName =
   document.getElementById("artistName");
 
+const playlistSelector =
+  document.getElementById("playlistSelector");
+
+const playlistButton =
+  document.getElementById("playlistButton");
+
 const playlistName =
   document.getElementById("playlistName");
+
+const playlistDropdown =
+  document.getElementById("playlistDropdown");
 
 const currentTime =
   document.getElementById("currentTime");
@@ -1407,7 +1778,7 @@ async function refreshToken() {
    API
 ========================= */
 
-async function spotifyFetch(endpoint) {
+async function spotifyFetch(endpoint, options = {}) {
 
   const token =
     localStorage.getItem(
@@ -1423,9 +1794,13 @@ async function spotifyFetch(endpoint) {
       endpoint,
       {
 
+        ...options,
+
         headers: {
           Authorization:
-            "Bearer " + token
+            "Bearer " + token,
+
+          ...(options.headers || {})
         }
 
       }
@@ -1439,7 +1814,8 @@ async function spotifyFetch(endpoint) {
     if (refreshed) {
 
       return spotifyFetch(
-        endpoint
+        endpoint,
+        options
       );
 
     }
@@ -1492,6 +1868,310 @@ async function getPlaylistName(
   return data?.name || "";
 
 }
+
+
+/* =========================
+   GET USER PLAYLISTS
+========================= */
+
+let userPlaylists = [];
+
+let playlistsLoaded =
+  false;
+
+
+async function loadPlaylists() {
+
+  playlistDropdown.innerHTML =
+    '<div id="playlistLoading">Loading playlists...</div>';
+
+  const data =
+    await spotifyFetch(
+      "/me/playlists?limit=50"
+    );
+
+  if (!data ||
+      !data.items) {
+
+    playlistDropdown.innerHTML =
+      '<div id="playlistLoading">Unable to load playlists</div>';
+
+    return;
+
+  }
+
+  userPlaylists =
+    data.items.filter(
+      playlist =>
+        playlist &&
+        playlist.id
+    );
+
+  playlistsLoaded =
+    true;
+
+  renderPlaylists();
+
+}
+
+
+function renderPlaylists() {
+
+  playlistDropdown.innerHTML =
+    "";
+
+  if (!userPlaylists.length) {
+
+    playlistDropdown.innerHTML =
+      '<div id="playlistLoading">No playlists found</div>';
+
+    return;
+
+  }
+
+  userPlaylists.forEach(
+    playlist => {
+
+      const option =
+        document.createElement(
+          "button"
+        );
+
+      option.className =
+        "playlistOption";
+
+      option.type =
+        "button";
+
+      option.dataset.playlistId =
+        playlist.id;
+
+      option.dataset.playlistUri =
+        playlist.uri;
+
+      option.innerHTML = `
+        <span>${escapeHtml(playlist.name)}</span>
+        <span class="playlistCheck"></span>
+      `;
+
+      option.addEventListener(
+        "click",
+        async event => {
+
+          event.stopPropagation();
+
+          await playPlaylist(
+            playlist
+          );
+
+        }
+      );
+
+      playlistDropdown.appendChild(
+        option
+      );
+
+    }
+  );
+
+  updatePlaylistSelection();
+
+}
+
+
+function updatePlaylistSelection() {
+
+  const current =
+    playlistName.dataset.playlistId;
+
+  const options =
+    playlistDropdown.querySelectorAll(
+      ".playlistOption"
+    );
+
+  options.forEach(
+    option => {
+
+      const check =
+        option.querySelector(
+          ".playlistCheck"
+        );
+
+      if (
+        current &&
+        option.dataset.playlistId ===
+        current
+      ) {
+
+        option.classList.add(
+          "current"
+        );
+
+        check.textContent =
+          "✓";
+
+      } else {
+
+        option.classList.remove(
+          "current"
+        );
+
+        check.textContent =
+          "";
+
+      }
+
+    }
+  );
+
+}
+
+
+async function playPlaylist(
+  playlist
+) {
+
+  if (!playlist?.uri)
+    return;
+
+  const encodedUri =
+    encodeURIComponent(
+      playlist.uri
+    );
+
+  await spotifyFetch(
+    "/me/player/play",
+    {
+      method: "PUT",
+
+      headers: {
+        "Content-Type":
+          "application/json"
+      },
+
+      body: JSON.stringify({
+        context_uri:
+          playlist.uri
+      })
+    }
+  );
+
+  playlistName.textContent =
+    playlist.name;
+
+  playlistName.dataset.playlistId =
+    playlist.id;
+
+  playlistName.dataset.playlistUri =
+    playlist.uri;
+
+  updatePlaylistSelection();
+
+  closePlaylistDropdown();
+
+  setTimeout(
+    updatePlayer,
+    500
+  );
+
+}
+
+
+function escapeHtml(text) {
+
+  const div =
+    document.createElement(
+      "div"
+    );
+
+  div.textContent =
+    text;
+
+  return div.innerHTML;
+
+}
+
+
+/* =========================
+   PLAYLIST DROPDOWN
+========================= */
+
+function openPlaylistDropdown() {
+
+  if (!playlistsLoaded) {
+
+    loadPlaylists();
+
+  }
+
+  playlistSelector.classList.add(
+    "open"
+  );
+
+  playlistButton.setAttribute(
+    "aria-expanded",
+    "true"
+  );
+
+}
+
+
+function closePlaylistDropdown() {
+
+  playlistSelector.classList.remove(
+    "open"
+  );
+
+  playlistButton.setAttribute(
+    "aria-expanded",
+    "false"
+  );
+
+}
+
+
+playlistButton.addEventListener(
+  "click",
+  event => {
+
+    event.stopPropagation();
+
+    if (
+      playlistSelector.classList.contains(
+        "open"
+      )
+    ) {
+
+      closePlaylistDropdown();
+
+    } else {
+
+      openPlaylistDropdown();
+
+    }
+
+  }
+);
+
+
+playlistDropdown.addEventListener(
+  "click",
+  event => {
+
+    event.stopPropagation();
+
+  }
+);
+
+
+document.addEventListener(
+  "click",
+  () => {
+
+    closePlaylistDropdown();
+
+  }
+);
 
 
 /* =========================
@@ -1667,6 +2347,12 @@ async function showPlaying(data) {
     playlistName.textContent =
       "No playlist";
 
+    playlistName.dataset.playlistId =
+      "";
+
+    playlistName.dataset.playlistUri =
+      "";
+
     status.textContent =
       "Idle";
 
@@ -1750,6 +2436,36 @@ async function showPlaying(data) {
   playlistName.textContent =
     playlist ||
     "No playlist";
+
+  if (
+    data.context?.uri &&
+    data.context.uri.includes(
+      "spotify:playlist:"
+    )
+  ) {
+
+    const playlistId =
+      data.context.uri.split(
+        "spotify:playlist:"
+      )[1];
+
+    playlistName.dataset.playlistId =
+      playlistId;
+
+    playlistName.dataset.playlistUri =
+      data.context.uri;
+
+  } else {
+
+    playlistName.dataset.playlistId =
+      "";
+
+    playlistName.dataset.playlistUri =
+      "";
+
+  }
+
+  updatePlaylistSelection();
 
   deviceName.textContent =
     data.device?.name ||
@@ -1997,6 +2713,33 @@ let lastVolume =
   100;
 
 
+function updateVolumeIcon() {
+
+  if (
+    Number(
+      volumeSlider.value
+    ) === 0
+  ) {
+
+    volumeIcon.innerHTML =
+      `
+        <span class="icon-muted"></span>
+        <span class="icon-muted-line"></span>
+      `;
+
+  } else {
+
+    volumeIcon.innerHTML =
+      `
+        <span class="icon-volume"></span>
+        <span class="icon-volume-wave"></span>
+      `;
+
+  }
+
+}
+
+
 volumeSlider.addEventListener(
   "input",
   async () => {
@@ -2011,6 +2754,8 @@ volumeSlider.addEventListener(
 
     lastVolume =
       volume;
+
+    updateVolumeIcon();
 
     await spotifyFetch(
       "/me/player/volume?volume_percent=" +
@@ -2044,6 +2789,8 @@ volumeIcon.addEventListener(
       volumePercentage.textContent =
         "0%";
 
+      updateVolumeIcon();
+
       await spotifyFetch(
         "/me/player/volume?volume_percent=0",
         {
@@ -2061,6 +2808,8 @@ volumeIcon.addEventListener(
 
       volumePercentage.textContent =
         restored + "%";
+
+      updateVolumeIcon();
 
       await spotifyFetch(
         "/me/player/volume?volume_percent=" +
