@@ -1406,7 +1406,7 @@ body.batterySaver #visualizerCanvas {
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   box-shadow: 0 25px 80px rgba(0,0,0,0.55);
-  z-index: 200;
+  z-index: 5000;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px) scale(0.97);
@@ -2210,7 +2210,9 @@ document.addEventListener(
   position: fixed;
 
   top: 70px;
-  right: max(25px, env(safe-area-inset-right));
+  left: auto;
+  right: 20px;
+  max-width: calc(100vw - 24px);
 
   width: min(220px, calc(100vw - 36px));
 
@@ -7338,6 +7340,21 @@ displayModeButton.addEventListener(
     historyPanel.classList.remove(
       "open"
     );
+
+    const buttonRect = displayModeButton.getBoundingClientRect();
+    const menuWidth = Math.min(220, window.innerWidth - 24);
+    const rightEdge = Math.min(
+      window.innerWidth - 12,
+      Math.max(menuWidth + 12, buttonRect.right)
+    );
+    const leftEdge = Math.max(
+      12,
+      Math.min(buttonRect.right - menuWidth, rightEdge - menuWidth)
+    );
+
+    displayModeMenu.style.left = `${leftEdge}px`;
+    displayModeMenu.style.right = "auto";
+    displayModeMenu.style.top = `${Math.max(12, buttonRect.bottom + 8)}px`;
 
     displayModeMenu.classList.toggle(
       "open"
