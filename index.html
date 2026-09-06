@@ -555,7 +555,7 @@
     ===================================================== */
 
     #albumArtContainer {
-      width: clamp(260px, 28vw, 390px);
+      width: clamp(320px, 34vw, 480px);
 
       aspect-ratio: 1 / 1;
 
@@ -1779,12 +1779,6 @@
       );
 
 
-    const albumArtContainer =
-      document.getElementById(
-        "albumArtContainer"
-      );
-
-
     const background =
       document.getElementById(
         "background"
@@ -2670,10 +2664,6 @@
         background.style.backgroundImage =
           `url("${image}")`;
 
-
-        /* =================================================
-           SQUARE ALBUM ART
-        ================================================= */
 
         albumArtDisplay.src =
           image;
@@ -3725,7 +3715,7 @@
 
     /* =====================================================
        LIVE TIMER
-       
+
        This runs locally every 250ms.
        Spotify is still checked every 5 seconds,
        but the displayed timer doesn't wait for
