@@ -4020,6 +4020,8 @@ const status =
 const deviceName =
   document.getElementById("deviceName");
 
+let currentDeviceId = "";
+
 const clock =
   document.getElementById("clock");
 
@@ -7815,8 +7817,11 @@ async function showPlaying(data) {
   }
 
 
-  await detectCurrentPlaylist(data.context);
+  const contextUri = data.context?.uri || "";
+  await detectCurrentPlaylist(contextUri);
 
+
+  currentDeviceId = data.device?.id || currentDeviceId || "";
 
   deviceName.textContent =
     data.device?.name ||
@@ -8083,6 +8088,29 @@ document.addEventListener("visibilitychange", () => {
 });
 
 /* =========================
+   PLAYER DEVICE TARGET
+========================= */
+
+function playerCommandOptions(method = "POST") {
+  const options = {
+    method,
+    allowDuringQuotaCooldown: true
+  };
+
+  if (currentDeviceId) {
+    const separator = method === "GET" ? "?" : "?";
+    options.deviceQuery = separator + "device_id=" + encodeURIComponent(currentDeviceId);
+  }
+
+  return options;
+}
+
+function withDeviceId(endpoint) {
+  if (!currentDeviceId) return endpoint;
+  return endpoint + (endpoint.includes("?") ? "&" : "?") + "device_id=" + encodeURIComponent(currentDeviceId);
+}
+
+/* =========================
    PREVIOUS
 ========================= */
 
@@ -8092,7 +8120,7 @@ previousButton.addEventListener(
 
     const result =
       await spotifyFetch(
-        "/me/player/previous",
+        withDeviceId("/me/player/previous"),
         {
           method:
             "POST",
@@ -8131,8 +8159,8 @@ playButton.addEventListener(
     const result =
       await spotifyFetch(
         isPlaying
-          ? "/me/player/pause"
-          : "/me/player/play",
+          ? withDeviceId("/me/player/pause")
+          : withDeviceId("/me/player/play"),
         {
           method:
             "PUT",
@@ -8180,7 +8208,7 @@ nextButton.addEventListener(
 
     const result =
       await spotifyFetch(
-        "/me/player/next",
+        withDeviceId("/me/player/next"),
         {
           method:
             "POST",
@@ -8192,15 +8220,15 @@ nextButton.addEventListener(
       result &&
       result.__spotifyError
     ) {
-
+      console.error("Spotify Next failed:", result);
       return;
-
     }
 
-    setTimeout(
-      updatePlayer,
-      250
-    );
+    // Spotify returns 204 on success. Poll immediately so the UI follows
+    // the new track instead of waiting for the normal polling interval.
+    await updatePlayer();
+    setTimeout(updatePlayer, 700);
+    setTimeout(updatePlayer, 1800);
 
   }
 );
@@ -8296,8 +8324,8 @@ volumeSlider.addEventListener(
     updateVolumeIcon();
 
     await spotifyFetch(
-      "/me/player/volume?volume_percent=" +
-      volume,
+      withDeviceId("/me/player/volume?volume_percent=" +
+      volume),
       {
         method:
           "PUT",
@@ -8353,8 +8381,8 @@ volumeIcon.addEventListener(
       updateVolumeIcon();
 
       await spotifyFetch(
-        "/me/player/volume?volume_percent=" +
-        restored,
+        withDeviceId("/me/player/volume?volume_percent=" +
+        restored),
         {
           method:
             "PUT",
