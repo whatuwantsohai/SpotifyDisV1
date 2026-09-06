@@ -1207,6 +1207,179 @@ body.modeVisualizer #backgroundOverlay {
     );
 }
 
+
+/* =========================
+   FEATURE 19/20 — QUEUE ACTIONS
+========================= */
+
+.queueItem {
+  position: relative;
+  cursor: grab;
+  user-select: none;
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.queueItem:hover {
+  background: rgba(255,255,255,0.045);
+}
+
+.queueItem:active {
+  cursor: grabbing;
+}
+
+.queueItem.dragging {
+  opacity: 0.42;
+  transform: scale(0.98);
+}
+
+.queueItem.dragOver {
+  border-top: 2px solid rgba(255,255,255,0.7);
+}
+
+.queueDragHandle {
+  width: 16px;
+  flex-shrink: 0;
+  opacity: 0.28;
+  font-size: 13px;
+  line-height: 1;
+  cursor: grab;
+}
+
+.queueActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.queueAction {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  color: white;
+  font: 700 10px/1 inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.queueAction:hover {
+  background: rgba(255,255,255,0.14);
+}
+
+.queueAction:active {
+  transform: scale(0.94);
+}
+
+.queueAction.remove {
+  color: rgba(255,180,180,0.9);
+}
+
+.queueNotice {
+  padding: 9px 4px 2px;
+  color: rgba(255,255,255,0.34);
+  font-size: 9px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+/* =========================
+   FEATURE 25 — LYRICS FOCUS
+========================= */
+
+body.modeLyrics #header {
+  opacity: 0.35;
+  transition: opacity 0.25s ease;
+}
+
+body.modeLyrics #header:hover {
+  opacity: 1;
+}
+
+body.modeLyrics #lyricsView {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255,255,255,0.035), transparent 42%);
+}
+
+body.modeLyrics .lyricsHint {
+  display: block;
+}
+
+body.modeLyrics .lyricsLine {
+  max-width: 1000px;
+  cursor: pointer;
+}
+
+body.modeLyrics .lyricsLine:hover {
+  color: rgba(255,255,255,0.65);
+}
+
+body.modeLyrics .lyricsLine.active {
+  filter: drop-shadow(0 8px 30px rgba(0,0,0,0.25));
+}
+
+.lyricsHint {
+  display: none;
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(20,20,20,0.65);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.42);
+  font-size: 10px;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+}
+
+/* =========================
+   FEATURE 29 — BATTERY-CONSCIOUS MODE
+========================= */
+
+body.batterySaver #ambientGlow {
+  animation: none;
+  opacity: 0.32 !important;
+}
+
+body.batterySaver #backgroundImage {
+  transition: none;
+}
+
+body.batterySaver #backgroundImage,
+body.batterySaver #ambientGlow {
+  filter: none;
+}
+
+body.batterySaver .vinylRecord {
+  animation-duration: 14s;
+}
+
+body.batterySaver #visualizerCanvas {
+  opacity: 0.58;
+}
+
+.batterySaverBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 7px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.52);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
 /* =========================
    QUEUE PANEL
 ========================= */
@@ -1948,6 +2121,76 @@ body.modeVisualizer #backgroundImage {
     filter: blur(8px);
   }
 }
+/* =========================
+   FEATURE 25 — LYRICS FOCUS CONTROLS
+========================= */
+
+lyricsInner.addEventListener(
+  "click",
+  async event => {
+
+    const line =
+      event.target.closest(".lyricsLine");
+
+    if (!line || !lyricsLines.length)
+      return;
+
+    const index =
+      Number(line.dataset.index);
+
+    const lyric =
+      lyricsLines[index];
+
+    if (!lyric)
+      return;
+
+    const result =
+      await spotifyFetch(
+        "/me/player/seek?position_ms=" +
+        Math.max(0, Math.floor(lyric.time)),
+        {
+          method: "PUT"
+        }
+      );
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+      return;
+    }
+
+    currentProgress =
+      lyric.time;
+
+    progressUpdatedAt =
+      Date.now();
+
+    lyricsActiveIndex =
+      -1;
+
+    updateProgress();
+    wakeDisplay();
+  }
+);
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.key === "Escape" &&
+      appSettings.displayMode === "lyrics"
+    ) {
+      appSettings.displayMode = "normal";
+      saveSettings();
+      applySettings();
+      wakeDisplay();
+    }
+
+  }
+);
+
 /* =========================
    DISPLAY MODE MENU
 ========================= */
@@ -3184,11 +3427,15 @@ body.ambientScreensaver #backgroundImage {
   <div id="queueList">
     <div class="queueEmpty">Open Queue to load your upcoming tracks.</div>
   </div>
+  <div class="queueNotice">
+    Drag to reorder this session's queue. Spotify does not expose an API to reorder/remove existing queue entries, so these changes are kept locally until playback uses them.
+  </div>
 </div>
 
 <div id="lyricsView" aria-live="polite">
   <div id="lyricsInner"></div>
   <div id="lyricsFallback">No synced lyrics available.</div>
+  <div class="lyricsHint">Click a line to seek · Esc to exit focus</div>
 </div>
 
 <div id="vinylMode" aria-hidden="true">
@@ -3444,6 +3691,33 @@ body.ambientScreensaver #backgroundImage {
         <option value="subtle">Subtle</option>
         <option value="cinematic">Cinematic</option>
       </select>
+
+    </div>
+
+  </div>
+
+  <div class="settingsSection">
+
+    <div class="settingsSectionTitle">
+      Performance
+    </div>
+
+    <div class="settingRow">
+
+      <div>
+        Battery-conscious Mode
+        <div class="settingDescription">
+          Reduce animation and background work while keeping playback responsive
+        </div>
+      </div>
+
+      <label class="toggle">
+        <input
+          id="batterySaverToggle"
+          type="checkbox"
+        >
+        <span class="toggleSlider"></span>
+      </label>
 
     </div>
 
@@ -3807,6 +4081,9 @@ const screensaverToggle =
 const dayNightToggle =
   document.getElementById("dayNightToggle");
 
+const batterySaverToggle =
+  document.getElementById("batterySaverToggle");
+
 const clearHistoryButton =
   document.getElementById("clearHistoryButton");
 
@@ -3847,6 +4124,15 @@ let lyricsLines =
 
 let lyricsActiveIndex =
   -1;
+
+/* Feature 19/20: local queue controls.
+   Spotify's public queue API is read-only for existing entries, so
+   reorder/remove are maintained locally and priority-next items are
+   played through the normal playback endpoint. */
+let sessionQueueItems = [];
+let queueDraggingIndex = -1;
+let priorityNextQueue = [];
+let queueRemovedIds = new Set();
 
 
 /* =========================
@@ -5976,6 +6262,37 @@ function drawVisualizer(
   timestamp
 ) {
 
+  const playing =
+    status.classList.contains(
+      "playing"
+    );
+
+  const activeMode =
+    resolveDisplayMode();
+
+  const targetFps =
+    activeMode === "visualizer"
+      ? (appSettings.batterySaver ? 18 : 60)
+      : (appSettings.batterySaver ? 2 : 5);
+
+  const frameInterval =
+    1000 / targetFps;
+
+  if (
+    drawVisualizer.lastFrame &&
+    timestamp - drawVisualizer.lastFrame <
+      frameInterval
+  ) {
+    visualizerAnimation =
+      requestAnimationFrame(
+        drawVisualizer
+      );
+    return;
+  }
+
+  drawVisualizer.lastFrame =
+    timestamp;
+
   const width =
     window.innerWidth;
 
@@ -5989,14 +6306,18 @@ function drawVisualizer(
     height
   );
 
-  const playing =
-    status.classList.contains(
-      "playing"
-    );
+  // Feature 33: drive the visualizer from Spotify's actual
+  // playback clock rather than an independent animation clock.
+  const elapsed =
+    getCurrentElapsed();
 
-  const time =
-    timestamp -
-    visualizerStart;
+  const durationRatio =
+    currentDuration
+      ? elapsed / currentDuration
+      : 0;
+
+  const phase =
+    elapsed * 0.0015;
 
   const baseAlpha =
     playing
@@ -6004,7 +6325,9 @@ function drawVisualizer(
       : 0.12;
 
   const bars =
-    42;
+    appSettings.batterySaver
+      ? 28
+      : 42;
 
   const centerY =
     height * 0.72;
@@ -6023,14 +6346,16 @@ function drawVisualizer(
 
     const wave =
       Math.sin(
-        time * 0.0015 +
-        i * 0.42
+        phase +
+        i * 0.42 +
+        durationRatio * Math.PI * 2
       );
 
     const wave2 =
       Math.sin(
-        time * 0.0022 +
-        i * 0.19
+        elapsed * 0.0022 +
+        i * 0.19 +
+        durationRatio * Math.PI
       );
 
     const strength =
@@ -6082,16 +6407,13 @@ function drawVisualizer(
     );
 
     visualizerContext.fill();
-
   }
 
   visualizerAnimation =
     requestAnimationFrame(
       drawVisualizer
     );
-
 }
-
 
 resizeVisualizer();
 
@@ -6131,7 +6453,10 @@ const defaultSettings = {
     true,
 
   dayNight:
-    true
+    true,
+
+  batterySaver:
+    false
 
 };
 
@@ -6210,12 +6535,46 @@ function resolveDisplayMode() {
     return appSettings.displayMode;
   }
 
-  // Auto is tuned for the iPhone display: use the information-rich
-  // Vinyl layout in landscape, and the cleaner Normal layout in portrait.
-  return window.matchMedia("(orientation: landscape)").matches
-    ? "vinyl"
-    : "normal";
+  const reducedMotion =
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  const landscape =
+    window.matchMedia("(orientation: landscape)").matches;
+
+  const compact =
+    window.innerWidth < 700;
+
+  const shortScreen =
+    window.innerHeight < 620;
+
+  const playingNow =
+    status?.classList.contains("playing");
+
+  // Smart Auto:
+  // - Respect OS reduced-motion and Battery-conscious mode.
+  // - Use Normal on compact/short displays where immersive layouts
+  //   compete with controls.
+  // - Use Vinyl on larger landscape displays.
+  // - Use Visualizer on large landscape displays while playing.
+  if (
+    appSettings.batterySaver ||
+    reducedMotion ||
+    compact
+  ) {
+    return "normal";
+  }
+
+  if (landscape) {
+    if (shortScreen) {
+      return "visualizer";
+    }
+
+    return playingNow
+      ? "visualizer"
+      : "vinyl";
+  }
+
+  return "normal";
 }
 
 function applySettings() {
@@ -6275,6 +6634,14 @@ displayModeOptions.forEach(
   dayNightToggle.checked =
     appSettings.dayNight;
 
+  batterySaverToggle.checked =
+    appSettings.batterySaver;
+
+  document.body.classList.toggle(
+    "batterySaver",
+    !!appSettings.batterySaver
+  );
+
   if (
     appSettings.dynamicBackground
   ) {
@@ -6308,53 +6675,251 @@ function closeQueue() {
   queuePanel.classList.remove("open");
 }
 
+function queueItemKey(item, fallbackIndex) {
+  return item?.uri || item?.id || ("queue-" + fallbackIndex);
+}
+
+function queueItemTitle(item) {
+  return item?.type === "episode"
+    ? (item.name || "Unknown episode")
+    : (item?.name || "Unknown track");
+}
+
+function queueItemArtist(item) {
+  return item?.type === "episode"
+    ? (item.show?.name || "Podcast")
+    : (item?.artists?.map(a => a.name).join(", ") || "Unknown artist");
+}
+
+function queueItemImage(item) {
+  return item?.type === "episode"
+    ? (item.show?.images?.[0]?.url || "")
+    : (item?.album?.images?.[0]?.url || "");
+}
+
+function queueItemUri(item) {
+  return item?.uri || "";
+}
+
+function moveQueueItem(fromIndex, toIndex) {
+  if (
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= sessionQueueItems.length ||
+    toIndex >= sessionQueueItems.length ||
+    fromIndex === toIndex
+  ) {
+    return;
+  }
+
+  const [moved] =
+    sessionQueueItems.splice(fromIndex, 1);
+
+  sessionQueueItems.splice(toIndex, 0, moved);
+
+  renderQueue(sessionQueueItems);
+}
+
 function renderQueue(items) {
+  sessionQueueItems = Array.isArray(items)
+    ? items.slice()
+    : [];
+
   queueList.innerHTML = "";
 
-  if (!items.length) {
+  if (!sessionQueueItems.length) {
     queueList.innerHTML =
       '<div class="queueEmpty">Your queue is empty.</div>';
     return;
   }
 
-  items.forEach(item => {
+  sessionQueueItems.forEach((item, index) => {
     const row = document.createElement("div");
     row.className = "queueItem";
+    row.draggable = true;
+    row.dataset.index = String(index);
+
+    const handle = document.createElement("div");
+    handle.className = "queueDragHandle";
+    handle.textContent = "⋮⋮";
+    handle.title = "Drag to reorder";
+    handle.setAttribute("aria-label", "Drag to reorder");
 
     const image = document.createElement("img");
     image.className = "queueArtwork";
     image.alt = "";
+    image.src = queueItemImage(item);
 
     const details = document.createElement("div");
     details.className = "queueDetails";
 
     const title = document.createElement("div");
     title.className = "queueTrack";
+    title.textContent = queueItemTitle(item);
 
     const artist = document.createElement("div");
     artist.className = "queueArtist";
-
-    if (item?.type === "episode") {
-      image.src =
-        item.show?.images?.[0]?.url || "";
-      title.textContent =
-        item.name || "Unknown episode";
-      artist.textContent =
-        item.show?.name || "Podcast";
-    } else {
-      image.src =
-        item?.album?.images?.[0]?.url || "";
-      title.textContent =
-        item?.name || "Unknown track";
-      artist.textContent =
-        item?.artists?.map(a => a.name).join(", ") ||
-        "Unknown artist";
-    }
+    artist.textContent = queueItemArtist(item);
 
     details.appendChild(title);
     details.appendChild(artist);
+
+    const actions = document.createElement("div");
+    actions.className = "queueActions";
+
+    const playNext = document.createElement("button");
+    playNext.className = "queueAction";
+    playNext.type = "button";
+    playNext.textContent = "↑";
+    playNext.title = "Play next";
+    playNext.setAttribute("aria-label", "Play next");
+    playNext.addEventListener("click", async event => {
+      event.stopPropagation();
+
+      const uri = queueItemUri(item);
+      if (!uri) return;
+
+      const key = queueItemKey(item, index);
+      queueRemovedIds.delete(key);
+
+      sessionQueueItems =
+        sessionQueueItems.filter(
+          (candidate, candidateIndex) =>
+            queueItemKey(candidate, candidateIndex) !== key
+        );
+
+      priorityNextQueue =
+        priorityNextQueue.filter(
+          queued => queued.key !== key
+        );
+
+      priorityNextQueue.unshift({
+        key,
+        item
+      });
+
+      renderQueue(sessionQueueItems);
+      wakeDisplay();
+    });
+
+    const remove = document.createElement("button");
+    remove.className = "queueAction remove";
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.title = "Remove from session queue";
+    remove.setAttribute("aria-label", "Remove from session queue");
+    remove.addEventListener("click", event => {
+      event.stopPropagation();
+
+      const key = queueItemKey(item, index);
+      queueRemovedIds.add(key);
+
+      sessionQueueItems =
+        sessionQueueItems.filter(
+          (candidate, candidateIndex) =>
+            queueItemKey(candidate, candidateIndex) !== key
+        );
+
+      priorityNextQueue =
+        priorityNextQueue.filter(
+          queued => queued.key !== key
+        );
+
+      renderQueue(sessionQueueItems);
+      wakeDisplay();
+    });
+
+    actions.appendChild(playNext);
+    actions.appendChild(remove);
+
+    row.addEventListener("dragstart", event => {
+      queueDraggingIndex = index;
+      row.classList.add("dragging");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData(
+        "text/plain",
+        String(index)
+      );
+    });
+
+    row.addEventListener("dragend", () => {
+      queueDraggingIndex = -1;
+      row.classList.remove("dragging");
+      queueList
+        .querySelectorAll(".dragOver")
+        .forEach(el => el.classList.remove("dragOver"));
+    });
+
+    row.addEventListener("dragover", event => {
+      event.preventDefault();
+
+      if (
+        queueDraggingIndex < 0 ||
+        queueDraggingIndex === index
+      ) {
+        return;
+      }
+
+      event.dataTransfer.dropEffect = "move";
+      row.classList.add("dragOver");
+    });
+
+    row.addEventListener("dragleave", () => {
+      row.classList.remove("dragOver");
+    });
+
+    row.addEventListener("drop", event => {
+      event.preventDefault();
+      row.classList.remove("dragOver");
+
+      const fromIndex = Number(
+        event.dataTransfer.getData("text/plain")
+      );
+
+      if (
+        Number.isInteger(fromIndex) &&
+        fromIndex !== index
+      ) {
+        moveQueueItem(fromIndex, index);
+      }
+    });
+
+    row.addEventListener("click", async event => {
+      if (event.target.closest(".queueActions")) return;
+
+      const uri = queueItemUri(item);
+      if (!uri) return;
+
+      const result = await spotifyFetch(
+        "/me/player/play",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            uris: [uri]
+          })
+        }
+      );
+
+      if (
+        result &&
+        result.__spotifyError
+      ) {
+        return;
+      }
+
+      closeQueue();
+      setTimeout(updatePlayer, 250);
+      wakeDisplay();
+    });
+
+    row.appendChild(handle);
     row.appendChild(image);
     row.appendChild(details);
+    row.appendChild(actions);
+
     queueList.appendChild(row);
   });
 }
@@ -6376,12 +6941,20 @@ async function loadQueue() {
     return;
   }
 
-  renderQueue(
+  const serverItems =
     Array.isArray(data.queue)
       ? data.queue
-      : []
-  );
+      : [];
 
+  const filteredItems =
+    serverItems.filter(
+      (item, index) =>
+        !queueRemovedIds.has(
+          queueItemKey(item, index)
+        )
+    );
+
+  renderQueue(filteredItems);
   queueLoaded = true;
 }
 
@@ -6872,6 +7445,20 @@ dayNightToggle.addEventListener(
     saveSettings();
 
     updateDayNight();
+
+  }
+);
+
+batterySaverToggle.addEventListener(
+  "change",
+  () => {
+
+    appSettings.batterySaver =
+      batterySaverToggle.checked;
+
+    saveSettings();
+    applySettings();
+    restartPlaybackPolling();
 
   }
 );
@@ -7608,6 +8195,11 @@ async function showPlaying(data) {
     data.is_playing
   );
 
+  if (
+    appSettings.displayMode === "auto"
+  ) {
+    applySettings();
+  }
 
   updatePlayButton(
     data.is_playing
@@ -7700,6 +8292,52 @@ let trackEndTimer =
   null;
 
 
+async function playPriorityNextIfAvailable() {
+
+  while (priorityNextQueue.length) {
+
+    const next =
+      priorityNextQueue.shift();
+
+    const uri =
+      queueItemUri(next.item);
+
+    if (!uri)
+      continue;
+
+    const result =
+      await spotifyFetch(
+        "/me/player/play",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            uris: [uri]
+          })
+        }
+      );
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+      priorityNextQueue.unshift(next);
+      return false;
+    }
+
+    setTimeout(
+      updatePlayer,
+      250
+    );
+
+    return true;
+  }
+
+  return false;
+}
+
 function scheduleTrackEndCheck() {
 
   if (trackEndTimer) {
@@ -7732,7 +8370,14 @@ function scheduleTrackEndCheck() {
 
     trackEndTimer =
       setTimeout(
-        updatePlayer,
+        async () => {
+          const handled =
+            await playPriorityNextIfAvailable();
+
+          if (!handled) {
+            await updatePlayer();
+          }
+        },
         150
       );
 
@@ -7761,10 +8406,32 @@ function startSpotify() {
     pollingInterval =
       setInterval(
         updatePlayer,
-        10000
+        appSettings.batterySaver
+          ? 30000
+          : 10000
       );
 
   }
+
+}
+
+function restartPlaybackPolling() {
+
+  if (!pollingInterval) {
+    return;
+  }
+
+  clearInterval(
+    pollingInterval
+  );
+
+  pollingInterval =
+    setInterval(
+      updatePlayer,
+      appSettings.batterySaver
+        ? 30000
+        : 10000
+    );
 
 }
 
@@ -7854,6 +8521,13 @@ nextButton.addEventListener(
   "click",
   async () => {
 
+    if (
+      await playPriorityNextIfAvailable()
+    ) {
+      wakeDisplay();
+      return;
+    }
+
     const result =
       await spotifyFetch(
         "/me/player/next",
@@ -7871,6 +8545,11 @@ nextButton.addEventListener(
       return;
 
     }
+
+    setTimeout(
+      updatePlayer,
+      250
+    );
 
   }
 );
@@ -8201,6 +8880,11 @@ function logout() {
   );
 
   closeQueue();
+
+  sessionQueueItems = [];
+  priorityNextQueue = [];
+  queueRemovedIds.clear();
+  queueLoaded = false;
 
   lyricsRequestId++;
   lyricsTrackId = null;
