@@ -339,53 +339,56 @@ body {
     translateY(-2px);
 }
 
+/* =========================
+   BOTTOM PLAYLIST SHEET
+========================= */
+
 #playlistDropdown {
-  position: absolute;
+  position: fixed;
 
-  left: 0;
-  top: calc(100% + 10px);
+  left: 50%;
+  bottom: 0;
 
-  min-width: 230px;
-  max-width: 320px;
-  max-height: 260px;
+  width: min(520px, 92vw);
+  max-height: min(55vh, 420px);
 
-  padding: 7px;
+  padding: 12px;
 
   overflow-y: auto;
 
-  border-radius: 13px;
+  border-radius:
+    20px
+    20px
+    0
+    0;
 
   background:
-    rgba(20,20,20,0.96);
+    rgba(20,20,20,0.97);
 
   border:
     1px solid rgba(255,255,255,0.12);
 
   box-shadow:
-    0 18px 50px rgba(0,0,0,0.55);
+    0 -20px 60px rgba(0,0,0,0.55);
 
   backdrop-filter:
-    blur(18px);
+    blur(22px);
 
   -webkit-backdrop-filter:
-    blur(18px);
+    blur(22px);
 
   opacity: 0;
   visibility: hidden;
 
   transform:
-    translateY(-6px)
-    scale(0.98);
-
-  transform-origin:
-    top left;
+    translate(-50%, 100%);
 
   transition:
-    opacity 0.18s ease,
-    transform 0.18s ease,
-    visibility 0.18s ease;
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    visibility 0.25s ease;
 
-  z-index: 30;
+  z-index: 100;
 }
 
 #playlistSelector.open #playlistDropdown {
@@ -393,8 +396,7 @@ body {
   visibility: visible;
 
   transform:
-    translateY(0)
-    scale(1);
+    translate(-50%, 0);
 }
 
 .playlistOption {
@@ -405,10 +407,10 @@ body {
   justify-content: space-between;
 
   padding:
-    9px 11px;
+    12px 13px;
 
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
 
   background: transparent;
 
@@ -443,11 +445,14 @@ body {
 
 #playlistLoading {
   padding:
-    12px;
+    14px;
 
-  color: rgba(255,255,255,0.55);
+  color:
+    rgba(255,255,255,0.55);
 
   font-size: 12px;
+
+  text-align: center;
 }
 
 /* =========================
@@ -1063,9 +1068,14 @@ body {
   }
 
   #playlistDropdown {
-    min-width: 210px;
-    max-width: 280px;
-    max-height: 220px;
+    width: min(92vw, 420px);
+    max-height: 60vh;
+
+    border-radius:
+      18px
+      18px
+      0
+      0;
   }
 
   #progressContainer {
@@ -1141,7 +1151,8 @@ body {
   }
 
   #playlistDropdown {
-    min-width: 220px;
+    width: min(500px, 90vw);
+    max-height: 70vh;
   }
 
   #progressContainer {
@@ -1196,11 +1207,13 @@ body {
   }
 
   #playlistDropdown {
-    min-width: 210px;
-    max-height: 210px;
+    width: min(500px, 90vw);
+    max-height: 75vh;
+    padding: 9px;
   }
 
-  #playlistOption {
+  .playlistOption {
+    padding: 9px 11px;
     font-size: 11px;
   }
 
