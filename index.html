@@ -532,202 +532,26 @@ body.dayMode #backgroundImage {
 }
 
 /* =========================
-   PLAYLIST
+   CURRENT PLAYLIST
 ========================= */
 
 #playlistSelector {
   position: relative;
   display: block;
   margin-top: 10px;
+  min-height: 18px;
 }
 
-#playlistButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-
-  padding: 0;
-
-  border: none;
-  outline: none;
-
-  background: transparent;
-
-  color: white;
-
-  font-family: inherit;
-  font-size: 16px;
-  font-weight: 500;
-
-  opacity: 0.55;
-
-  cursor: pointer;
-
-  transition: opacity 0.2s ease;
-}
-
-#playlistButton:hover {
-  opacity: 0.9;
-}
-
-#playlistArrow {
-  width: 8px;
-  height: 8px;
-
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-
-  transform:
-    rotate(45deg)
-    translateY(-2px);
-
-  transition: transform 0.2s ease;
-}
-
-#playlistSelector.open #playlistArrow {
-  transform:
-    rotate(225deg)
-    translateY(-2px);
-}
-
-/* =========================
-   PLAYLIST SHEET
-========================= */
-
-#playlistDropdown {
-  position: fixed;
-
-  left: 50%;
-  bottom: 0;
-
-  width: min(520px, 92vw);
-  max-height: min(55vh, 420px);
-
-  padding: 14px;
-
-  overflow-y: auto;
-
-  border-radius:
-    20px
-    20px
-    0
-    0;
-
-  background: rgba(20,20,20,0.97);
-
-  border: 1px solid rgba(255,255,255,0.12);
-
-  box-shadow:
-    0 -20px 60px rgba(0,0,0,0.55);
-
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-
-  opacity: 0;
-  visibility: hidden;
-
-  transform: translate(-50%, 100%);
-
-  transition:
-    opacity 0.25s ease,
-    transform 0.25s ease,
-    visibility 0.25s ease;
-
-  z-index: 100;
-}
-
-#playlistSelector.open #playlistDropdown {
-  opacity: 1;
-  visibility: visible;
-
-  transform: translate(-50%, 0);
-}
-
-.playlistOption {
-  width: 100%;
-
-  display: flex;
-  align-items: center;
-
-  padding: 12px 14px;
-
-  border: none;
-  border-radius: 12px;
-
-  background: transparent;
-
-  color: white;
-
-  font-family: inherit;
-
-  text-align: left;
-
-  cursor: pointer;
-
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
-}
-
-.playlistOption:hover {
-  background: rgba(255,255,255,0.10);
-}
-
-.playlistOption:active {
-  transform: scale(0.98);
-}
-
-.playlistOption.current {
-  background: rgba(255,255,255,0.08);
-}
-
-.playlistDetails {
-  min-width: 0;
-  flex: 1;
-}
-
-.playlistTitle {
-  font-size: 14px;
-
-  font-weight: 600;
-
-  line-height: 1.25;
-
-  white-space: nowrap;
-
+#playlistName {
+  display: inline-block;
+  max-width: min(520px, 80vw);
   overflow: hidden;
-
   text-overflow: ellipsis;
-}
-
-.playlistSubtitle {
-  margin-top: 4px;
-
-  font-size: 11px;
-
-  opacity: 0.45;
-}
-
-.playlistCheck {
-  width: 22px;
-
-  flex-shrink: 0;
-
-  font-size: 15px;
-
-  text-align: center;
-
-  opacity: 0.8;
-}
-
-#playlistLoading {
-  padding: 18px 14px;
-
-  color: rgba(255,255,255,0.55);
-
-  font-size: 12px;
-
-  text-align: center;
+  white-space: nowrap;
+  color: rgba(255,255,255,0.52);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
 }
 
 /* =========================
@@ -1457,8 +1281,7 @@ body.uiHidden #fullscreenButton,
 body.uiHidden #displayModeMenu,
 body.uiHidden #queuePanel,
 body.uiHidden #historyPanel,
-body.uiHidden #settingsPanel,
-body.uiHidden #playlistDropdown {
+body.uiHidden #settingsPanel {
   opacity: 0 !important;
   pointer-events: none !important;
 }
@@ -3115,22 +2938,6 @@ body.ambientScreensaver #backgroundImage {
     font-size: 18px;
   }
 
-  #playlistButton {
-    font-size: 14px;
-  }
-
-  #playlistDropdown {
-    width: min(92vw, 420px);
-
-    max-height: 60vh;
-
-    border-radius:
-      18px
-      18px
-      0
-      0;
-  }
-
   #progressContainer {
     margin-top: 24px;
   }
@@ -3218,16 +3025,6 @@ body.ambientScreensaver #backgroundImage {
     margin-top: 8px;
   }
 
-  #playlistButton {
-    font-size: 13px;
-  }
-
-  #playlistDropdown {
-    width: min(500px, 90vw);
-
-    max-height: 70vh;
-  }
-
   #progressContainer {
     margin-top: 17px;
   }
@@ -3270,36 +3067,6 @@ body.ambientScreensaver #backgroundImage {
 
   #artistName {
     font-size: 14px;
-  }
-
-  #playlistButton {
-    font-size: 11px;
-  }
-
-  #playlistDropdown {
-    width: min(500px, 90vw);
-
-    max-height: 75vh;
-
-    padding: 9px;
-  }
-
-  .playlistOption {
-    padding: 8px 9px;
-  }
-
-  .playlistTitle {
-    font-size: 11px;
-  }
-
-  .playlistSubtitle {
-    font-size: 9px;
-
-    margin-top: 2px;
-  }
-
-  .playlistCheck {
-    font-size: 12px;
   }
 
   #progressContainer {
@@ -3734,29 +3501,8 @@ body.ambientScreensaver #backgroundOverlay { background:rgba(0,0,0,.52); }
           —
         </div>
 
-        <div id="playlistSelector">
-
-          <button
-            id="playlistButton"
-            type="button"
-            aria-label="Select playlist"
-            aria-expanded="false"
-          >
-            <span id="playlistName">
-              No playlist
-            </span>
-
-            <span id="playlistArrow"></span>
-          </button>
-
-          <div id="playlistDropdown">
-
-            <div id="playlistLoading">
-              Loading playlists...
-            </div>
-
-          </div>
-
+        <div id="playlistSelector" aria-label="Current playlist">
+          <span id="playlistName">No playlist</span>
         </div>
 
       </div>
@@ -4232,14 +3978,8 @@ const artistName =
 const playlistSelector =
   document.getElementById("playlistSelector");
 
-const playlistButton =
-  document.getElementById("playlistButton");
-
 const playlistName =
   document.getElementById("playlistName");
-
-const playlistDropdown =
-  document.getElementById("playlistDropdown");
 
 const currentTime =
   document.getElementById("currentTime");
@@ -4820,14 +4560,6 @@ const MAX_QUOTA_BACKOFF =
    PLAYLIST CACHE
 ========================= */
 
-const PLAYLIST_CACHE_KEY =
-  "spotify_playlists_cache";
-
-const PLAYLIST_CACHE_TIME_KEY =
-  "spotify_playlists_cache_time";
-
-const PLAYLIST_CACHE_TTL =
-  15 * 60 * 1000;
 
 
 /* =========================
@@ -5124,696 +4856,92 @@ async function spotifyFetch(
 
 
 /* =========================
-   PLAYLIST DATA
+   CURRENT PLAYLIST DETECTION
 ========================= */
 
-let userPlaylists =
-  [];
+let detectedPlaylistId = "";
+let detectedPlaylistName = "";
+let playlistNameRequestId = 0;
 
-let playlistsLoaded =
-  false;
+const PLAYLIST_NAME_CACHE_KEY =
+  "spotify_current_playlist_names";
 
-
-/* =========================
-   PLAYLIST CACHE
-========================= */
-
-function loadCachedPlaylists() {
-
-  const cached =
-    localStorage.getItem(
-      PLAYLIST_CACHE_KEY
-    );
-
-  const cachedTime =
-    Number(
-      localStorage.getItem(
-        PLAYLIST_CACHE_TIME_KEY
-      ) || 0
-    );
-
-  if (
-    !cached ||
-    !cachedTime
-  ) {
-
-    return false;
-
-  }
-
-  if (
-    Date.now() -
-    cachedTime >
-    PLAYLIST_CACHE_TTL
-  ) {
-
-    return false;
-
-  }
-
+function readPlaylistNameCache() {
   try {
-
-    const parsed =
-      JSON.parse(
-        cached
-      );
-
-    if (
-      !Array.isArray(
-        parsed
-      )
-    ) {
-
-      return false;
-
-    }
-
-    userPlaylists =
-      parsed.filter(
-        playlist =>
-          playlist &&
-          playlist.id
-      );
-
-    if (
-      !userPlaylists.length
-    ) {
-
-      return false;
-
-    }
-
-    playlistsLoaded =
-      true;
-
-    renderPlaylists();
-
-    console.log(
-      "Loaded playlists from cache."
+    const parsed = JSON.parse(
+      localStorage.getItem(PLAYLIST_NAME_CACHE_KEY) || "{}"
     );
-
-    return true;
-
+    return parsed && typeof parsed === "object" ? parsed : {};
   } catch (error) {
-
-    console.error(
-      "Playlist cache error:",
-      error
-    );
-
-    return false;
-
+    return {};
   }
-
 }
 
-
-function cachePlaylists() {
-
+function writePlaylistNameCache(cache) {
   try {
-
     localStorage.setItem(
-      PLAYLIST_CACHE_KEY,
-      JSON.stringify(
-        userPlaylists
-      )
+      PLAYLIST_NAME_CACHE_KEY,
+      JSON.stringify(cache)
     );
-
-    localStorage.setItem(
-      PLAYLIST_CACHE_TIME_KEY,
-      String(
-        Date.now()
-      )
-    );
-
   } catch (error) {
-
-    console.warn(
-      "Unable to cache playlists:",
-      error
-    );
-
+    // Ignore storage failures; detection still works for the session.
   }
-
 }
 
+async function detectCurrentPlaylist(contextUri) {
 
-/* =========================
-   LOAD PLAYLISTS
-========================= */
+  const prefix = "spotify:playlist:";
 
-async function loadPlaylists() {
-
-  if (
-    loadCachedPlaylists()
-  ) {
-
+  if (!contextUri || !contextUri.includes(prefix)) {
+    detectedPlaylistId = "";
+    detectedPlaylistName = "";
+    playlistName.textContent = "No playlist";
+    playlistName.dataset.playlistId = "";
+    playlistName.dataset.playlistUri = "";
     return;
-
   }
 
-  playlistDropdown.innerHTML =
-    '<div id="playlistLoading">Loading playlists...</div>';
+  const playlistId = contextUri.split(prefix)[1] || "";
+  if (!playlistId) return;
 
-  userPlaylists =
-    [];
-
-  let url =
-    "/me/playlists?limit=50";
-
-  try {
-
-    while (url) {
-
-      const data =
-        await spotifyFetch(
-          url
-        );
-
-      if (
-        !data ||
-        data.__spotifyError ||
-        !data.items
-      ) {
-
-        console.error(
-          "Unable to load playlists:",
-          data
-        );
-
-        if (
-          data &&
-          data.quotaExceeded
-        ) {
-
-          playlistDropdown.innerHTML =
-            '<div id="playlistLoading">Spotify playlist quota reached</div>';
-
-        } else if (
-          data &&
-          data.status === 429
-        ) {
-
-          playlistDropdown.innerHTML =
-            '<div id="playlistLoading">Spotify is temporarily rate limited</div>';
-
-        } else {
-
-          playlistDropdown.innerHTML =
-            '<div id="playlistLoading">Unable to load playlists</div>';
-
-        }
-
-        playlistsLoaded =
-          false;
-
-        return;
-
-      }
-
-      const validPlaylists =
-        data.items.filter(
-          playlist =>
-            playlist &&
-            playlist.id
-        );
-
-      userPlaylists.push(
-        ...validPlaylists
-      );
-
-      url =
-        data.next
-          ? new URL(data.next).pathname +
-            new URL(data.next).search
-          : null;
-
-    }
-
-    playlistsLoaded =
-      true;
-
-    cachePlaylists();
-
-    renderPlaylists();
-
-  } catch (error) {
-
-    console.error(
-      "Playlist loading error:",
-      error
-    );
-
-    playlistDropdown.innerHTML =
-      '<div id="playlistLoading">Unable to load playlists</div>';
-
-    playlistsLoaded =
-      false;
-
-  }
-
-}
-
-
-/* =========================
-   PLAYLIST NAME
-========================= */
-
-function getPlaylistName(
-  contextUri
-) {
-
-  if (!contextUri)
-    return "";
-
-  if (
-    !contextUri.includes(
-      "spotify:playlist:"
-    )
-  )
-    return "";
-
-  const playlistId =
-    contextUri.split(
-      "spotify:playlist:"
-    )[1];
-
-  if (!playlistId)
-    return "";
-
-  const existingPlaylist =
-    userPlaylists.find(
-      playlist =>
-        playlist.id ===
-        playlistId
-    );
-
-  if (existingPlaylist) {
-
-    return existingPlaylist.name;
-
-  }
-
-  return "";
-
-}
-
-
-/* =========================
-   RENDER PLAYLISTS
-========================= */
-
-function renderPlaylists() {
-
-  playlistDropdown.innerHTML =
-    "";
-
-  if (!userPlaylists.length) {
-
-    playlistDropdown.innerHTML =
-      '<div id="playlistLoading">No playlists found</div>';
-
+  if (playlistId === detectedPlaylistId && detectedPlaylistName) {
     return;
-
   }
 
-  userPlaylists.forEach(
-    playlist => {
+  detectedPlaylistId = playlistId;
+  detectedPlaylistName = "";
+  playlistName.dataset.playlistId = playlistId;
+  playlistName.dataset.playlistUri = contextUri;
 
-      const option =
-        document.createElement(
-          "button"
-        );
+  const cache = readPlaylistNameCache();
+  const cachedName = cache[playlistId];
 
-      option.className =
-        "playlistOption";
+  if (cachedName) {
+    detectedPlaylistName = cachedName;
+    playlistName.textContent = cachedName;
+    return;
+  }
 
-      option.type =
-        "button";
+  playlistName.textContent = "Playlist";
+  const requestId = ++playlistNameRequestId;
 
-      option.dataset.playlistId =
-        playlist.id;
-
-      option.dataset.playlistUri =
-        playlist.uri;
-
-      const details =
-        document.createElement(
-          "div"
-        );
-
-      details.className =
-        "playlistDetails";
-
-      const title =
-        document.createElement(
-          "div"
-        );
-
-      title.className =
-        "playlistTitle";
-
-      title.textContent =
-        playlist.name ||
-        "Untitled Playlist";
-
-      const subtitle =
-        document.createElement(
-          "div"
-        );
-
-      subtitle.className =
-        "playlistSubtitle";
-
-      subtitle.textContent =
-        "Playlist";
-
-      details.appendChild(
-        title
-      );
-
-      details.appendChild(
-        subtitle
-      );
-
-      const check =
-        document.createElement(
-          "span"
-        );
-
-      check.className =
-        "playlistCheck";
-
-      option.appendChild(
-        details
-      );
-
-      option.appendChild(
-        check
-      );
-
-      option.addEventListener(
-        "click",
-        async event => {
-
-          event.stopPropagation();
-
-          await playPlaylist(
-            playlist
-          );
-
-        }
-      );
-
-      playlistDropdown.appendChild(
-        option
-      );
-
-    }
+  const data = await spotifyFetch(
+    "/playlists/" + encodeURIComponent(playlistId) + "?fields=name"
   );
 
-  updatePlaylistSelection();
-
-}
-
-
-/* =========================
-   PLAYLIST SELECTION
-========================= */
-
-function updatePlaylistSelection() {
-
-  const current =
-    playlistName.dataset.playlistId;
-
-  const options =
-    playlistDropdown.querySelectorAll(
-      ".playlistOption"
-    );
-
-  options.forEach(
-    option => {
-
-      const check =
-        option.querySelector(
-          ".playlistCheck"
-        );
-
-      if (
-        current &&
-        option.dataset.playlistId ===
-        current
-      ) {
-
-        option.classList.add(
-          "current"
-        );
-
-        check.textContent =
-          "✓";
-
-      } else {
-
-        option.classList.remove(
-          "current"
-        );
-
-        check.textContent =
-          "";
-
-      }
-
-    }
-  );
-
-}
-
-
-/* =========================
-   PLAY PLAYLIST
-========================= */
-
-async function playPlaylist(
-  playlist
-) {
-
-  if (!playlist?.uri)
+  if (requestId !== playlistNameRequestId || playlistId !== detectedPlaylistId) {
     return;
-
-  const devices =
-    await spotifyFetch(
-      "/me/player/devices"
-    );
-
-  if (
-    devices &&
-    devices.__spotifyError
-  ) {
-
-    return;
-
   }
 
-  if (
-    devices &&
-    devices.devices
-  ) {
-
-    const activeDevice =
-      devices.devices.find(
-        device =>
-          device.is_active
-      );
-
-    if (!activeDevice) {
-
-      console.warn(
-        "No active Spotify playback device found."
-      );
-
-      playlistDropdown.innerHTML =
-        '<div id="playlistLoading">Open Spotify on a device first</div>';
-
-      setTimeout(
-        () => {
-
-          if (playlistsLoaded) {
-
-            renderPlaylists();
-
-          }
-
-        },
-        1800
-      );
-
-      return;
-
-    }
-
-    const result =
-      await spotifyFetch(
-        "/me/player/play?device_id=" +
-        encodeURIComponent(
-          activeDevice.id
-        ),
-        {
-
-          method:
-            "PUT",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              context_uri:
-                playlist.uri
-
-            })
-
-        }
-      );
-
-    if (
-      result &&
-      result.__spotifyError
-    ) {
-
-      return;
-
-    }
-
+  if (data && !data.__spotifyError && data.name) {
+    detectedPlaylistName = data.name;
+    playlistName.textContent = data.name;
+    cache[playlistId] = data.name;
+    writePlaylistNameCache(cache);
   } else {
-
-    const result =
-      await spotifyFetch(
-        "/me/player/play",
-        {
-
-          method:
-            "PUT",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body:
-            JSON.stringify({
-
-              context_uri:
-                playlist.uri
-
-            })
-
-        }
-      );
-
-    if (
-      result &&
-      result.__spotifyError
-    ) {
-
-      return;
-
-    }
-
+    playlistName.textContent = "Playlist";
   }
-
-  playlistName.textContent =
-    playlist.name;
-
-  playlistName.dataset.playlistId =
-    playlist.id;
-
-  playlistName.dataset.playlistUri =
-    playlist.uri;
-
-  updatePlaylistSelection();
-
-  closePlaylistDropdown();
-
 }
-
-
-/* =========================
-   PLAYLIST DROPDOWN
-========================= */
-
-function openPlaylistDropdown() {
-
-  playlistSelector.classList.add(
-    "open"
-  );
-
-  playlistButton.setAttribute(
-    "aria-expanded",
-    "true"
-  );
-
-  if (!playlistsLoaded) {
-
-    loadPlaylists();
-
-  } else {
-
-    updatePlaylistSelection();
-
-  }
-
-}
-
-
-function closePlaylistDropdown() {
-
-  playlistSelector.classList.remove(
-    "open"
-  );
-
-  playlistButton.setAttribute(
-    "aria-expanded",
-    "false"
-  );
-
-}
-
-
-playlistButton.addEventListener(
-  "click",
-  event => {
-
-    event.stopPropagation();
-
-    if (
-      playlistSelector.classList.contains(
-        "open"
-      )
-    ) {
-
-      closePlaylistDropdown();
-
-    } else {
-
-      openPlaylistDropdown();
-
-    }
-
-  }
-);
-
-
-playlistDropdown.addEventListener(
-  "click",
-  event => {
-
-    event.stopPropagation();
-
-  }
-);
 
 
 /* =========================
@@ -8613,58 +7741,7 @@ async function showPlaying(data) {
   const contextUri =
     data.context?.uri || "";
 
-  const playlist =
-    getPlaylistName(
-      contextUri
-    );
-
-
-  if (playlist) {
-
-    playlistName.textContent =
-      playlist;
-
-  } else if (
-    !contextUri.includes(
-      "spotify:playlist:"
-    )
-  ) {
-
-    playlistName.textContent =
-      "No playlist";
-
-  }
-
-
-  if (
-    contextUri.includes(
-      "spotify:playlist:"
-    )
-  ) {
-
-    const playlistId =
-      contextUri.split(
-        "spotify:playlist:"
-      )[1];
-
-    playlistName.dataset.playlistId =
-      playlistId;
-
-    playlistName.dataset.playlistUri =
-      contextUri;
-
-  } else {
-
-    playlistName.dataset.playlistId =
-      "";
-
-    playlistName.dataset.playlistUri =
-      "";
-
-  }
-
-
-  updatePlaylistSelection();
+  await detectCurrentPlaylist(contextUri);
 
 
   deviceName.textContent =
@@ -9254,23 +8331,6 @@ function logout() {
   localStorage.removeItem(
     "spotify_code_verifier"
   );
-
-  localStorage.removeItem(
-    PLAYLIST_CACHE_KEY
-  );
-
-  localStorage.removeItem(
-    PLAYLIST_CACHE_TIME_KEY
-  );
-
-  playlistsLoaded =
-    false;
-
-  userPlaylists =
-    [];
-
-  playlistDropdown.innerHTML =
-    '<div id="playlistLoading">Loading playlists...</div>';
 
   playlistName.textContent =
     "No playlist";
