@@ -3392,6 +3392,21 @@ body.modeVisualizer #albumArtContainer {
   }
 }
 
+
+/* CLOCK + DATE SCREENSAVER */
+#screensaverOverlay { position:fixed; inset:0; z-index:1200; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:24px; text-align:center; pointer-events:none; opacity:0; visibility:hidden; transform:scale(.985); transition:opacity 700ms ease,transform 900ms ease,visibility 700ms ease; }
+body.ambientScreensaver #screensaverOverlay { opacity:1; visibility:visible; transform:scale(1); }
+#screensaverClock { font-size:clamp(64px,12vw,150px); line-height:.95; font-weight:650; letter-spacing:-.045em; font-variant-numeric:tabular-nums; text-shadow:0 10px 55px rgba(0,0,0,.4); }
+#screensaverDate { font-size:clamp(14px,2vw,24px); font-weight:500; letter-spacing:.02em; color:rgba(255,255,255,.62); }
+body.ambientScreensaver #backgroundImage { filter:blur(30px) brightness(.28) saturate(1.5); }
+body.ambientScreensaver #backgroundOverlay { background:rgba(0,0,0,.52); }
+
+/* Session Stats + Hide UI: side-by-side, no overlap. */
+#sessionControls { position:fixed; left:max(25px,env(safe-area-inset-left)); bottom:max(20px,env(safe-area-inset-bottom)); z-index:210; display:inline-flex; align-items:center; gap:8px; width:max-content; }
+#sessionBadge { position:static; left:auto; bottom:auto; z-index:auto; }
+#universalUiDock { position:static; flex:0 0 auto; }
+@media (max-width:600px) { #sessionControls { left:max(12px,env(safe-area-inset-left)); bottom:max(12px,env(safe-area-inset-bottom)); gap:6px; } }
+
 </style>
 </head>
 
@@ -3401,6 +3416,11 @@ body.modeVisualizer #albumArtContainer {
   <img id="backgroundImage" src="" alt="">
   <div id="backgroundOverlay"></div>
   <div id="ambientGlow"></div>
+</div>
+
+<div id="screensaverOverlay" aria-hidden="true">
+  <div id="screensaverClock">00:00:00</div>
+  <div id="screensaverDate">Monday, January 1, 2026</div>
 </div>
 
 <canvas id="visualizerCanvas"></canvas>
@@ -3940,6 +3960,26 @@ body.modeVisualizer #albumArtContainer {
     <div class="settingRow">
 
       <div>
+        Screensaver After
+        <div class="settingDescription">
+          Show a clock and date when music has stopped
+        </div>
+      </div>
+
+      <select id="screensaverTimeoutSelect" class="settingsSelect" aria-label="Screensaver timeout">
+        <option value="1">1 min</option>
+        <option value="5">5 min</option>
+        <option value="10">10 min</option>
+        <option value="15">15 min</option>
+        <option value="30">30 min</option>
+        <option value="60">60 min</option>
+      </select>
+
+    </div>
+
+    <div class="settingRow">
+
+      <div>
         Day / Night UI
         <div class="settingDescription">
           Adjust appearance automatically
@@ -4256,6 +4296,15 @@ const dimmingToggle =
 
 const screensaverToggle =
   document.getElementById("screensaverToggle");
+
+const screensaverTimeoutSelect =
+  document.getElementById("screensaverTimeoutSelect");
+
+const screensaverClock =
+  document.getElementById("screensaverClock");
+
+const screensaverDate =
+  document.getElementById("screensaverDate");
 
 const dayNightToggle =
   document.getElementById("dayNightToggle");
@@ -6718,6 +6767,9 @@ const defaultSettings = {
   screensaver:
     true,
 
+  screensaverTimeout:
+    15,
+
   dayNight:
     true,
 
@@ -6900,6 +6952,9 @@ displayModeOptions.forEach(
 
   screensaverToggle.checked =
     appSettings.screensaver;
+
+  screensaverTimeoutSelect.value =
+    String(appSettings.screensaverTimeout);
 
   dayNightToggle.checked =
     appSettings.dayNight;
@@ -7739,8 +7794,23 @@ screensaverToggle.addEventListener(
     appSettings.screensaver =
       screensaverToggle.checked;
 
+    if (!appSettings.screensaver) {
+      document.body.classList.remove("ambientScreensaver");
+    }
+
     saveSettings();
 
+  }
+);
+
+
+screensaverTimeoutSelect.addEventListener(
+  "change",
+  () => {
+    const minutes = Number(screensaverTimeoutSelect.value);
+    appSettings.screensaverTimeout = Number.isFinite(minutes) && minutes > 0 ? minutes : 15;
+    notPlayingSince = Date.now();
+    saveSettings();
   }
 );
 
@@ -7825,101 +7895,74 @@ let lastInteraction =
 const DIM_AFTER =
   5 * 60 * 1000;
 
-const SCREENSAVER_AFTER =
-  15 * 60 * 1000;
+let notPlayingSince =
+  Date.now();
 
+let playbackStateKnown =
+  false;
+
+function updateScreensaverClock() {
+  const now = new Date();
+
+  if (screensaverClock) {
+    screensaverClock.textContent = now.toLocaleTimeString([], {
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+    });
+  }
+
+  if (screensaverDate) {
+    screensaverDate.textContent = now.toLocaleDateString([], {
+      weekday: "long", month: "long", day: "numeric", year: "numeric"
+    });
+  }
+}
+
+function updatePlaybackScreensaverState(isPlaying) {
+  playbackStateKnown = true;
+  if (isPlaying) {
+    notPlayingSince = Date.now();
+    document.body.classList.remove("ambientScreensaver");
+  } else if (!notPlayingSince) {
+    notPlayingSince = Date.now();
+  }
+}
 
 function registerInteraction() {
-
-  lastInteraction =
-    Date.now();
-
+  lastInteraction = Date.now();
   wakeDisplay();
-
 }
-
 
 function wakeDisplay() {
-
-  document.body.classList.remove(
-    "autoDim",
-    "ambientScreensaver"
-  );
-
+  const wasScreensaver = document.body.classList.contains("ambientScreensaver");
+  document.body.classList.remove("autoDim", "ambientScreensaver");
+  if (wasScreensaver) {
+    notPlayingSince = Date.now();
+    updateScreensaverClock();
+  }
 }
 
+["mousemove", "mousedown", "touchstart", "touchmove", "keydown", "pointerdown"].forEach(eventName => {
+  document.addEventListener(eventName, registerInteraction, { passive: true });
+});
 
-[
-  "mousemove",
-  "mousedown",
-  "touchstart",
-  "touchmove",
-  "keydown",
-  "pointerdown"
-].forEach(
-  eventName => {
+updateScreensaverClock();
 
-    document.addEventListener(
-      eventName,
-      registerInteraction,
-      {
-        passive:
-          true
-      }
-    );
+setInterval(() => {
+  updateScreensaverClock();
+  const idle = Date.now() - lastInteraction;
+  const screensaverDelay = Math.max(1, Number(appSettings.screensaverTimeout) || 15) * 60 * 1000;
+  const stoppedFor = Date.now() - notPlayingSince;
 
+  if (appSettings.screensaver && playbackStateKnown && !document.body.classList.contains("isPlaying") && stoppedFor >= screensaverDelay) {
+    document.body.classList.add("ambientScreensaver");
+    document.body.classList.remove("autoDim");
+  } else if (appSettings.dimming && idle >= DIM_AFTER) {
+    document.body.classList.add("autoDim");
+    document.body.classList.remove("ambientScreensaver");
+  } else if (!document.body.classList.contains("ambientScreensaver")) {
+    document.body.classList.remove("autoDim");
   }
-);
-
-
-setInterval(
-  () => {
-
-    const idle =
-      Date.now() -
-      lastInteraction;
-
-    if (
-      appSettings.screensaver &&
-      idle >=
-      SCREENSAVER_AFTER
-    ) {
-
-      document.body.classList.add(
-        "ambientScreensaver"
-      );
-
-      document.body.classList.remove(
-        "autoDim"
-      );
-
-    } else if (
-      appSettings.dimming &&
-      idle >=
-      DIM_AFTER
-    ) {
-
-      document.body.classList.add(
-        "autoDim"
-      );
-
-      document.body.classList.remove(
-        "ambientScreensaver"
-      );
-
-    } else {
-
-      document.body.classList.remove(
-        "autoDim",
-        "ambientScreensaver"
-      );
-
-    }
-
-  },
-  5000
-);
-
+}, 1000);
 
 /* =========================
    FULLSCREEN
@@ -8344,6 +8387,8 @@ async function showPlaying(data) {
       "isPlaying"
     );
 
+    updatePlaybackScreensaverState(false);
+
     lyricsRequestId++;
     lyricsTrackId = null;
     lyricsLines = [];
@@ -8517,6 +8562,8 @@ async function showPlaying(data) {
   updateStatus(
     data.is_playing
   );
+
+  updatePlaybackScreensaverState(!!data.is_playing);
 
   if (
     appSettings.displayMode === "auto"
