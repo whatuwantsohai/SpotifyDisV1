@@ -6359,11 +6359,9 @@ async function showPlaying(data) {
     track.id;
 
 
- if (isNewTrack) {
+  if (isNewTrack) {
 
-  playTrackTransition();
-
-}
+    await playTrackTransition();
 
   }
 
