@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
 
   <title>SpotDeck</title>
 
@@ -13,60 +16,111 @@
       padding: 0;
     }
 
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+    }
+
     body {
       font-family: Arial, Helvetica, sans-serif;
       background: #080808;
       color: white;
-      min-height: 100vh;
       overflow: hidden;
     }
 
-    /* =========================
+    button,
+    input {
+      font: inherit;
+    }
+
+    /* =====================================================
        CONNECT SCREEN
-    ========================= */
+    ===================================================== */
 
     #connectScreen {
       position: fixed;
       inset: 0;
-      background: #080808;
+      background:
+        radial-gradient(
+          circle at center,
+          #171717 0%,
+          #080808 65%
+        );
+
       display: flex;
       align-items: center;
       justify-content: center;
+
       z-index: 99999;
+
+      padding:
+        max(20px, env(safe-area-inset-top))
+        max(20px, env(safe-area-inset-right))
+        max(20px, env(safe-area-inset-bottom))
+        max(20px, env(safe-area-inset-left));
     }
 
     #connectBox {
       width: min(90%, 420px);
+
       text-align: center;
+
       padding: 40px 30px;
-      border-radius: 24px;
-      background: #151515;
-      border: 1px solid #292929;
-      box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+
+      border-radius: 26px;
+
+      background: rgba(22, 22, 22, 0.95);
+
+      border: 1px solid rgba(255,255,255,0.08);
+
+      box-shadow:
+        0 30px 100px rgba(0,0,0,0.7);
+
+      backdrop-filter: blur(20px);
+    }
+
+    #connectLogo {
+      width: 68px;
+      height: 68px;
+
+      margin: 0 auto 18px;
+
+      border-radius: 50%;
+
+      background: #1ed760;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      color: black;
+
+      font-size: 30px;
+      font-weight: 900;
     }
 
     #connectBox h1 {
       font-size: 42px;
+
       margin-bottom: 10px;
+
       letter-spacing: -2px;
     }
 
     #connectBox p {
       color: #aaa;
-      margin-bottom: 30px;
+
+      margin-bottom: 28px;
+
       line-height: 1.5;
+
+      font-size: 15px;
     }
 
     #connectButton {
-      position: relative;
-      z-index: 100000;
-
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-
       width: 100%;
-      min-height: 58px;
+      min-height: 56px;
 
       border: none;
       border-radius: 999px;
@@ -74,12 +128,13 @@
       background: #1ed760;
       color: #000;
 
-      font-size: 17px;
-      font-weight: bold;
+      font-size: 16px;
+      font-weight: 800;
 
       cursor: pointer;
 
-      box-shadow: 0 10px 35px rgba(30,215,96,0.25);
+      box-shadow:
+        0 10px 35px rgba(30,215,96,0.22);
 
       transition:
         transform 0.15s ease,
@@ -89,36 +144,45 @@
 
     #connectButton:hover {
       background: #1fdf64;
+
       transform: translateY(-2px);
-      box-shadow: 0 15px 45px rgba(30,215,96,0.35);
+
+      box-shadow:
+        0 15px 45px rgba(30,215,96,0.35);
     }
 
     #connectButton:active {
       transform: scale(0.98);
     }
 
-    /* =========================
+
+    /* =====================================================
        MAIN APP
-    ========================= */
+    ===================================================== */
 
     #app {
       display: none;
+
       position: relative;
+
       width: 100vw;
-      height: 100vh;
+      height: 100dvh;
+
       overflow: hidden;
+
       background: #080808;
     }
 
     #background {
       position: absolute;
-      inset: 0;
+      inset: -30px;
 
       background-size: cover;
       background-position: center;
 
-      filter: blur(35px);
-      transform: scale(1.12);
+      filter: blur(40px);
+
+      transform: scale(1.1);
 
       opacity: 0.35;
 
@@ -130,58 +194,99 @@
     #backgroundOverlay {
       position: absolute;
       inset: 0;
+
       background:
         linear-gradient(
           180deg,
           rgba(0,0,0,0.55),
-          rgba(0,0,0,0.8)
+          rgba(0,0,0,0.86)
         );
     }
 
+
+    /* =====================================================
+       CONTENT
+    ===================================================== */
+
     #content {
       position: relative;
+
       z-index: 5;
 
       width: 100%;
       height: 100%;
 
       display: flex;
+
       flex-direction: column;
+
       align-items: center;
+
       justify-content: center;
 
-      padding: 30px;
+      padding:
+        80px
+        30px
+        30px;
     }
 
-    /* =========================
+
+    /* =====================================================
        HEADER
-    ========================= */
+    ===================================================== */
 
     #header {
       position: absolute;
-      top: 25px;
-      left: 30px;
-      right: 30px;
+
+      top:
+        max(20px, env(safe-area-inset-top));
+
+      left:
+        max(25px, env(safe-area-inset-left));
+
+      right:
+        max(25px, env(safe-area-inset-right));
 
       display: flex;
+
       align-items: center;
+
       justify-content: space-between;
     }
 
     #logo {
-      font-size: 22px;
+      font-size: 20px;
+
       font-weight: 800;
+
       letter-spacing: -1px;
     }
 
     #status {
       color: #aaa;
+
       font-size: 13px;
     }
 
-    /* =========================
-       ALBUM
-    ========================= */
+
+    /* =====================================================
+       PLAYING
+    ===================================================== */
+
+    #playing {
+      width: min(100%, 600px);
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+    }
+
+
+    /* =====================================================
+       ALBUM ART
+    ===================================================== */
 
     #albumArt {
       width: min(55vh, 420px);
@@ -194,7 +299,7 @@
       background: #151515;
 
       box-shadow:
-        0 30px 90px rgba(0,0,0,0.55);
+        0 30px 90px rgba(0,0,0,0.6);
 
       transition:
         transform 0.4s ease,
@@ -205,51 +310,88 @@
       transform: scale(1.015);
     }
 
-    /* =========================
+
+    /* =====================================================
        TRACK INFO
-    ========================= */
+    ===================================================== */
 
     #trackInfo {
-      width: min(90%, 600px);
-      margin-top: 28px;
+      width: 100%;
+
+      margin-top: 25px;
+
       text-align: center;
     }
 
     #trackName {
-      font-size: clamp(25px, 4vw, 40px);
+      font-size: clamp(24px, 4vw, 40px);
+
       font-weight: 800;
 
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.12;
+
+      letter-spacing: -0.8px;
+
+      /*
+        IMPORTANT:
+        Don't truncate long song titles.
+      */
+
+      white-space: normal;
+
+      overflow-wrap: anywhere;
     }
 
     #artistName {
       margin-top: 8px;
 
-      color: #bdbdbd;
+      color: #c4c4c4;
 
       font-size: clamp(15px, 2vw, 19px);
 
-      white-space: nowrap;
+      line-height: 1.3;
+
+      white-space: normal;
+    }
+
+    #playlistName {
+      margin-top: 8px;
+
+      color: #8f8f8f;
+
+      font-size: 13px;
+
+      line-height: 1.3;
+
+      white-space: normal;
+
       overflow: hidden;
+
       text-overflow: ellipsis;
     }
 
-    /* =========================
+    #playlistName::first-letter {
+      color: #aaa;
+    }
+
+
+    /* =====================================================
        PROGRESS
-    ========================= */
+    ===================================================== */
 
     #progressContainer {
-      width: min(90%, 600px);
-      margin-top: 25px;
+      width: 100%;
+
+      margin-top: 24px;
     }
 
     #progressBar {
       width: 100%;
+
       height: 5px;
 
-      background: rgba(255,255,255,0.18);
+      background:
+        rgba(255,255,255,0.18);
 
       border-radius: 999px;
 
@@ -260,6 +402,7 @@
 
     #progress {
       width: 0%;
+
       height: 100%;
 
       background: white;
@@ -271,44 +414,53 @@
 
     #time {
       display: flex;
+
       justify-content: space-between;
 
       margin-top: 8px;
 
       font-size: 11px;
+
       color: #aaa;
     }
 
-    /* =========================
+
+    /* =====================================================
        CONTROLS
-    ========================= */
+    ===================================================== */
 
     #controls {
       display: flex;
+
       align-items: center;
+
       justify-content: center;
 
-      gap: 22px;
+      gap: 18px;
 
-      margin-top: 25px;
+      margin-top: 22px;
     }
 
     .control {
-      width: 45px;
-      height: 45px;
+      width: 44px;
+      height: 44px;
 
       border: none;
+
       border-radius: 50%;
 
-      background: rgba(255,255,255,0.08);
+      background:
+        rgba(255,255,255,0.09);
 
       color: white;
 
       display: flex;
+
       align-items: center;
+
       justify-content: center;
 
-      font-size: 18px;
+      font-size: 17px;
 
       cursor: pointer;
 
@@ -318,27 +470,136 @@
     }
 
     .control:hover {
-      background: rgba(255,255,255,0.18);
+      background:
+        rgba(255,255,255,0.18);
+
       transform: scale(1.05);
     }
 
+    .control:active {
+      transform: scale(0.94);
+    }
+
     #playButton {
-      width: 58px;
-      height: 58px;
+      width: 56px;
+      height: 56px;
 
       background: white;
+
       color: black;
 
-      font-size: 22px;
+      font-size: 21px;
     }
 
     #playButton:hover {
-      background: #eee;
+      background: #eeeeee;
     }
 
-    /* =========================
-       DISCONNECTED
-    ========================= */
+
+    /* =====================================================
+       VOLUME
+    ===================================================== */
+
+    #volumeContainer {
+      width: min(100%, 380px);
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 10px;
+
+      margin-top: 19px;
+    }
+
+    #volumeButton {
+      width: 30px;
+      height: 30px;
+
+      border: none;
+
+      background: transparent;
+
+      color: #ccc;
+
+      cursor: pointer;
+
+      font-size: 17px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      flex-shrink: 0;
+    }
+
+    #volumeButton:hover {
+      color: white;
+    }
+
+    #volumeSlider {
+      flex: 1;
+
+      appearance: none;
+
+      -webkit-appearance: none;
+
+      height: 4px;
+
+      border-radius: 999px;
+
+      background:
+        rgba(255,255,255,0.22);
+
+      outline: none;
+
+      cursor: pointer;
+    }
+
+    #volumeSlider::-webkit-slider-thumb {
+      appearance: none;
+
+      -webkit-appearance: none;
+
+      width: 14px;
+      height: 14px;
+
+      border-radius: 50%;
+
+      background: white;
+
+      cursor: pointer;
+    }
+
+    #volumeSlider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+
+      border: none;
+
+      border-radius: 50%;
+
+      background: white;
+
+      cursor: pointer;
+    }
+
+    #volumePercentage {
+      width: 38px;
+
+      text-align: right;
+
+      color: #aaa;
+
+      font-size: 11px;
+    }
+
+
+    /* =====================================================
+       NOTHING PLAYING
+    ===================================================== */
 
     #nothingPlaying {
       display: none;
@@ -348,6 +609,7 @@
 
     #nothingPlaying h2 {
       font-size: 30px;
+
       margin-bottom: 8px;
     }
 
@@ -355,53 +617,296 @@
       color: #aaa;
     }
 
-    /* =========================
-       RESPONSIVE
-    ========================= */
+
+    /* =====================================================
+       PHONE PORTRAIT
+    ===================================================== */
 
     @media (max-width: 600px) {
 
       #content {
-        padding: 20px;
+        padding:
+          70px
+          20px
+          max(20px, env(safe-area-inset-bottom));
       }
 
       #header {
-        top: 18px;
-        left: 20px;
-        right: 20px;
+        left:
+          max(18px, env(safe-area-inset-left));
+
+        right:
+          max(18px, env(safe-area-inset-right));
+      }
+
+      #logo {
+        font-size: 18px;
       }
 
       #albumArt {
-        width: min(78vw, 360px);
-        height: min(78vw, 360px);
+        width: min(72vw, 340px);
+        height: min(72vw, 340px);
+
+        border-radius: 15px;
+      }
+
+      #trackInfo {
+        margin-top: 20px;
+      }
+
+      #trackName {
+        font-size: clamp(23px, 7vw, 32px);
+      }
+
+      #artistName {
+        font-size: 15px;
+      }
+
+      #playlistName {
+        font-size: 12px;
+      }
+
+      #progressContainer {
+        margin-top: 19px;
       }
 
       #controls {
         gap: 12px;
+
+        margin-top: 18px;
       }
 
       .control {
         width: 40px;
         height: 40px;
+
+        font-size: 15px;
       }
 
       #playButton {
         width: 52px;
         height: 52px;
       }
+
+      #volumeContainer {
+        margin-top: 15px;
+      }
     }
+
+
+    /* =====================================================
+       IPHONE LANDSCAPE
+    ===================================================== */
+
+    @media
+      (orientation: landscape)
+      and (max-height: 600px) {
+
+      #content {
+        padding:
+          50px
+          max(25px, env(safe-area-inset-right))
+          max(15px, env(safe-area-inset-bottom))
+          max(25px, env(safe-area-inset-left));
+
+        display: flex;
+
+        justify-content: center;
+      }
+
+      #header {
+        top:
+          max(10px, env(safe-area-inset-top));
+
+        left:
+          max(20px, env(safe-area-inset-left));
+
+        right:
+          max(20px, env(safe-area-inset-right));
+      }
+
+      #logo {
+        font-size: 17px;
+      }
+
+      #status {
+        font-size: 11px;
+      }
+
+      #playing {
+        width: min(900px, 100%);
+
+        display: grid;
+
+        grid-template-columns:
+          min(38vh, 250px)
+          1fr;
+
+        grid-template-rows:
+          auto
+          auto
+          auto
+          auto;
+
+        column-gap: 28px;
+
+        align-items: center;
+      }
+
+      #albumArt {
+        grid-column: 1;
+
+        grid-row: 1 / 5;
+
+        width: min(42vh, 250px);
+        height: min(42vh, 250px);
+
+        border-radius: 14px;
+      }
+
+      #trackInfo {
+        grid-column: 2;
+
+        grid-row: 1;
+
+        width: 100%;
+
+        margin-top: 0;
+
+        text-align: left;
+      }
+
+      #trackName {
+        font-size: clamp(22px, 4.5vh, 34px);
+
+        line-height: 1.08;
+
+        max-height: 3.3em;
+
+        overflow: hidden;
+      }
+
+      #artistName {
+        margin-top: 7px;
+
+        font-size: 15px;
+      }
+
+      #playlistName {
+        margin-top: 6px;
+
+        font-size: 12px;
+      }
+
+      #progressContainer {
+        grid-column: 2;
+
+        grid-row: 2;
+
+        width: 100%;
+
+        margin-top: 14px;
+      }
+
+      #controls {
+        grid-column: 2;
+
+        grid-row: 3;
+
+        justify-content: flex-start;
+
+        margin-top: 12px;
+
+        gap: 12px;
+      }
+
+      #volumeContainer {
+        grid-column: 2;
+
+        grid-row: 4;
+
+        width: min(100%, 350px);
+
+        margin-top: 9px;
+      }
+
+      .control {
+        width: 38px;
+        height: 38px;
+      }
+
+      #playButton {
+        width: 48px;
+        height: 48px;
+      }
+    }
+
+
+    /* =====================================================
+       VERY SHORT LANDSCAPE
+       e.g. iPhone landscape with browser chrome
+    ===================================================== */
+
+    @media
+      (orientation: landscape)
+      and (max-height: 430px) {
+
+      #playing {
+        grid-template-columns:
+          min(32vh, 180px)
+          1fr;
+
+        column-gap: 22px;
+      }
+
+      #albumArt {
+        width: min(34vh, 180px);
+        height: min(34vh, 180px);
+      }
+
+      #trackName {
+        font-size: clamp(19px, 4.5vh, 28px);
+
+        max-height: 2.25em;
+      }
+
+      #artistName {
+        font-size: 13px;
+      }
+
+      #playlistName {
+        font-size: 11px;
+      }
+
+      #progressContainer {
+        margin-top: 9px;
+      }
+
+      #controls {
+        margin-top: 7px;
+      }
+
+      #volumeContainer {
+        margin-top: 4px;
+      }
+    }
+
   </style>
 </head>
 
 <body>
 
-  <!-- =========================
+  <!-- =====================================================
        CONNECT SCREEN
-  ========================= -->
+  ===================================================== -->
 
   <div id="connectScreen">
 
     <div id="connectBox">
+
+      <div id="connectLogo">
+        ♪
+      </div>
 
       <h1>SpotDeck</h1>
 
@@ -410,7 +915,10 @@
         your currently playing music.
       </p>
 
-      <button id="connectButton" type="button">
+      <button
+        id="connectButton"
+        type="button"
+      >
         Connect Spotify
       </button>
 
@@ -419,9 +927,9 @@
   </div>
 
 
-  <!-- =========================
+  <!-- =====================================================
        MAIN APP
-  ========================= -->
+  ===================================================== -->
 
   <div id="app">
 
@@ -432,8 +940,15 @@
     <div id="content">
 
       <div id="header">
-        <div id="logo">SPOTDECK</div>
-        <div id="status">Connected</div>
+
+        <div id="logo">
+          SPOTDECK
+        </div>
+
+        <div id="status">
+          Connected
+        </div>
+
       </div>
 
 
@@ -447,6 +962,7 @@
           alt="Album artwork"
         >
 
+
         <div id="trackInfo">
 
           <div id="trackName">
@@ -457,14 +973,23 @@
             —
           </div>
 
+          <div id="playlistName">
+            ♫ No playlist
+          </div>
+
         </div>
 
+
+        <!-- PROGRESS -->
 
         <div id="progressContainer">
 
           <div id="progressBar">
+
             <div id="progress"></div>
+
           </div>
+
 
           <div id="time">
 
@@ -481,6 +1006,8 @@
         </div>
 
 
+        <!-- CONTROLS -->
+
         <div id="controls">
 
           <button
@@ -492,6 +1019,7 @@
             ⏮
           </button>
 
+
           <button
             class="control"
             id="playButton"
@@ -500,6 +1028,7 @@
           >
             ▶
           </button>
+
 
           <button
             class="control"
@@ -512,6 +1041,36 @@
 
         </div>
 
+
+        <!-- VOLUME -->
+
+        <div id="volumeContainer">
+
+          <button
+            id="volumeButton"
+            type="button"
+            title="Mute"
+          >
+            🔊
+          </button>
+
+
+          <input
+            id="volumeSlider"
+            type="range"
+            min="0"
+            max="100"
+            value="50"
+            step="1"
+          >
+
+
+          <span id="volumePercentage">
+            50%
+          </span>
+
+        </div>
+
       </div>
 
 
@@ -519,7 +1078,9 @@
 
       <div id="nothingPlaying">
 
-        <h2>Nothing Playing</h2>
+        <h2>
+          Nothing Playing
+        </h2>
 
         <p>
           Start playing something on Spotify.
@@ -550,7 +1111,9 @@
       "user-read-playback-state",
       "user-modify-playback-state",
       "user-read-private",
-      "user-read-email"
+      "user-read-email",
+      "playlist-read-private",
+      "playlist-read-collaborative"
     ].join(" ");
 
 
@@ -579,6 +1142,9 @@
     const artistName =
       document.getElementById("artistName");
 
+    const playlistName =
+      document.getElementById("playlistName");
+
     const progress =
       document.getElementById("progress");
 
@@ -597,6 +1163,15 @@
     const nextButton =
       document.getElementById("nextButton");
 
+    const volumeButton =
+      document.getElementById("volumeButton");
+
+    const volumeSlider =
+      document.getElementById("volumeSlider");
+
+    const volumePercentage =
+      document.getElementById("volumePercentage");
+
     const playing =
       document.getElementById("playing");
 
@@ -605,6 +1180,15 @@
 
     const status =
       document.getElementById("status");
+
+
+    /* =====================================================
+       VOLUME STATE
+    ===================================================== */
+
+    let previousVolume = 50;
+
+    let currentVolume = 50;
 
 
     /* =====================================================
@@ -623,11 +1207,16 @@
           new Uint8Array(length)
         );
 
-      for (let i = 0; i < length; i++) {
+      for (
+        let i = 0;
+        i < length;
+        i++
+      ) {
 
         result +=
           characters[
-            randomValues[i] % characters.length
+            randomValues[i] %
+            characters.length
           ];
 
       }
@@ -654,7 +1243,9 @@
     function base64UrlEncode(input) {
 
       return btoa(
-        String.fromCharCode(...new Uint8Array(input))
+        String.fromCharCode(
+          ...new Uint8Array(input)
+        )
       )
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
@@ -668,7 +1259,9 @@
       const hashed =
         await sha256(verifier);
 
-      return base64UrlEncode(hashed);
+      return base64UrlEncode(
+        hashed
+      );
 
     }
 
@@ -685,7 +1278,10 @@
           generateRandomString(64);
 
         const challenge =
-          await createCodeChallenge(verifier);
+          await createCodeChallenge(
+            verifier
+          );
+
 
         sessionStorage.setItem(
           "spotify_code_verifier",
@@ -750,6 +1346,7 @@
           "spotify_code_verifier"
         );
 
+
       if (!verifier) {
 
         throw new Error(
@@ -791,7 +1388,8 @@
                 "application/x-www-form-urlencoded"
             },
 
-            body: body.toString()
+            body:
+              body.toString()
           }
         );
 
@@ -833,7 +1431,8 @@
 
       const expiresAt =
         Date.now() +
-        (data.expires_in * 1000);
+        data.expires_in * 1000;
+
 
       localStorage.setItem(
         "spotify_token_expires",
@@ -861,6 +1460,7 @@
         localStorage.getItem(
           "spotify_refresh_token"
         );
+
 
       if (!refresh) {
 
@@ -895,7 +1495,8 @@
                 "application/x-www-form-urlencoded"
             },
 
-            body: body.toString()
+            body:
+              body.toString()
           }
         );
 
@@ -929,7 +1530,8 @@
 
       const expiresAt =
         Date.now() +
-        (data.expires_in * 1000);
+        data.expires_in * 1000;
+
 
       localStorage.setItem(
         "spotify_token_expires",
@@ -952,6 +1554,7 @@
         localStorage.getItem(
           "spotify_access_token"
         );
+
 
       const expires =
         Number(
@@ -1070,6 +1673,88 @@
 
 
     /* =====================================================
+       GET PLAYLIST NAME
+    ===================================================== */
+
+    async function getPlaylistName(context) {
+
+      if (
+        !context ||
+        !context.uri
+      ) {
+
+        return "♫ No playlist";
+
+      }
+
+
+      /*
+        Spotify playlist context URI:
+
+        spotify:playlist:PLAYLIST_ID
+      */
+
+      if (
+        context.type !== "playlist" ||
+        !context.uri.includes(
+          "spotify:playlist:"
+        )
+      ) {
+
+        return "♫ Album / Other";
+
+      }
+
+
+      const playlistId =
+        context.uri.split(":").pop();
+
+
+      try {
+
+        const response =
+          await spotifyFetch(
+            "/playlists/" +
+            playlistId +
+            "?fields=name"
+          );
+
+
+        if (!response.ok) {
+
+          return "♫ Playlist";
+
+        }
+
+
+        const data =
+          await response.json();
+
+
+        if (data.name) {
+
+          return "♫ " + data.name;
+
+        }
+
+      }
+
+      catch (error) {
+
+        console.error(
+          "Playlist lookup error:",
+          error
+        );
+
+      }
+
+
+      return "♫ Playlist";
+
+    }
+
+
+    /* =====================================================
        GET CURRENT SONG
     ===================================================== */
 
@@ -1120,7 +1805,7 @@
         }
 
 
-        showPlaying(data);
+        await showPlaying(data);
 
       }
 
@@ -1140,16 +1825,10 @@
        DISPLAY SONG
     ===================================================== */
 
-    function showPlaying(data) {
+    async function showPlaying(data) {
 
       playing.style.display =
-        "flex";
-
-      playing.style.flexDirection =
-        "column";
-
-      playing.style.alignItems =
-        "center";
+        "grid";
 
 
       nothingPlaying.style.display =
@@ -1160,9 +1839,13 @@
         data.item;
 
 
+      /* SONG */
+
       trackName.textContent =
         track.name;
 
+
+      /* ARTIST */
 
       artistName.textContent =
         track.artists
@@ -1171,6 +1854,16 @@
           )
           .join(", ");
 
+
+      /* PLAYLIST */
+
+      playlistName.textContent =
+        await getPlaylistName(
+          data.context
+        );
+
+
+      /* ARTWORK */
 
       const image =
         track.album &&
@@ -1191,6 +1884,8 @@
       }
 
 
+      /* PROGRESS */
+
       const trackDuration =
         track.duration_ms || 0;
 
@@ -1199,16 +1894,23 @@
 
 
       duration.textContent =
-        formatTime(trackDuration);
+        formatTime(
+          trackDuration
+        );
 
 
       currentTime.textContent =
-        formatTime(trackProgress);
+        formatTime(
+          trackProgress
+        );
 
 
       const percentage =
         trackDuration
-          ? (trackProgress / trackDuration) * 100
+          ? (
+              trackProgress /
+              trackDuration
+            ) * 100
           : 0;
 
 
@@ -1219,16 +1921,34 @@
         ) + "%";
 
 
+      /* PLAY BUTTON */
+
       playButton.textContent =
         data.is_playing
           ? "⏸"
           : "▶";
 
 
+      /* STATUS */
+
       status.textContent =
         data.is_playing
           ? "Playing"
           : "Paused";
+
+
+      /* VOLUME */
+
+      if (
+        typeof data.device?.volume_percent ===
+        "number"
+      ) {
+
+        updateVolumeUI(
+          data.device.volume_percent
+        );
+
+      }
 
     }
 
@@ -1238,8 +1958,10 @@
       playing.style.display =
         "none";
 
+
       nothingPlaying.style.display =
         "block";
+
 
       status.textContent =
         "Nothing playing";
@@ -1254,12 +1976,16 @@
     function formatTime(ms) {
 
       const totalSeconds =
-        Math.floor(ms / 1000);
+        Math.floor(
+          ms / 1000
+        );
+
 
       const minutes =
         Math.floor(
           totalSeconds / 60
         );
+
 
       const seconds =
         totalSeconds % 60;
@@ -1270,7 +1996,10 @@
         ":" +
         seconds
           .toString()
-          .padStart(2, "0")
+          .padStart(
+            2,
+            "0"
+          )
       );
 
     }
@@ -1423,12 +2152,17 @@
 
         const rect =
           document
-            .getElementById("progressBar")
+            .getElementById(
+              "progressBar"
+            )
             .getBoundingClientRect();
 
 
         const percentage =
-          (event.clientX - rect.left) /
+          (
+            event.clientX -
+            rect.left
+          ) /
           rect.width;
 
 
@@ -1438,7 +2172,10 @@
           );
 
 
-        if (response.status === 204) {
+        if (
+          response.status ===
+          204
+        ) {
 
           return;
 
@@ -1449,13 +2186,28 @@
           await response.json();
 
 
+        if (
+          !data.item
+        ) {
+
+          return;
+
+        }
+
+
         const durationMs =
           data.item.duration_ms;
 
 
         const position =
           Math.floor(
-            percentage *
+            Math.max(
+              0,
+              Math.min(
+                percentage,
+                1
+              )
+            ) *
             durationMs
           );
 
@@ -1489,6 +2241,155 @@
 
 
     /* =====================================================
+       VOLUME UI
+    ===================================================== */
+
+    function updateVolumeUI(volume) {
+
+      currentVolume =
+        Math.max(
+          0,
+          Math.min(
+            100,
+            Math.round(volume)
+          )
+        );
+
+
+      volumeSlider.value =
+        currentVolume;
+
+
+      volumePercentage.textContent =
+        currentVolume + "%";
+
+
+      updateVolumeIcon();
+
+    }
+
+
+    function updateVolumeIcon() {
+
+      if (
+        currentVolume === 0
+      ) {
+
+        volumeButton.textContent =
+          "🔇";
+
+      }
+
+      else if (
+        currentVolume < 50
+      ) {
+
+        volumeButton.textContent =
+          "🔉";
+
+      }
+
+      else {
+
+        volumeButton.textContent =
+          "🔊";
+
+      }
+
+    }
+
+
+    /* =====================================================
+       SET VOLUME
+    ===================================================== */
+
+    async function setVolume(volume) {
+
+      volume =
+        Math.max(
+          0,
+          Math.min(
+            100,
+            Number(volume)
+          )
+        );
+
+
+      try {
+
+        const response =
+          await spotifyFetch(
+            "/me/player/volume?volume_percent=" +
+            Math.round(volume),
+            {
+              method: "PUT"
+            }
+          );
+
+
+        if (!response.ok) {
+
+          console.error(
+            "Volume request failed:",
+            response.status
+          );
+
+          return;
+
+        }
+
+
+        currentVolume =
+          Math.round(volume);
+
+
+        updateVolumeUI(
+          currentVolume
+        );
+
+      }
+
+      catch (error) {
+
+        console.error(
+          "Volume error:",
+          error
+        );
+
+      }
+
+    }
+
+
+    /* =====================================================
+       MUTE
+    ===================================================== */
+
+    async function toggleMute() {
+
+      if (
+        currentVolume > 0
+      ) {
+
+        previousVolume =
+          currentVolume;
+
+        await setVolume(0);
+
+      }
+
+      else {
+
+        await setVolume(
+          previousVolume || 50
+        );
+
+      }
+
+    }
+
+
+    /* =====================================================
        LOGOUT
     ===================================================== */
 
@@ -1509,6 +2410,7 @@
 
       app.style.display =
         "none";
+
 
       connectScreen.style.display =
         "flex";
@@ -1615,6 +2517,7 @@
       connectScreen.style.display =
         "none";
 
+
       app.style.display =
         "block";
 
@@ -1658,6 +2561,45 @@
         "click",
         seek
       );
+
+
+    volumeSlider.addEventListener(
+      "input",
+      () => {
+
+        const value =
+          Number(
+            volumeSlider.value
+          );
+
+        currentVolume =
+          value;
+
+        volumePercentage.textContent =
+          value + "%";
+
+        updateVolumeIcon();
+
+      }
+    );
+
+
+    volumeSlider.addEventListener(
+      "change",
+      () => {
+
+        setVolume(
+          volumeSlider.value
+        );
+
+      }
+    );
+
+
+    volumeButton.addEventListener(
+      "click",
+      toggleMute
+    );
 
 
     /* =====================================================
