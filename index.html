@@ -387,6 +387,33 @@
 
 
     /* =====================================================
+       CURRENT TIME CLOCK
+    ===================================================== */
+
+    #clock {
+      position: absolute;
+
+      left: 50%;
+
+      transform: translateX(-50%);
+
+      font-size: 18px;
+
+      font-weight: 600;
+
+      letter-spacing: 0.2px;
+
+      color:
+        rgba(255,255,255,0.88);
+
+      text-shadow:
+        0 2px 15px rgba(0,0,0,0.65);
+
+      white-space: nowrap;
+    }
+
+
+    /* =====================================================
        STATUS AREA
     ===================================================== */
 
@@ -905,7 +932,9 @@
     }
 
 
-    /* CSS VOLUME ICON */
+    /* =====================================================
+       CSS VOLUME ICON
+    ===================================================== */
 
     .volumeIcon {
       width: 19px;
@@ -1103,6 +1132,11 @@
       }
 
 
+      #clock {
+        font-size: 15px;
+      }
+
+
       #statusArea {
         gap: 6px;
       }
@@ -1241,6 +1275,11 @@
       #volumeContainer {
         margin-top: 10px;
       }
+
+
+      #clock {
+        font-size: 15px;
+      }
     }
 
 
@@ -1348,16 +1387,10 @@
 
   <div id="app">
 
-    <!-- FULLSCREEN ALBUM ART -->
-
     <div id="background"></div>
-
-    <!-- FADE -->
 
     <div id="backgroundOverlay"></div>
 
-
-    <!-- CONTENT -->
 
     <div id="content">
 
@@ -1368,6 +1401,13 @@
 
         <div id="logo">
           SPOTIFYDIS
+        </div>
+
+
+        <!-- LIVE CURRENT TIME -->
+
+        <div id="clock">
+          8:00 PM
         </div>
 
 
@@ -1708,6 +1748,12 @@
       );
 
 
+    const clock =
+      document.getElementById(
+        "clock"
+      );
+
+
     /* =====================================================
        VOLUME STATE
     ===================================================== */
@@ -1730,6 +1776,37 @@
     let syncedIsPlaying = false;
 
     let syncTimestamp = Date.now();
+
+
+    /* =====================================================
+       LIVE CURRENT CLOCK
+    ===================================================== */
+
+    function updateClock() {
+
+      const now =
+        new Date();
+
+
+      clock.textContent =
+        now.toLocaleTimeString(
+          [],
+          {
+            hour: "numeric",
+            minute: "2-digit"
+          }
+        );
+
+    }
+
+
+    updateClock();
+
+
+    setInterval(
+      updateClock,
+      1000
+    );
 
 
     /* =====================================================
@@ -1915,10 +1992,6 @@
 
     }
 
-
-    /* =====================================================
-       INLINE BUTTON SUPPORT
-    ===================================================== */
 
     window.login = login;
 
@@ -2497,16 +2570,20 @@
       currentTrackId =
         track.id || null;
 
+
       syncedProgressMs =
         trackProgress;
 
+
       syncedDurationMs =
         trackDuration;
+
 
       syncedIsPlaying =
         Boolean(
           data.is_playing
         );
+
 
       syncTimestamp =
         Date.now();
@@ -2519,6 +2596,15 @@
 
 
       updatePlaybackDisplay();
+
+
+      /* ===================================================
+         PLAY BUTTON
+      =================================================== */
+
+      updatePlayButton(
+        data.is_playing
+      );
 
 
       /* ===================================================
@@ -2606,6 +2692,22 @@
         );
 
       }
+
+    }
+
+
+    /* =====================================================
+       PLAY BUTTON ICON
+    ===================================================== */
+
+    function updatePlayButton(
+      isPlaying
+    ) {
+
+      playButton.innerHTML =
+        isPlaying
+          ? '<span class="icon-pause"></span>'
+          : '<span class="icon-play"></span>';
 
     }
 
@@ -2710,11 +2812,34 @@
       syncedProgressMs =
         0;
 
+
       syncedDurationMs =
         0;
 
+
       syncedIsPlaying =
         false;
+
+
+      syncTimestamp =
+        Date.now();
+
+
+      updatePlayButton(
+        false
+      );
+
+
+      currentTime.textContent =
+        "0:00";
+
+
+      duration.textContent =
+        "0:00";
+
+
+      progress.style.width =
+        "0%";
 
     }
 
@@ -2982,20 +3107,22 @@
         syncedProgressMs =
           position;
 
+
         syncedDurationMs =
           durationMs;
+
 
         syncedIsPlaying =
           Boolean(
             data.is_playing
           );
 
+
         syncTimestamp =
           Date.now();
 
 
         updatePlaybackDisplay();
-
 
       }
 
@@ -3008,45 +3135,6 @@
         );
 
       }
-
-    }
-
-
-    /* =====================================================
-       PLAY BUTTON ICON
-    ===================================================== */
-
-    function updatePlayButton(
-      isPlaying
-    ) {
-
-      playButton.innerHTML =
-        isPlaying
-          ? '<span class="icon-pause"></span>'
-          : '<span class="icon-play"></span>';
-
-    }
-
-
-    /* =====================================================
-       STATUS + PLAY BUTTON SYNC
-    ===================================================== */
-
-    const originalUpdateStatus =
-      updateStatus;
-
-
-    function updateStatusAndButton(
-      isPlaying
-    ) {
-
-      originalUpdateStatus(
-        isPlaying
-      );
-
-      updatePlayButton(
-        isPlaying
-      );
 
     }
 
@@ -3484,12 +3572,11 @@
 
 
     /* =====================================================
-       LIVE TIMER
+       LIVE TRACK TIMER
        
-       This runs locally every 250ms.
-       Spotify is still checked every 5 seconds,
-       but the displayed timer doesn't wait for
-       the API request to update.
+       Updates locally every 250ms.
+       Spotify is checked every 5 seconds
+       to correct any drift.
     ===================================================== */
 
     setInterval(
@@ -3531,30 +3618,6 @@
       },
       5000
     );
-
-
-    /* =====================================================
-       PATCH STATUS DISPLAY
-    ===================================================== */
-
-    const originalShowPlaying =
-      showPlaying;
-
-
-    showPlaying =
-      async function(data) {
-
-        await originalShowPlaying(
-          data
-        );
-
-
-        updatePlayButton(
-          data.is_playing
-        );
-
-      };
-
 
   </script>
 
