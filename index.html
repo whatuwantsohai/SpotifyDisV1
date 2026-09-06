@@ -1323,6 +1323,36 @@ body.modeLyrics .lyricsLine.active {
   filter: drop-shadow(0 8px 30px rgba(0,0,0,0.25));
 }
 
+#lyricsExitButton {
+  position: fixed;
+  top: max(18px, calc(10px + env(safe-area-inset-top)));
+  right: max(18px, calc(10px + env(safe-area-inset-right)));
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 50%;
+  background: rgba(15,15,15,0.72);
+  color: rgba(255,255,255,0.82);
+  font-size: 28px;
+  line-height: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.modeLyrics #lyricsExitButton {
+  display: flex;
+}
+
+body.modeLyrics #lyricsExitButton:active {
+  transform: scale(0.94);
+}
+
 .lyricsHint {
   display: none;
   position: fixed;
@@ -2174,22 +2204,41 @@ lyricsInner.addEventListener(
   }
 );
 
+function exitLyricsMode() {
+  // Check the rendered mode too, because Auto mode can render Lyrics
+  // without appSettings.displayMode literally being "lyrics".
+  const lyricsIsVisible =
+    document.body.classList.contains("modeLyrics") ||
+    appSettings.displayMode === "lyrics";
+
+  if (!lyricsIsVisible) return;
+
+  appSettings.displayMode = "normal";
+  saveSettings();
+  applySettings();
+  closeDisplayModeMenu();
+  wakeDisplay();
+}
+
+// Desktop keyboard support.
 document.addEventListener(
   "keydown",
   event => {
-
-    if (
-      event.key === "Escape" &&
-      appSettings.displayMode === "lyrics"
-    ) {
-      appSettings.displayMode = "normal";
-      saveSettings();
-      applySettings();
-      wakeDisplay();
+    if (event.key === "Escape" || event.key === "Esc") {
+      exitLyricsMode();
     }
-
   }
 );
+
+// Touch/click support for iPhone and other touch devices.
+["click", "pointerup", "touchend"].forEach(eventName => {
+  lyricsExitButton.addEventListener(eventName, event => {
+    event.preventDefault();
+    event.stopPropagation();
+    exitLyricsMode();
+  }, { passive: false });
+});
+
 
 /* =========================
    DISPLAY MODE MENU
@@ -3230,6 +3279,57 @@ body.ambientScreensaver #backgroundImage {
   }
 }
 
+
+/* iPhone 13 / narrow mobile optimization */
+@media (max-width: 430px) {
+  body.modeLyrics #lyricsView {
+    z-index: 50;
+    padding-top: max(86px, calc(74px + env(safe-area-inset-top))) !important;
+    padding-bottom: max(96px, calc(84px + env(safe-area-inset-bottom))) !important;
+  }
+
+  body.modeLyrics #lyricsExitButton {
+    top: max(12px, env(safe-area-inset-top));
+    right: 14px;
+  }
+
+  html, body { width:100%; min-width:0; overflow-x:hidden; }
+  body { -webkit-text-size-adjust:100%; padding-bottom: env(safe-area-inset-bottom); }
+  .app, .shell, .container, main { width:100%; max-width:100%; box-sizing:border-box; }
+  header, nav, .topbar, .header { padding-left:16px !important; padding-right:16px !important; }
+  .sidebar, .side-panel, .desktop-only { display:none !important; }
+  .main, .content, .page { margin:0 !important; padding:12px 14px !important; width:100% !important; box-sizing:border-box; }
+  .grid, .cards, .features, .stats-grid { grid-template-columns:1fr !important; }
+  .player, .now-playing, .player-bar { border-radius:16px !important; }
+  .cover, .album-art, .artwork { max-width:72vw; max-height:72vw; width:72vw; height:72vw; margin-left:auto; margin-right:auto; }
+  button, .btn, input, select { min-height:44px; }
+  .queuePanel { width:min(100vw, 430px) !important; max-width:100vw !important; right:0 !important; left:auto !important; border-radius:20px 20px 0 0 !important; }
+  .queueList { max-height:62vh; padding-bottom:calc(12px + env(safe-area-inset-bottom)); }
+  .queueItem { grid-template-columns:28px 44px minmax(0,1fr) auto !important; gap:8px !important; padding:10px 8px !important; }
+  .queueItem .queueActions { display:flex; gap:4px; }
+  .queueItem .queueActions button { min-width:40px; padding:0 6px; }
+  .queueItem .queueMeta, .queueItem small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lyricsView { padding:0 18px !important; }
+  .lyricsInner { max-width:100% !important; padding-bottom:calc(120px + env(safe-area-inset-bottom)); }
+  .lyricsLine { font-size:clamp(21px, 6vw, 30px) !important; line-height:1.35 !important; padding:10px 0 !important; }
+  .lyricsHint { bottom:calc(12px + env(safe-area-inset-bottom)); font-size:12px; }
+  .settingsPanel, .modal, .dialog { width:calc(100vw - 24px) !important; max-width:none !important; margin:12px auto !important; }
+  .settingsRow { gap:10px; }
+  .visualizer { height:110px !important; }
+  .transport { gap:8px !important; }
+  .transport button { min-width:44px; }
+  .volume, .progress-row { width:100% !important; }
+}
+@media (max-width: 430px) and (orientation: landscape) {
+  .cover, .album-art, .artwork { width:38vh; height:38vh; max-width:none; max-height:none; }
+  .main, .content, .page { padding:8px 14px !important; }
+  .lyricsLine { font-size:20px !important; padding:6px 0 !important; }
+}
+@supports (padding: max(0px)) {
+  @media (max-width: 430px) {
+    header, nav { padding-top:max(10px, env(safe-area-inset-top)); }
+  }
+}
 </style>
 </head>
 
@@ -3433,9 +3533,10 @@ body.ambientScreensaver #backgroundImage {
 </div>
 
 <div id="lyricsView" aria-live="polite">
+  <button id="lyricsExitButton" type="button" aria-label="Exit lyrics mode" title="Exit lyrics mode">×</button>
   <div id="lyricsInner"></div>
   <div id="lyricsFallback">No synced lyrics available.</div>
-  <div class="lyricsHint">Click a line to seek · Esc to exit focus</div>
+  <div class="lyricsHint">Tap × to exit · Tap a line to seek</div>
 </div>
 
 <div id="vinylMode" aria-hidden="true">
@@ -4041,6 +4142,9 @@ const queueList =
 
 const lyricsView =
   document.getElementById("lyricsView");
+
+const lyricsExitButton =
+  document.getElementById("lyricsExitButton");
 
 const lyricsInner =
   document.getElementById("lyricsInner");
