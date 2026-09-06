@@ -4572,6 +4572,18 @@ async function spotifyFetch(
   retry = true
 ) {
 
+  // Playback controls must not be blocked by a local playlist/quota
+  // cooldown. Spotify uses separate quota buckets for endpoint groups,
+  // so a playlist metadata 429 should not make Play/Next/Previous/Volume
+  // buttons appear dead. The request can still receive Spotify's own 429.
+  const allowDuringQuotaCooldown =
+    options.allowDuringQuotaCooldown === true;
+
+  if (Object.prototype.hasOwnProperty.call(options, "allowDuringQuotaCooldown")) {
+    options = { ...options };
+    delete options.allowDuringQuotaCooldown;
+  }
+
   const token =
     localStorage.getItem(
       "spotify_access_token"
@@ -4604,6 +4616,7 @@ async function spotifyFetch(
   }
 
   if (
+    !allowDuringQuotaCooldown &&
     Date.now() <
     spotifyQuotaExceededUntil
   ) {
@@ -4862,6 +4875,7 @@ async function spotifyFetch(
 let detectedPlaylistId = "";
 let detectedPlaylistName = "";
 let playlistNameRequestId = 0;
+let playlistNameRetryAt = 0;
 
 const PLAYLIST_NAME_CACHE_KEY =
   "spotify_current_playlist_names";
@@ -4888,30 +4902,67 @@ function writePlaylistNameCache(cache) {
   }
 }
 
-async function detectCurrentPlaylist(contextUri) {
+function extractPlaylistId(context) {
 
-  const prefix = "spotify:playlist:";
+  if (!context) return "";
 
-  if (!contextUri || !contextUri.includes(prefix)) {
+  const candidates = [
+    context.uri,
+    context.href,
+    context.external_urls?.spotify
+  ].filter(Boolean);
+
+  for (const value of candidates) {
+
+    const text = String(value);
+
+    // Standard Spotify URI: spotify:playlist:<id>
+    let match = text.match(/spotify:playlist:([A-Za-z0-9]+)(?:$|[?#])/);
+    if (match?.[1]) return match[1];
+
+    // Older URI form: spotify:user:<user>:playlist:<id>
+    match = text.match(/spotify:user:[^:]+:playlist:([A-Za-z0-9]+)(?:$|[?#])/);
+    if (match?.[1]) return match[1];
+
+    // Spotify web URL / API URL: .../playlist/<id>
+    match = text.match(/\/(?:playlist|playlists)\/([A-Za-z0-9]+)(?:$|[?#])/);
+    if (match?.[1]) return match[1];
+  }
+
+  return "";
+}
+
+async function detectCurrentPlaylist(context) {
+
+  const playlistId = extractPlaylistId(context);
+
+  if (!playlistId) {
     detectedPlaylistId = "";
     detectedPlaylistName = "";
+    playlistNameRetryAt = 0;
     playlistName.textContent = "No playlist";
     playlistName.dataset.playlistId = "";
     playlistName.dataset.playlistUri = "";
     return;
   }
 
-  const playlistId = contextUri.split(prefix)[1] || "";
-  if (!playlistId) return;
-
   if (playlistId === detectedPlaylistId && detectedPlaylistName) {
+    return;
+  }
+
+  // Do not hammer the playlist endpoint after a 429/403. Keep showing the
+  // detected playlist state and retry later.
+  if (
+    playlistId === detectedPlaylistId &&
+    Date.now() < playlistNameRetryAt
+  ) {
     return;
   }
 
   detectedPlaylistId = playlistId;
   detectedPlaylistName = "";
   playlistName.dataset.playlistId = playlistId;
-  playlistName.dataset.playlistUri = contextUri;
+  playlistName.dataset.playlistUri = context?.uri || context?.external_urls?.spotify || "";
 
   const cache = readPlaylistNameCache();
   const cachedName = cache[playlistId];
@@ -4922,9 +4973,11 @@ async function detectCurrentPlaylist(contextUri) {
     return;
   }
 
-  playlistName.textContent = "Playlist";
+  playlistName.textContent = "Detecting playlist…";
   const requestId = ++playlistNameRequestId;
 
+  // Use the single-playlist endpoint only. We deliberately do NOT call
+  // /me/playlists, which was responsible for the playlist quota problem.
   const data = await spotifyFetch(
     "/playlists/" + encodeURIComponent(playlistId) + "?fields=name"
   );
@@ -4938,8 +4991,25 @@ async function detectCurrentPlaylist(contextUri) {
     playlistName.textContent = data.name;
     cache[playlistId] = data.name;
     writePlaylistNameCache(cache);
+    return;
+  }
+
+  // Keep a useful state instead of silently pretending there is no playlist.
+  if (data?.status === 403) {
+    // Keep the playlist detected, but do not mislabel it as private unless
+    // Spotify explicitly tells us that the resource is unavailable.
+    playlistName.textContent = cachedName || "Playlist";
+    playlistNameRetryAt = Date.now() + 5 * 60 * 1000;
+    console.warn("Spotify playlist metadata is currently unavailable (403).", data);
+  } else if (data?.quotaExceeded || data?.status === 429) {
+    playlistName.textContent = cachedName || "Playlist";
+    playlistNameRetryAt = Date.now() + Math.max(
+      60 * 1000,
+      Number(data?.retryAfter || 60) * 1000
+    );
   } else {
-    playlistName.textContent = "Playlist";
+    playlistName.textContent = cachedName || "Playlist";
+    playlistNameRetryAt = Date.now() + 60 * 1000;
   }
 }
 
@@ -7738,10 +7808,7 @@ async function showPlaying(data) {
   }
 
 
-  const contextUri =
-    data.context?.uri || "";
-
-  await detectCurrentPlaylist(contextUri);
+  await detectCurrentPlaylist(data.context);
 
 
   deviceName.textContent =
@@ -7870,6 +7937,7 @@ async function playPriorityNextIfAvailable() {
         "/me/player/play",
         {
           method: "PUT",
+          allowDuringQuotaCooldown: true,
           headers: {
             "Content-Type": "application/json"
           },
@@ -8009,7 +8077,8 @@ previousButton.addEventListener(
         "/me/player/previous",
         {
           method:
-            "POST"
+            "POST",
+          allowDuringQuotaCooldown: true
         }
       );
 
@@ -8046,7 +8115,8 @@ playButton.addEventListener(
           : "/me/player/play",
         {
           method:
-            "PUT"
+            "PUT",
+          allowDuringQuotaCooldown: true
         }
       );
 
@@ -8093,7 +8163,8 @@ nextButton.addEventListener(
         "/me/player/next",
         {
           method:
-            "POST"
+            "POST",
+          allowDuringQuotaCooldown: true
         }
       );
 
@@ -8209,7 +8280,8 @@ volumeSlider.addEventListener(
       volume,
       {
         method:
-          "PUT"
+          "PUT",
+        allowDuringQuotaCooldown: true
       }
     );
 
@@ -8265,7 +8337,8 @@ volumeIcon.addEventListener(
         restored,
         {
           method:
-            "PUT"
+            "PUT",
+          allowDuringQuotaCooldown: true
         }
       );
 
