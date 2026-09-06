@@ -2,26 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     >
 
     <title>SpotDeck</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ["Inter", "system-ui", "sans-serif"]
-                    }
-                }
-            }
-        };
-    </script>
 
     <style>
         * {
@@ -36,33 +23,2389 @@
             overflow: hidden;
             background: #050505;
             color: white;
-            font-family: Inter, system-ui, sans-serif;
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
         }
 
         button,
         input {
+            font: inherit;
+        }
+
+        button {
             -webkit-tap-highlight-color: transparent;
         }
+
+        /* =====================================================
+           APP
+           ===================================================== */
 
         #app {
             position: relative;
             width: 100vw;
             height: 100vh;
             overflow: hidden;
+            background: #050505;
         }
 
-        /* Background artwork */
+        /* =====================================================
+           BACKGROUND
+           ===================================================== */
+
         #background {
             position: absolute;
-            inset: -60px;
+            inset: -70px;
+            z-index: 0;
+
             background-position: center;
             background-size: cover;
             background-repeat: no-repeat;
-            filter: blur(45px);
+
+            filter: blur(55px);
             transform: scale(1.15);
+
             opacity: 0;
+
             transition:
                 opacity 1s ease,
+                background-image 1s ease;
+        }
+
+        #backgroundOverlay {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(0, 0, 0, 0.90),
+                    rgba(0, 0, 0, 0.65),
+                    rgba(0, 0, 0, 0.85)
+                );
+        }
+
+        #backgroundDark {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        /* =====================================================
+           MAIN CONTENT
+           ===================================================== */
+
+        #content {
+            position: relative;
+            z-index: 10;
+
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+            flex-direction: column;
+
+            padding: 30px;
+        }
+
+        /* =====================================================
+           HEADER
+           ===================================================== */
+
+        #header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #logo {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 0.16em;
+        }
+
+        #status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            font-size: 12px;
+            color: rgba(255,255,255,.65);
+        }
+
+        #statusDot {
+            width: 8px;
+            height: 8px;
+
+            border-radius: 50%;
+
+            background: #777;
+        }
+
+        #statusDot.connected {
+            background: #1ed760;
+
+            box-shadow:
+                0 0 12px rgba(30,215,96,.8);
+        }
+
+        /* =====================================================
+           MAIN PLAYER
+           ===================================================== */
+
+        #main {
+            flex: 1;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #player {
+            width: min(1100px, 100%);
+
+            display: grid;
+            grid-template-columns:
+                minmax(280px, 430px)
+                1fr;
+
+            gap: 70px;
+
+            align-items: center;
+        }
+
+        #albumContainer {
+            display: flex;
+            justify-content: center;
+        }
+
+        #albumArt {
+            width: min(430px, 38vw);
+            aspect-ratio: 1 / 1;
+
+            object-fit: cover;
+
+            border-radius: 18px;
+
+            background: #181818;
+
+            box-shadow:
+                0 30px 80px rgba(0,0,0,.6),
+                0 10px 30px rgba(0,0,0,.35);
+        }
+
+        #info {
+            min-width: 0;
+        }
+
+        #playingLabel {
+            margin-bottom: 14px;
+
+            font-size: 12px;
+            font-weight: 700;
+
+            letter-spacing: .18em;
+
+            color: rgba(255,255,255,.5);
+        }
+
+        #title {
+            margin: 0;
+
+            font-size: clamp(32px, 4.5vw, 64px);
+
+            line-height: 1.02;
+
+            font-weight: 800;
+
+            letter-spacing: -.04em;
+
+            overflow: hidden;
+
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        #artist {
+            margin-top: 14px;
+
+            font-size: clamp(18px, 2vw, 25px);
+
+            color: rgba(255,255,255,.78);
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #album {
+            margin-top: 6px;
+
+            font-size: 14px;
+
+            color: rgba(255,255,255,.45);
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* =====================================================
+           PROGRESS
+           ===================================================== */
+
+        #progressArea {
+            margin-top: 36px;
+        }
+
+        #progressBar {
+            width: 100%;
+            height: 5px;
+
+            background: rgba(255,255,255,.2);
+
+            border-radius: 999px;
+
+            overflow: hidden;
+
+            cursor: pointer;
+        }
+
+        #progressFill {
+            width: 0%;
+            height: 100%;
+
+            background: white;
+
+            border-radius: 999px;
+        }
+
+        #timeRow {
+            margin-top: 8px;
+
+            display: flex;
+            justify-content: space-between;
+
+            font-size: 12px;
+
+            color: rgba(255,255,255,.5);
+        }
+
+        /* =====================================================
+           CONTROLS
+           ===================================================== */
+
+        #controls {
+            margin-top: 28px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 16px;
+        }
+
+        .control {
+            width: 48px;
+            height: 48px;
+
+            padding: 0;
+
+            border: 0;
+            border-radius: 50%;
+
+            background: rgba(255,255,255,.12);
+
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            cursor: pointer;
+
+            font-size: 18px;
+
+            transition:
+                transform .15s ease,
+                background .15s ease;
+        }
+
+        .control:hover {
+            background: rgba(255,255,255,.22);
+            transform: scale(1.05);
+        }
+
+        .control:active {
+            transform: scale(.93);
+        }
+
+        .control.active {
+            color: #1ed760;
+        }
+
+        #playButton {
+            width: 64px;
+            height: 64px;
+
+            background: white;
+
+            color: black;
+
+            font-size: 22px;
+        }
+
+        #playButton:hover {
+            background: #eeeeee;
+        }
+
+        /* =====================================================
+           VOLUME
+           ===================================================== */
+
+        #volumeArea {
+            margin-top: 26px;
+
+            width: 300px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 12px;
+        }
+
+        #volumeIcon {
+            opacity: .7;
+        }
+
+        #volume {
+            width: 100%;
+
+            accent-color: white;
+
+            cursor: pointer;
+        }
+
+        /* =====================================================
+           FOOTER
+           ===================================================== */
+
+        #bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bottomButton {
+            padding: 10px 15px;
+
+            border: 1px solid rgba(255,255,255,.15);
+
+            border-radius: 10px;
+
+            background: rgba(0,0,0,.25);
+
+            color: rgba(255,255,255,.75);
+
+            cursor: pointer;
+        }
+
+        .bottomButton:hover {
+            background: rgba(255,255,255,.1);
+            color: white;
+        }
+
+        /* =====================================================
+           CONNECT SCREEN
+           ===================================================== */
+
+        #connectScreen {
+            position: fixed !important;
+
+            inset: 0 !important;
+
+            width: 100vw;
+            height: 100vh;
+
+            z-index: 999999 !important;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            background:
+                radial-gradient(
+                    circle at center,
+                    #252525 0%,
+                    #0b0b0b 55%,
+                    #000000 100%
+                );
+        }
+
+        #connectBox {
+            position: relative;
+
+            z-index: 1000000;
+
+            width: min(450px, 90vw);
+
+            padding: 40px;
+
+            text-align: center;
+        }
+
+        #connectLogo {
+            font-size: 34px;
+
+            font-weight: 900;
+
+            letter-spacing: .15em;
+
+            margin-bottom: 18px;
+        }
+
+        #connectText {
+            font-size: 16px;
+
+            line-height: 1.6;
+
+            color: rgba(255,255,255,.6);
+
+            margin-bottom: 30px;
+        }
+
+        /*
+           IMPORTANT:
+           This button intentionally has very explicit styling.
+        */
+
+        #connectButton {
+            position: relative !important;
+
+            z-index: 1000001 !important;
+
+            display: flex !important;
+
+            align-items: center !important;
+            justify-content: center !important;
+
+            width: 230px !important;
+            height: 56px !important;
+
+            margin: 0 auto !important;
+
+            padding: 0 !important;
+
+            border: none !important;
+
+            border-radius: 999px !important;
+
+            background: #1ed760 !important;
+
+            color: #000000 !important;
+
+            font-size: 17px !important;
+
+            font-weight: 800 !important;
+
+            line-height: 1 !important;
+
+            cursor: pointer !important;
+
+            opacity: 1 !important;
+
+            visibility: visible !important;
+
+            pointer-events: auto !important;
+
+            box-shadow:
+                0 10px 35px rgba(30,215,96,.25) !important;
+
+            transition:
+                transform .2s ease,
+                background .2s ease,
+                box-shadow .2s ease !important;
+        }
+
+        #connectButton:hover {
+            background: #2ee86d !important;
+
+            transform: scale(1.04);
+
+            box-shadow:
+                0 12px 40px rgba(30,215,96,.4) !important;
+        }
+
+        #connectButton:active {
+            transform: scale(.97);
+        }
+
+        /* =====================================================
+           SETTINGS
+           ===================================================== */
+
+        #settings {
+            position: fixed;
+
+            inset: 0;
+
+            z-index: 200000;
+
+            display: none;
+
+            align-items: center;
+            justify-content: center;
+
+            background: rgba(0,0,0,.75);
+
+            backdrop-filter: blur(15px);
+        }
+
+        #settings.show {
+            display: flex;
+        }
+
+        #settingsBox {
+            position: relative;
+
+            width: min(500px, 90vw);
+
+            max-height: 85vh;
+
+            overflow-y: auto;
+
+            padding: 25px;
+
+            border-radius: 20px;
+
+            background: #151515;
+
+            border: 1px solid #333;
+        }
+
+        #closeSettings {
+            position: absolute;
+
+            right: 20px;
+            top: 20px;
+
+            width: 35px;
+            height: 35px;
+
+            border: 0;
+
+            border-radius: 50%;
+
+            background: #252525;
+
+            color: white;
+
+            cursor: pointer;
+        }
+
+        .settingRow {
+            padding: 15px 0;
+
+            border-bottom: 1px solid #292929;
+        }
+
+        .settingLabel {
+            font-size: 11px;
+
+            text-transform: uppercase;
+
+            letter-spacing: .1em;
+
+            color: rgba(255,255,255,.45);
+        }
+
+        .settingValue {
+            margin-top: 6px;
+
+            font-size: 15px;
+        }
+
+        /* =====================================================
+           MOBILE
+           ===================================================== */
+
+        @media (max-width: 800px) {
+
+            #content {
+                padding: 20px;
+            }
+
+            #player {
+                grid-template-columns: 1fr;
+
+                gap: 28px;
+            }
+
+            #albumArt {
+                width: min(330px, 65vw);
+            }
+
+            #info {
+                text-align: center;
+            }
+
+            #controls {
+                justify-content: center;
+            }
+
+            #volumeArea {
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+
+        @media (max-height: 650px) {
+
+            #albumArt {
+                width: min(280px, 32vh);
+            }
+
+            #player {
+                gap: 35px;
+            }
+
+            #progressArea {
+                margin-top: 18px;
+            }
+
+            #controls {
+                margin-top: 16px;
+            }
+
+            #volumeArea {
+                margin-top: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="app">
+
+    <!-- BACKGROUND -->
+
+    <div id="background"></div>
+    <div id="backgroundOverlay"></div>
+    <div id="backgroundDark"></div>
+
+
+    <!-- =====================================================
+         CONNECT SCREEN
+         ===================================================== -->
+
+    <div id="connectScreen">
+
+        <div id="connectBox">
+
+            <div id="connectLogo">
+                SPOTDECK
+            </div>
+
+            <div id="connectText">
+                Your dedicated Spotify display.
+                <br>
+                Connect your Spotify account to begin.
+            </div>
+
+            <button
+                id="connectButton"
+                type="button"
+            >
+                Connect Spotify
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         MAIN APP
+         ===================================================== -->
+
+    <div id="content">
+
+        <header id="header">
+
+            <div id="logo">
+                SPOTDECK
+            </div>
+
+            <div id="status">
+
+                <div id="statusDot"></div>
+
+                <span id="statusText">
+                    Not connected
+                </span>
+
+            </div>
+
+        </header>
+
+
+        <main id="main">
+
+            <div id="player">
+
+                <div id="albumContainer">
+
+                    <img
+                        id="albumArt"
+                        src="https://placehold.co/800x800/181818/FFFFFF?text=SPOTDECK"
+                        alt="Album artwork"
+                    >
+
+                </div>
+
+
+                <div id="info">
+
+                    <div id="playingLabel">
+                        NOT PLAYING
+                    </div>
+
+                    <h1 id="title">
+                        Nothing Playing
+                    </h1>
+
+                    <div id="artist">
+                        —
+                    </div>
+
+                    <div id="album">
+                        —
+                    </div>
+
+
+                    <div id="progressArea">
+
+                        <div id="progressBar">
+
+                            <div id="progressFill"></div>
+
+                        </div>
+
+                        <div id="timeRow">
+
+                            <span id="currentTime">
+                                0:00
+                            </span>
+
+                            <span id="duration">
+                                0:00
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div id="controls">
+
+                        <button
+                            class="control"
+                            id="shuffleButton"
+                            type="button"
+                        >
+                            ⤨
+                        </button>
+
+                        <button
+                            class="control"
+                            id="previousButton"
+                            type="button"
+                        >
+                            ⏮
+                        </button>
+
+                        <button
+                            class="control"
+                            id="playButton"
+                            type="button"
+                        >
+                            ▶
+                        </button>
+
+                        <button
+                            class="control"
+                            id="nextButton"
+                            type="button"
+                        >
+                            ⏭
+                        </button>
+
+                        <button
+                            class="control"
+                            id="repeatButton"
+                            type="button"
+                        >
+                            ↻
+                        </button>
+
+                    </div>
+
+
+                    <div id="volumeArea">
+
+                        <span id="volumeIcon">
+                            🔊
+                        </span>
+
+                        <input
+                            id="volume"
+                            type="range"
+                            min="0"
+                            max="100"
+                            value="50"
+                        >
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+
+        <footer id="bottom">
+
+            <button
+                class="bottomButton"
+                id="settingsButton"
+                type="button"
+            >
+                ⚙ Settings
+            </button>
+
+            <button
+                class="bottomButton"
+                id="fullscreenButton"
+                type="button"
+            >
+                ⛶ Fullscreen
+            </button>
+
+        </footer>
+
+    </div>
+
+
+    <!-- =====================================================
+         SETTINGS
+         ===================================================== -->
+
+    <div id="settings">
+
+        <div id="settingsBox">
+
+            <button
+                id="closeSettings"
+                type="button"
+            >
+                ×
+            </button>
+
+            <h2>
+                Settings
+            </h2>
+
+            <div class="settingRow">
+
+                <div class="settingLabel">
+                    Spotify Account
+                </div>
+
+                <div
+                    class="settingValue"
+                    id="accountName"
+                >
+                    Not connected
+                </div>
+
+            </div>
+
+            <div class="settingRow">
+
+                <div class="settingLabel">
+                    Active Device
+                </div>
+
+                <div
+                    class="settingValue"
+                    id="deviceName"
+                >
+                    —
+                </div>
+
+            </div>
+
+            <div class="settingRow">
+
+                <div class="settingLabel">
+                    Current Track
+                </div>
+
+                <div
+                    class="settingValue"
+                    id="settingsTrack"
+                >
+                    Nothing playing
+                </div>
+
+            </div>
+
+            <div style="margin-top:20px; display:flex; gap:10px;">
+
+                <button
+                    class="bottomButton"
+                    id="settingsFullscreen"
+                    type="button"
+                >
+                    Fullscreen
+                </button>
+
+                <button
+                    class="bottomButton"
+                    id="logoutButton"
+                    type="button"
+                >
+                    Log out
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   SPOTIFY CONFIG
+   ========================================================= */
+
+const SPOTIFY_CLIENT_ID =
+    "3f16de704ed44b8aac1ce33d94c4db45";
+
+const REDIRECT_URI =
+    "https://whatuwantsohai.github.io/SpotifyDisV1/";
+
+const SCOPES = [
+    "user-read-currently-playing",
+    "user-read-playback-state",
+    "user-modify-playback-state",
+    "user-read-private",
+    "user-read-email"
+].join(" ");
+
+
+/* =========================================================
+   STORAGE
+   ========================================================= */
+
+const SESSION_KEY =
+    "spotdeck_session_v1";
+
+const VERIFIER_KEY =
+    "spotdeck_verifier_v1";
+
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+let accessToken = null;
+let refreshToken = null;
+
+let currentTrack = null;
+
+let currentProgress = 0;
+let currentDuration = 0;
+
+let isPlaying = false;
+
+let shuffleState = false;
+let repeatState = "off";
+
+let polling = null;
+
+
+/* =========================================================
+   DOM
+   ========================================================= */
+
+const connectScreen =
+    document.getElementById("connectScreen");
+
+const connectButton =
+    document.getElementById("connectButton");
+
+const background =
+    document.getElementById("background");
+
+const albumArt =
+    document.getElementById("albumArt");
+
+const title =
+    document.getElementById("title");
+
+const artist =
+    document.getElementById("artist");
+
+const album =
+    document.getElementById("album");
+
+const playingLabel =
+    document.getElementById("playingLabel");
+
+const progressFill =
+    document.getElementById("progressFill");
+
+const currentTime =
+    document.getElementById("currentTime");
+
+const duration =
+    document.getElementById("duration");
+
+const playButton =
+    document.getElementById("playButton");
+
+const volume =
+    document.getElementById("volume");
+
+const shuffleButton =
+    document.getElementById("shuffleButton");
+
+const repeatButton =
+    document.getElementById("repeatButton");
+
+const statusDot =
+    document.getElementById("statusDot");
+
+const statusText =
+    document.getElementById("statusText");
+
+const settings =
+    document.getElementById("settings");
+
+
+/* =========================================================
+   PKCE
+   ========================================================= */
+
+function randomString(length = 64) {
+
+    const chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+
+    const values =
+        crypto.getRandomValues(
+            new Uint8Array(length)
+        );
+
+    let result = "";
+
+    for (let i = 0; i < length; i++) {
+
+        result +=
+            chars[
+                values[i] %
+                chars.length
+            ];
+    }
+
+    return result;
+}
+
+
+async function sha256(value) {
+
+    const data =
+        new TextEncoder()
+            .encode(value);
+
+    return crypto.subtle.digest(
+        "SHA-256",
+        data
+    );
+}
+
+
+function base64url(buffer) {
+
+    return btoa(
+        String.fromCharCode(
+            ...new Uint8Array(buffer)
+        )
+    )
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+}
+
+
+async function createChallenge(verifier) {
+
+    return base64url(
+        await sha256(verifier)
+    );
+}
+
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+async function login() {
+
+    console.log(
+        "Spotify Client ID:",
+        SPOTIFY_CLIENT_ID
+    );
+
+    console.log(
+        "Spotify Redirect URI:",
+        REDIRECT_URI
+    );
+
+    const verifier =
+        randomString();
+
+    const challenge =
+        await createChallenge(verifier);
+
+    sessionStorage.setItem(
+        VERIFIER_KEY,
+        verifier
+    );
+
+    const params =
+        new URLSearchParams();
+
+    params.set(
+        "client_id",
+        SPOTIFY_CLIENT_ID
+    );
+
+    params.set(
+        "response_type",
+        "code"
+    );
+
+    params.set(
+        "redirect_uri",
+        REDIRECT_URI
+    );
+
+    params.set(
+        "code_challenge_method",
+        "S256"
+    );
+
+    params.set(
+        "code_challenge",
+        challenge
+    );
+
+    params.set(
+        "scope",
+        SCOPES
+    );
+
+    params.set(
+        "show_dialog",
+        "false"
+    );
+
+    window.location.href =
+        "https://accounts.spotify.com/authorize?" +
+        params.toString();
+}
+
+
+connectButton.onclick =
+    login;
+
+
+/* =========================================================
+   TOKEN EXCHANGE
+   ========================================================= */
+
+async function exchangeCode(code) {
+
+    const verifier =
+        sessionStorage.getItem(
+            VERIFIER_KEY
+        );
+
+    if (!verifier) {
+
+        throw new Error(
+            "PKCE verifier missing. Please click Connect Spotify again."
+        );
+    }
+
+    const body =
+        new URLSearchParams();
+
+    body.set(
+        "client_id",
+        SPOTIFY_CLIENT_ID
+    );
+
+    body.set(
+        "grant_type",
+        "authorization_code"
+    );
+
+    body.set(
+        "code",
+        code
+    );
+
+    body.set(
+        "redirect_uri",
+        REDIRECT_URI
+    );
+
+    body.set(
+        "code_verifier",
+        verifier
+    );
+
+    const response =
+        await fetch(
+            "https://accounts.spotify.com/api/token",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/x-www-form-urlencoded"
+                },
+
+                body: body
+            }
+        );
+
+    const data =
+        await response.json();
+
+    console.log(
+        "Token response:",
+        data
+    );
+
+    if (!response.ok) {
+
+        throw new Error(
+            data.error_description ||
+            data.error ||
+            "Spotify token exchange failed"
+        );
+    }
+
+    accessToken =
+        data.access_token;
+
+    refreshToken =
+        data.refresh_token || null;
+
+    localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({
+            access_token:
+                accessToken,
+
+            refresh_token:
+                refreshToken
+        })
+    );
+
+    sessionStorage.removeItem(
+        VERIFIER_KEY
+    );
+
+    window.history.replaceState(
+        {},
+        document.title,
+        REDIRECT_URI
+    );
+
+    connectScreen.style.display =
+        "none";
+
+    updateStatus(true);
+
+    await loadUser();
+
+    await getPlayback();
+
+    startPolling();
+}
+
+
+/* =========================================================
+   REFRESH TOKEN
+   ========================================================= */
+
+async function refreshAccessToken() {
+
+    if (!refreshToken) {
+
+        logout();
+
+        return;
+    }
+
+    const body =
+        new URLSearchParams();
+
+    body.set(
+        "grant_type",
+        "refresh_token"
+    );
+
+    body.set(
+        "refresh_token",
+        refreshToken
+    );
+
+    body.set(
+        "client_id",
+        SPOTIFY_CLIENT_ID
+    );
+
+    const response =
+        await fetch(
+            "https://accounts.spotify.com/api/token",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/x-www-form-urlencoded"
+                },
+
+                body
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+
+        logout();
+
+        return;
+    }
+
+    accessToken =
+        data.access_token;
+
+    if (data.refresh_token) {
+
+        refreshToken =
+            data.refresh_token;
+    }
+
+    localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({
+            access_token:
+                accessToken,
+
+            refresh_token:
+                refreshToken
+        })
+    );
+}
+
+
+/* =========================================================
+   SPOTIFY API
+   ========================================================= */
+
+async function spotifyFetch(
+    endpoint,
+    options = {},
+    retry = true
+) {
+
+    const response =
+        await fetch(
+            "https://api.spotify.com/v1" +
+            endpoint,
+            {
+                ...options,
+
+                headers: {
+                    Authorization:
+                        "Bearer " +
+                        accessToken,
+
+                    ...(options.headers || {})
+                }
+            }
+        );
+
+    if (
+        response.status === 401 &&
+        retry
+    ) {
+
+        await refreshAccessToken();
+
+        return spotifyFetch(
+            endpoint,
+            options,
+            false
+        );
+    }
+
+    if (
+        response.status === 204
+    ) {
+
+        return null;
+    }
+
+    if (!response.ok) {
+
+        const text =
+            await response.text();
+
+        throw new Error(
+            text ||
+            `Spotify API error ${response.status}`
+        );
+    }
+
+    return response.json();
+}
+
+
+/* =========================================================
+   USER
+   ========================================================= */
+
+async function loadUser() {
+
+    try {
+
+        const user =
+            await spotifyFetch(
+                "/me"
+            );
+
+        document.getElementById(
+            "accountName"
+        ).textContent =
+            user.display_name ||
+            user.id ||
+            "Spotify User";
+
+    } catch (error) {
+
+        console.error(error);
+    }
+}
+
+
+/* =========================================================
+   PLAYBACK
+   ========================================================= */
+
+async function getPlayback() {
+
+    try {
+
+        const data =
+            await spotifyFetch(
+                "/me/player"
+            );
+
+        if (
+            !data ||
+            !data.item
+        ) {
+
+            clearTrack();
+
+            return;
+        }
+
+        currentTrack =
+            data.item;
+
+        currentProgress =
+            data.progress_ms || 0;
+
+        currentDuration =
+            data.item.duration_ms || 0;
+
+        isPlaying =
+            !!data.is_playing;
+
+        shuffleState =
+            !!data.shuffle_state;
+
+        repeatState =
+            data.repeat_state || "off";
+
+        document.getElementById(
+            "deviceName"
+        ).textContent =
+            data.device?.name ||
+            "No active device";
+
+        renderTrack();
+
+        updateControls();
+
+    } catch (error) {
+
+        console.error(
+            "Playback error:",
+            error
+        );
+    }
+}
+
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+
+function renderTrack() {
+
+    if (!currentTrack) {
+
+        clearTrack();
+
+        return;
+    }
+
+    const image =
+        currentTrack.album
+            ?.images?.[0]?.url;
+
+    title.textContent =
+        currentTrack.name;
+
+    artist.textContent =
+        currentTrack.artists
+            ?.map(
+                item => item.name
+            )
+            .join(", ") ||
+        "Unknown artist";
+
+    album.textContent =
+        currentTrack.album?.name ||
+        "Unknown album";
+
+    document.getElementById(
+        "settingsTrack"
+    ).textContent =
+        currentTrack.name +
+        " — " +
+        currentTrack.artists
+            ?.map(
+                item => item.name
+            )
+            .join(", ");
+
+    if (image) {
+
+        albumArt.src =
+            image;
+
+        background.style.backgroundImage =
+            `url("${image}")`;
+
+        background.style.opacity =
+            "1";
+    }
+
+    playingLabel.textContent =
+        isPlaying
+            ? "NOW PLAYING"
+            : "PAUSED";
+
+    updateProgress();
+}
+
+
+function clearTrack() {
+
+    currentTrack = null;
+
+    title.textContent =
+        "Nothing Playing";
+
+    artist.textContent =
+        "—";
+
+    album.textContent =
+        "—";
+
+    playingLabel.textContent =
+        "NOT PLAYING";
+
+    progressFill.style.width =
+        "0%";
+
+    currentTime.textContent =
+        "0:00";
+
+    duration.textContent =
+        "0:00";
+
+    document.getElementById(
+        "settingsTrack"
+    ).textContent =
+        "Nothing playing";
+
+    background.style.opacity =
+        "0";
+
+    playButton.textContent =
+        "▶";
+}
+
+
+/* =========================================================
+   PROGRESS
+   ========================================================= */
+
+function formatTime(ms) {
+
+    const seconds =
+        Math.floor(ms / 1000);
+
+    const minutes =
+        Math.floor(seconds / 60);
+
+    const remaining =
+        seconds % 60;
+
+    return (
+        minutes +
+        ":" +
+        String(remaining)
+            .padStart(2, "0")
+    );
+}
+
+
+function updateProgress() {
+
+    if (!currentDuration) {
+
+        return;
+    }
+
+    const percentage =
+        Math.min(
+            100,
+            (
+                currentProgress /
+                currentDuration
+            ) * 100
+        );
+
+    progressFill.style.width =
+        percentage + "%";
+
+    currentTime.textContent =
+        formatTime(
+            currentProgress
+        );
+
+    duration.textContent =
+        formatTime(
+            currentDuration
+        );
+}
+
+
+setInterval(
+    () => {
+
+        if (
+            isPlaying &&
+            currentTrack &&
+            currentProgress <
+            currentDuration
+        ) {
+
+            currentProgress +=
+                1000;
+
+            updateProgress();
+        }
+
+    },
+    1000
+);
+
+
+/* =========================================================
+   PLAY PAUSE
+   ========================================================= */
+
+playButton.onclick =
+    async function () {
+
+        try {
+
+            if (isPlaying) {
+
+                await spotifyFetch(
+                    "/me/player/pause",
+                    {
+                        method: "PUT"
+                    }
+                );
+
+            } else {
+
+                await spotifyFetch(
+                    "/me/player/play",
+                    {
+                        method: "PUT"
+                    }
+                );
+            }
+
+            await getPlayback();
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert(
+                "Spotify needs an active playback device."
+            );
+        }
+    };
+
+
+/* =========================================================
+   NEXT
+   ========================================================= */
+
+document.getElementById(
+    "nextButton"
+).onclick =
+    async function () {
+
+        try {
+
+            await spotifyFetch(
+                "/me/player/next",
+                {
+                    method: "POST"
+                }
+            );
+
+            setTimeout(
+                getPlayback,
+                700
+            );
+
+        } catch (error) {
+
+            console.error(error);
+        }
+    };
+
+
+/* =========================================================
+   PREVIOUS
+   ========================================================= */
+
+document.getElementById(
+    "previousButton"
+).onclick =
+    async function () {
+
+        try {
+
+            await spotifyFetch(
+                "/me/player/previous",
+                {
+                    method: "POST"
+                }
+            );
+
+            setTimeout(
+                getPlayback,
+                700
+            );
+
+        } catch (error) {
+
+            console.error(error);
+        }
+    };
+
+
+/* =========================================================
+   SHUFFLE
+   ========================================================= */
+
+shuffleButton.onclick =
+    async function () {
+
+        try {
+
+            shuffleState =
+                !shuffleState;
+
+            await spotifyFetch(
+                `/me/player/shuffle?state=${shuffleState}`,
+                {
+                    method: "PUT"
+                }
+            );
+
+            updateControls();
+
+        } catch (error) {
+
+            console.error(error);
+        }
+    };
+
+
+/* =========================================================
+   REPEAT
+   ========================================================= */
+
+repeatButton.onclick =
+    async function () {
+
+        const modes = [
+            "off",
+            "context",
+            "track"
+        ];
+
+        const index =
+            modes.indexOf(
+                repeatState
+            );
+
+        repeatState =
+            modes[
+                (index + 1) %
+                modes.length
+            ];
+
+        try {
+
+            await spotifyFetch(
+                `/me/player/repeat?state=${repeatState}`,
+                {
+                    method: "PUT"
+                }
+            );
+
+            updateControls();
+
+        } catch (error) {
+
+            console.error(error);
+        }
+    };
+
+
+/* =========================================================
+   CONTROL UI
+   ========================================================= */
+
+function updateControls() {
+
+    playButton.textContent =
+        isPlaying
+            ? "Ⅱ"
+            : "▶";
+
+    shuffleButton.classList.toggle(
+        "active",
+        shuffleState
+    );
+
+    repeatButton.classList.toggle(
+        "active",
+        repeatState !== "off"
+    );
+}
+
+
+/* =========================================================
+   VOLUME
+   ========================================================= */
+
+volume.onchange =
+    async function () {
+
+        try {
+
+            await spotifyFetch(
+                `/me/player/volume?volume_percent=${volume.value}`,
+                {
+                    method: "PUT"
+                }
+            );
+
+        } catch (error) {
+
+            console.error(error);
+        }
+    };
+
+
+/* =========================================================
+   SEEK
+   ========================================================= */
+
+document.getElementById(
+    "progressBar"
+).onclick =
+    async function (event) {
+
+        if (!currentDuration) {
+
+            return;
+        }
+
+        const rect =
+            this.getBoundingClientRect();
+
+        const ratio =
+            (
+                event.clientX -
+                rect.left
+            ) /
+            rect.width;
+
+        const position =
+            Math.floor(
+                ratio *
+                currentDuration
+            );
+
+        try {
+
+            await spotifyFetch(
+                `/me/player/seek?position_ms=${position}`,
+                {
+                    method: "PUT"
+                }
+            );
+
+            currentProgress =
+                position;
+
+            updateProgress();
+
+        } catch (error) {
+
+            console.error(error);
+        }
+    };
+
+
+/* =========================================================
+   POLLING
+   ========================================================= */
+
+function startPolling() {
+
+    if (polling) {
+
+        clearInterval(
+            polling
+        );
+    }
+
+    polling =
+        setInterval(
+            getPlayback,
+            3000
+        );
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+function updateStatus(
+    connected
+) {
+
+    statusText.textContent =
+        connected
+            ? "Connected"
+            : "Not connected";
+
+    statusDot.classList.toggle(
+        "connected",
+        connected
+    );
+}
+
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+
+document.getElementById(
+    "settingsButton"
+).onclick =
+    function () {
+
+        settings.classList.add(
+            "show"
+        );
+    };
+
+
+document.getElementById(
+    "closeSettings"
+).onclick =
+    function () {
+
+        settings.classList.remove(
+            "show"
+        );
+    };
+
+
+settings.onclick =
+    function (event) {
+
+        if (
+            event.target ===
+            settings
+        ) {
+
+            settings.classList.remove(
+                "show"
+            );
+        }
+    };
+
+
+/* =========================================================
+   FULLSCREEN
+   ========================================================= */
+
+async function fullscreen() {
+
+    try {
+
+        if (
+            !document.fullscreenElement
+        ) {
+
+            await document.documentElement
+                .requestFullscreen();
+
+        } else {
+
+            await document.exitFullscreen();
+        }
+
+    } catch (error) {
+
+        console.error(error);
+    }
+}
+
+
+document.getElementById(
+    "fullscreenButton"
+).onclick =
+    fullscreen;
+
+
+document.getElementById(
+    "settingsFullscreen"
+).onclick =
+    fullscreen;
+
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+function logout() {
+
+    accessToken = null;
+    refreshToken = null;
+
+    localStorage.removeItem(
+        SESSION_KEY
+    );
+
+    sessionStorage.removeItem(
+        VERIFIER_KEY
+    );
+
+    if (polling) {
+
+        clearInterval(
+            polling
+        );
+
+        polling = null;
+    }
+
+    updateStatus(false);
+
+    clearTrack();
+
+    connectScreen.style.display =
+        "flex";
+}
+
+
+document.getElementById(
+    "logoutButton"
+).onclick =
+    logout;
+
+
+/* =========================================================
+   KEYBOARD
+   ========================================================= */
+
+document.onkeydown =
+    function (event) {
+
+        if (
+            event.code ===
+            "Space"
+        ) {
+
+            event.preventDefault();
+
+            playButton.click();
+        }
+
+        if (
+            event.code ===
+            "ArrowRight"
+        ) {
+
+            document.getElementById(
+                "nextButton"
+            ).click();
+        }
+
+        if (
+            event.code ===
+            "ArrowLeft"
+        ) {
+
+            document.getElementById(
+                "previousButton"
+            ).click();
+        }
+
+        if (
+            event.code ===
+            "Escape"
+        ) {
+
+            settings.classList.remove(
+                "show"
+            );
+        }
+    };
+
+
+/* =========================================================
+   INITIALIZATION
+   ========================================================= */
+
+async function init() {
+
+    console.log(
+        "================================"
+    );
+
+    console.log(
+        "SPOTDECK INITIALIZED"
+    );
+
+    console.log(
+        "Client ID:",
+        SPOTIFY_CLIENT_ID
+    );
+
+    console.log(
+        "Redirect URI:",
+        REDIRECT_URI
+    );
+
+    console.log(
+        "================================"
+    );
+
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    const code =
+        params.get("code");
+
+    const error =
+        params.get("error");
+
+
+    /* Spotify returned an error */
+
+    if (error) {
+
+        console.error(
+            "Spotify OAuth error:",
+            error
+        );
+
+        alert(
+            "Spotify authorization failed: " +
+            error
+        );
+
+        window.history.replaceState(
+            {},
+            document.title,
+            REDIRECT_URI
+        );
+
+        return;
+    }
+
+
+    /* Spotify returned authorization code */
+
+    if (code) {
+
+        try {
+
+            await exchangeCode(
+                code
+            );
+
+            return;
+
+        } catch (error) {
+
+            console.error(
+                "Authentication failed:",
+                error
+            );
+
+            alert(
+                "Spotify login failed:\n\n" +
+                error.message
+            );
+
+            return;
+        }
+    }
+
+
+    /* Existing session */
+
+    const saved =
+        localStorage.getItem(
+            SESSION_KEY
+        );
+
+    if (saved) {
+
+        try {
+
+            const session =
+                JSON.parse(
+                    saved
+                );
+
+            accessToken =
+                session.access_token;
+
+            refreshToken =
+                session.refresh_token;
+
+            connectScreen.style.display =
+                "none";
+
+            updateStatus(true);
+
+            await loadUser();
+
+            await getPlayback();
+
+            startPolling();
+
+            return;
+
+        } catch (error) {
+
+            console.error(
+                error
+            );
+
+            localStorage.removeItem(
+                SESSION_KEY
+            );
+        }
+    }
+
+
+    /* No session */
+
+    connectScreen.style.display =
+        "flex";
+
+    updateStatus(false);
+}
+
+
+init();
+
+</script>
+
+</body>
+</html>                opacity 1s ease,
                 background-image 1s ease;
         }
 
