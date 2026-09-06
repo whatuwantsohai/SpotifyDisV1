@@ -1,66 +1,3237 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Spotify Now Playing</title>
-  <link rel="icon" href="assets/Spotify_Primary_Logo_RGB_Green.png" type="image/png">
-  <meta name="theme-color" content="#000000" />
-  
-  <!-- DNS Prefetch & Preconnect for faster API calls -->
-  <link rel="dns-prefetch" href="https://api.spotify.com" />
-  <link rel="preconnect" href="https://api.spotify.com" crossorigin />
-  <link rel="dns-prefetch" href="https://accounts.spotify.com" />
-  <link rel="preconnect" href="https://accounts.spotify.com" crossorigin />
-  <link rel="dns-prefetch" href="https://i.scdn.co" />
-  <link rel="preconnect" href="https://i.scdn.co" crossorigin />
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Font (Inter) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <style>
-    /* Custom font-family */
-    body {
-      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
+    <title>SpotDeck</title>
 
-    /* Shimmer animation for the progress bar when playing */
-    @keyframes shimmer {
-      from { transform: translateX(-100%); }
-      to { transform: translateX(200%); }
-    }
-    
-    /* Apply shimmer animation via data attribute */
-    [data-playing="true"] .bar-shimmer::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      width: 40%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
-      animation: shimmer 2.4s linear infinite;
-    }
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    /* Initial card entrance animation */
-    @keyframes cardIn {
-      from { 
-        transform: translateY(20px) scale(0.95); 
-        opacity: 0;
-      }
-      to { 
-        transform: translateY(0) scale(1); 
-        opacity: 1;
-      }
-    }
-    
-    /* Class to trigger animation */
+    <!-- Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: #050505;
+            font-family: "Inter", sans-serif;
+            color: white;
+        }
+
+        body {
+            position: relative;
+            user-select: none;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        /* =========================================================
+           BACKGROUND
+        ========================================================= */
+
+        #background {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+            background: #050505;
+        }
+
+        .bg-image {
+            position: absolute;
+            inset: -8%;
+            width: 116%;
+            height: 116%;
+            object-fit: cover;
+            filter: blur(55px) saturate(1.25);
+            transform: scale(1.08);
+            opacity: 0;
+            transition: opacity 1.2s ease;
+        }
+
+        .bg-image.active {
+            opacity: 1;
+        }
+
+        #artAmbience {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+            mix-blend-mode: screen;
+        }
+
+        #scrim {
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(0,0,0,0.58) 0%,
+                    rgba(0,0,0,0.18) 35%,
+                    rgba(0,0,0,0.38) 70%,
+                    rgba(0,0,0,0.88) 100%
+                );
+        }
+
+        #scrim::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.18);
+            backdrop-filter: blur(1px);
+        }
+
+        /* =========================================================
+           TOP BAR
+        ========================================================= */
+
+        #topBar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 28px;
+
+            z-index: 20;
+
+            background: linear-gradient(
+                to bottom,
+                rgba(0,0,0,0.35),
+                transparent
+            );
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            opacity: 0.85;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #1ed760;
+            box-shadow: 0 0 12px rgba(30,215,96,0.7);
+        }
+
+        #connectionStatus {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.65);
+        }
+
+        /* =========================================================
+           MAIN DISPLAY
+        ========================================================= */
+
+        #mainDisplay {
+            position: relative;
+            z-index: 10;
+
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            padding:
+                70px
+                30px
+                30px;
+
+            overflow: hidden;
+        }
+
+        /* =========================================================
+           ALBUM ART
+        ========================================================= */
+
+        #artWrap {
+            position: relative;
+
+            width: min(48vh, 330px);
+            height: min(48vh, 330px);
+
+            min-width: 190px;
+            min-height: 190px;
+
+            border-radius: 18px;
+            overflow: hidden;
+
+            background: rgba(255,255,255,0.06);
+
+            box-shadow:
+                0 30px 80px rgba(0,0,0,0.55),
+                0 8px 25px rgba(0,0,0,0.35);
+
+            transform: translateY(0) scale(1);
+            transition:
+                transform 0.5s ease,
+                box-shadow 0.5s ease;
+
+            flex-shrink: 0;
+        }
+
+        #artWrap.playing {
+            box-shadow:
+                0 35px 100px rgba(0,0,0,0.65),
+                0 10px 35px rgba(0,0,0,0.45);
+        }
+
+        #art {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+
+            transition:
+                opacity 0.35s ease,
+                transform 0.6s ease;
+        }
+
+        #art.loading {
+            opacity: 0.3;
+        }
+
+        /* =========================================================
+           TRACK INFORMATION
+        ========================================================= */
+
+        #trackInfo {
+            width: min(700px, 90vw);
+            text-align: center;
+
+            margin-top: 20px;
+
+            overflow: hidden;
+        }
+
+        #state-badge {
+            display: inline-flex;
+            align-items: center;
+
+            padding: 5px 10px;
+
+            border-radius: 999px;
+
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.10);
+
+            backdrop-filter: blur(12px);
+
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.13em;
+
+            color: rgba(255,255,255,0.72);
+
+            margin-bottom: 8px;
+        }
+
+        #title {
+            margin: 0;
+
+            font-size: clamp(24px, 4vw, 38px);
+            line-height: 1.1;
+
+            font-weight: 800;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+
+            text-shadow: 0 3px 20px rgba(0,0,0,0.45);
+        }
+
+        #artists {
+            margin-top: 7px;
+
+            font-size: clamp(13px, 2vw, 17px);
+            font-weight: 500;
+
+            color: rgba(255,255,255,0.82);
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #album {
+            margin-top: 3px;
+
+            font-size: 11px;
+            font-weight: 500;
+
+            color: rgba(255,255,255,0.52);
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* =========================================================
+           PROGRESS
+        ========================================================= */
+
+        #progressArea {
+            width: min(700px, 88vw);
+
+            margin-top: 20px;
+        }
+
+        #progress {
+            position: relative;
+
+            width: 100%;
+            height: 6px;
+
+            border-radius: 999px;
+
+            background: rgba(255,255,255,0.18);
+
+            cursor: pointer;
+
+            overflow: hidden;
+        }
+
+        #barInner {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+
+            width: 0%;
+
+            border-radius: inherit;
+
+            background: white;
+
+            transition: width 0.5s linear;
+        }
+
+        #progress:hover {
+            height: 8px;
+        }
+
+        #progressTimes {
+            display: flex;
+            justify-content: space-between;
+
+            margin-top: 7px;
+
+            font-size: 10px;
+            font-weight: 500;
+
+            color: rgba(255,255,255,0.58);
+        }
+
+        /* =========================================================
+           PLAYBACK CONTROLS
+        ========================================================= */
+
+        #playbackControls {
+            width: min(700px, 88vw);
+
+            margin-top: 15px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            gap: 28px;
+        }
+
+        .mainControls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            gap: 18px;
+        }
+
+        .control-btn {
+            width: 52px;
+            height: 52px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border: none;
+            border-radius: 50%;
+
+            background: rgba(255,255,255,0.10);
+            color: white;
+
+            backdrop-filter: blur(16px);
+
+            transition:
+                transform 0.15s ease,
+                background 0.15s ease,
+                opacity 0.15s ease;
+
+            box-shadow:
+                0 8px 25px rgba(0,0,0,0.22);
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.18);
+        }
+
+        .control-btn:active {
+            transform: scale(0.88);
+        }
+
+        .control-btn.primary {
+            width: 68px;
+            height: 68px;
+
+            background: white;
+            color: black;
+
+            box-shadow:
+                0 10px 35px rgba(0,0,0,0.35);
+        }
+
+        .control-btn.primary:hover {
+            background: rgba(255,255,255,0.9);
+        }
+
+        .control-btn.small {
+            width: 42px;
+            height: 42px;
+
+            background: transparent;
+            box-shadow: none;
+
+            opacity: 0.62;
+        }
+
+        .control-btn.small.active {
+            opacity: 1;
+            color: #1ed760;
+        }
+
+        .control-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+        }
+
+        .control-btn.primary svg {
+            width: 27px;
+            height: 27px;
+            stroke-width: 2.5;
+        }
+
+        .secondaryControls {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        /* =========================================================
+           VOLUME
+        ========================================================= */
+
+        #volumeArea {
+            width: min(420px, 60vw);
+
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            margin-top: 9px;
+
+            opacity: 0.75;
+        }
+
+        #volumeArea svg {
+            width: 17px;
+            height: 17px;
+            flex-shrink: 0;
+        }
+
+        #volumeSlider {
+            width: 100%;
+            height: 5px;
+
+            appearance: none;
+            -webkit-appearance: none;
+
+            background: rgba(255,255,255,0.2);
+
+            border-radius: 999px;
+
+            outline: none;
+        }
+
+        #volumeSlider::-webkit-slider-thumb {
+            appearance: none;
+            -webkit-appearance: none;
+
+            width: 14px;
+            height: 14px;
+
+            border-radius: 50%;
+
+            background: white;
+
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+
+            cursor: pointer;
+        }
+
+        #volumeSlider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+
+            border: none;
+            border-radius: 50%;
+
+            background: white;
+
+            cursor: pointer;
+        }
+
+        /* =========================================================
+           FOOTER / UTILITY CONTROLS
+        ========================================================= */
+
+        #footer {
+            position: fixed;
+
+            left: 0;
+            right: 0;
+            bottom: 0;
+
+            height: 58px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            gap: 8px;
+
+            z-index: 30;
+
+            background:
+                linear-gradient(
+                    to top,
+                    rgba(0,0,0,0.65),
+                    transparent
+                );
+
+            pointer-events: none;
+        }
+
+        .utility-btn {
+            pointer-events: auto;
+
+            width: 38px;
+            height: 38px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border: none;
+            border-radius: 50%;
+
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.7);
+
+            backdrop-filter: blur(12px);
+
+            transition: 0.15s ease;
+        }
+
+        .utility-btn:hover {
+            background: rgba(255,255,255,0.13);
+            color: white;
+        }
+
+        .utility-btn svg {
+            width: 17px;
+            height: 17px;
+        }
+
+        /* =========================================================
+           SETTINGS MODAL
+        ========================================================= */
+
+        #settingsModal {
+            position: fixed;
+            inset: 0;
+
+            z-index: 100;
+
+            display: none;
+            align-items: center;
+            justify-content: center;
+
+            padding: 20px;
+
+            background: rgba(0,0,0,0.55);
+
+            backdrop-filter: blur(18px);
+        }
+
+        #settingsModal.open {
+            display: flex;
+        }
+
+        #settingsPanel {
+            width: min(440px, 92vw);
+            max-height: 85vh;
+
+            overflow-y: auto;
+
+            padding: 24px;
+
+            border-radius: 22px;
+
+            background: rgba(22,22,22,0.88);
+
+            border: 1px solid rgba(255,255,255,0.1);
+
+            box-shadow:
+                0 30px 100px rgba(0,0,0,0.55);
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 24px;
+        }
+
+        .settings-header h2 {
+            margin: 0;
+
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        #closeSettings {
+            width: 36px;
+            height: 36px;
+
+            border: none;
+            border-radius: 50%;
+
+            background: rgba(255,255,255,0.08);
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-section {
+            margin-bottom: 22px;
+        }
+
+        .settings-label {
+            margin-bottom: 8px;
+
+            font-size: 10px;
+            font-weight: 700;
+
+            color: rgba(255,255,255,0.45);
+
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .settings-value {
+            padding: 13px 14px;
+
+            border-radius: 12px;
+
+            background: rgba(255,255,255,0.06);
+
+            color: rgba(255,255,255,0.8);
+
+            font-size: 13px;
+        }
+
+        .settings-action {
+            width: 100%;
+
+            padding: 13px 15px;
+
+            margin-top: 8px;
+
+            border: none;
+            border-radius: 12px;
+
+            background: rgba(255,255,255,0.08);
+
+            color: white;
+
+            text-align: left;
+
+            transition: 0.15s ease;
+        }
+
+        .settings-action:hover {
+            background: rgba(255,255,255,0.14);
+        }
+
+        .settings-action.danger {
+            color: #ff7777;
+        }
+
+        /* =========================================================
+           CONNECT SCREEN
+        ========================================================= */
+
+        #connectScreen {
+            position: fixed;
+            inset: 0;
+
+            z-index: 200;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 25px;
+
+            background:
+                radial-gradient(
+                    circle at center,
+                    #222 0%,
+                    #090909 65%,
+                    #000 100%
+                );
+        }
+
+        #connectScreen.hidden {
+            display: none;
+        }
+
+        .connect-content {
+            width: min(420px, 90vw);
+            text-align: center;
+        }
+
+        .connect-logo {
+            width: 82px;
+            height: 82px;
+
+            margin: 0 auto 22px;
+
+            border-radius: 24px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #1ed760;
+            color: black;
+
+            box-shadow:
+                0 20px 60px rgba(30,215,96,0.18);
+        }
+
+        .connect-logo svg {
+            width: 42px;
+            height: 42px;
+            stroke-width: 2.5;
+        }
+
+        .connect-content h1 {
+            margin: 0;
+
+            font-size: 30px;
+            font-weight: 800;
+        }
+
+        .connect-content p {
+            margin: 10px 0 25px;
+
+            color: rgba(255,255,255,0.55);
+
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        #connectBtn {
+            width: 100%;
+
+            height: 50px;
+
+            border: none;
+            border-radius: 999px;
+
+            background: #1ed760;
+            color: black;
+
+            font-size: 14px;
+            font-weight: 800;
+
+            transition: 0.15s ease;
+        }
+
+        #connectBtn:hover {
+            transform: scale(1.02);
+            background: #28e66b;
+        }
+
+        #connectBtn:active {
+            transform: scale(0.98);
+        }
+
+        /* =========================================================
+           EMPTY STATE
+        ========================================================= */
+
+        #emptyState {
+            position: absolute;
+            inset: 0;
+
+            display: none;
+
+            align-items: center;
+            justify-content: center;
+
+            text-align: center;
+
+            z-index: 5;
+
+            pointer-events: none;
+        }
+
+        #emptyState.visible {
+            display: flex;
+        }
+
+        .empty-content {
+            opacity: 0.75;
+        }
+
+        .empty-content svg {
+            width: 45px;
+            height: 45px;
+            margin-bottom: 12px;
+            opacity: 0.45;
+        }
+
+        .empty-content h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .empty-content p {
+            margin-top: 6px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        /* =========================================================
+           RESPONSIVE / SMALL DISPLAY
+        ========================================================= */
+
+        @media (max-height: 650px) {
+
+            #topBar {
+                height: 48px;
+                padding: 0 18px;
+            }
+
+            #mainDisplay {
+                padding:
+                    50px
+                    20px
+                    45px;
+            }
+
+            #artWrap {
+                width: min(42vh, 230px);
+                height: min(42vh, 230px);
+
+                min-width: 140px;
+                min-height: 140px;
+
+                border-radius: 13px;
+            }
+
+            #trackInfo {
+                margin-top: 12px;
+            }
+
+            #state-badge {
+                display: none;
+            }
+
+            #title {
+                font-size: 22px;
+            }
+
+            #artists {
+                margin-top: 4px;
+                font-size: 13px;
+            }
+
+            #album {
+                font-size: 9px;
+            }
+
+            #progressArea {
+                margin-top: 11px;
+            }
+
+            #playbackControls {
+                margin-top: 7px;
+            }
+
+            .control-btn {
+                width: 42px;
+                height: 42px;
+            }
+
+            .control-btn.primary {
+                width: 55px;
+                height: 55px;
+            }
+
+            .control-btn.small {
+                width: 35px;
+                height: 35px;
+            }
+
+            #volumeArea {
+                width: min(330px, 65vw);
+                margin-top: 3px;
+            }
+
+            #footer {
+                height: 38px;
+            }
+
+            .utility-btn {
+                width: 30px;
+                height: 30px;
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            #artWrap {
+                width: min(65vw, 300px);
+                height: min(65vw, 300px);
+            }
+
+            #playbackControls {
+                gap: 12px;
+            }
+
+            .secondaryControls {
+                display: none;
+            }
+
+            #volumeArea {
+                width: 65vw;
+            }
+        }
+
+        /* =========================================================
+           FULLSCREEN
+        ========================================================= */
+
+        :fullscreen #footer {
+            display: none;
+        }
+
+        :fullscreen #mainDisplay {
+            padding-bottom: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =========================================================
+         BACKGROUND
+    ========================================================= -->
+
+    <div id="background">
+
+        <img id="bgA" class="bg-image" src="" alt="">
+        <img id="bgB" class="bg-image" src="" alt="">
+
+        <canvas id="artAmbience"></canvas>
+
+        <div id="scrim"></div>
+
+    </div>
+
+
+    <!-- =========================================================
+         TOP BAR
+    ========================================================= -->
+
+    <div id="topBar">
+
+        <div class="brand">
+            <span class="status-dot"></span>
+            SPOTDECK
+        </div>
+
+        <div id="connectionStatus">
+            Not connected
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         CONNECT SCREEN
+    ========================================================= -->
+
+    <div id="connectScreen">
+
+        <div class="connect-content">
+
+            <div class="connect-logo">
+                <i data-lucide="music-2"></i>
+            </div>
+
+            <h1>SpotDeck</h1>
+
+            <p>
+                Your dedicated Spotify display.<br>
+                Connect your Spotify account to begin.
+            </p>
+
+            <button id="connectBtn">
+                Connect Spotify
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         MAIN DISPLAY
+    ========================================================= -->
+
+    <main id="mainDisplay">
+
+        <!-- ALBUM ART -->
+
+        <div id="artWrap">
+
+            <img
+                id="art"
+                src=""
+                alt="Album artwork"
+            >
+
+        </div>
+
+
+        <!-- TRACK INFORMATION -->
+
+        <div id="trackInfo">
+
+            <div id="state-badge">
+                NOT PLAYING
+            </div>
+
+            <h1 id="title">
+                Nothing Playing
+            </h1>
+
+            <div id="artists">
+                —
+            </div>
+
+            <div id="album">
+                —
+            </div>
+
+        </div>
+
+
+        <!-- PROGRESS -->
+
+        <div id="progressArea">
+
+            <div
+                id="progress"
+                title="Seek"
+            >
+
+                <div id="barInner"></div>
+
+            </div>
+
+            <div id="progressTimes">
+
+                <span id="elapsed">
+                    0:00
+                </span>
+
+                <span id="duration">
+                    0:00
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- PLAYBACK CONTROLS -->
+
+        <div id="playbackControls">
+
+            <div class="mainControls">
+
+                <button
+                    id="prevBtn"
+                    class="control-btn"
+                    aria-label="Previous"
+                >
+                    <i data-lucide="skip-back"></i>
+                </button>
+
+
+                <button
+                    id="playPauseBtn"
+                    class="control-btn primary"
+                    aria-label="Play"
+                >
+                    <i data-lucide="play"></i>
+                </button>
+
+
+                <button
+                    id="nextBtn"
+                    class="control-btn"
+                    aria-label="Next"
+                >
+                    <i data-lucide="skip-forward"></i>
+                </button>
+
+            </div>
+
+
+            <div class="secondaryControls">
+
+                <button
+                    id="shuffleBtn"
+                    class="control-btn small"
+                    aria-label="Shuffle"
+                >
+                    <i data-lucide="shuffle"></i>
+                </button>
+
+
+                <button
+                    id="repeatBtn"
+                    class="control-btn small"
+                    aria-label="Repeat"
+                >
+                    <i data-lucide="repeat"></i>
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- VOLUME -->
+
+        <div id="volumeArea">
+
+            <i data-lucide="volume-2"></i>
+
+            <input
+                id="volumeSlider"
+                type="range"
+                min="0"
+                max="100"
+                value="50"
+                aria-label="Volume"
+            >
+
+        </div>
+
+    </main>
+
+
+    <!-- =========================================================
+         UTILITY FOOTER
+    ========================================================= -->
+
+    <div id="footer">
+
+        <button
+            id="settingsBtn"
+            class="utility-btn"
+            aria-label="Settings"
+        >
+            <i data-lucide="settings"></i>
+        </button>
+
+
+        <button
+            id="fullscreenBtn"
+            class="utility-btn"
+            aria-label="Fullscreen"
+        >
+            <i data-lucide="maximize"></i>
+        </button>
+
+    </div>
+
+
+    <!-- =========================================================
+         SETTINGS MODAL
+    ========================================================= -->
+
+    <div id="settingsModal">
+
+        <div id="settingsPanel">
+
+            <div class="settings-header">
+
+                <h2>
+                    Settings
+                </h2>
+
+                <button id="closeSettings">
+                    <i data-lucide="x"></i>
+                </button>
+
+            </div>
+
+
+            <!-- ACCOUNT -->
+
+            <div class="settings-section">
+
+                <div class="settings-label">
+                    Spotify Account
+                </div>
+
+                <div
+                    id="accountInfo"
+                    class="settings-value"
+                >
+                    Not connected
+                </div>
+
+            </div>
+
+
+            <!-- CURRENT DEVICE -->
+
+            <div class="settings-section">
+
+                <div class="settings-label">
+                    Active Device
+                </div>
+
+                <div
+                    id="deviceInfo"
+                    class="settings-value"
+                >
+                    —
+                </div>
+
+            </div>
+
+
+            <!-- CURRENT TRACK -->
+
+            <div class="settings-section">
+
+                <div class="settings-label">
+                    Current Track
+                </div>
+
+                <div
+                    id="settingsTrack"
+                    class="settings-value"
+                >
+                    Nothing playing
+                </div>
+
+            </div>
+
+
+            <!-- FULLSCREEN -->
+
+            <div class="settings-section">
+
+                <div class="settings-label">
+                    Display
+                </div>
+
+                <button
+                    id="settingsFullscreen"
+                    class="settings-action"
+                >
+                    Enter Fullscreen
+                </button>
+
+            </div>
+
+
+            <!-- LOGOUT -->
+
+            <div class="settings-section">
+
+                <button
+                    id="logoutBtn"
+                    class="settings-action danger"
+                >
+                    Log out of Spotify
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         EMPTY STATE
+    ========================================================= -->
+
+    <div id="emptyState">
+
+        <div class="empty-content">
+
+            <i data-lucide="music"></i>
+
+            <h2>
+                Nothing playing
+            </h2>
+
+            <p>
+                Start playing something on Spotify.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        /* =========================================================
+           SPOTIFY CONFIG
+        ========================================================= */
+
+        const SPOTIFY_CLIENT_ID =
+            "8b793abcd48f44d18c4494272426888b";
+
+        const REDIRECT_URI =
+            window.location.origin + window.location.pathname;
+
+        const SPOTIFY_SCOPES = [
+            "user-read-currently-playing",
+            "user-read-playback-state",
+            "user-modify-playback-state",
+            "streaming",
+            "user-read-email",
+            "user-read-private"
+        ].join(" ");
+
+
+        /* =========================================================
+           STATE
+        ========================================================= */
+
+        let session = null;
+
+        let currentTrackId = null;
+        let currentArtwork = null;
+
+        let currentProgress = 0;
+        let currentDuration = 0;
+
+        let isPlaying = false;
+
+        let currentVolume = 50;
+
+        let shuffleState = false;
+        let repeatState = "off";
+
+        let pollTimer = null;
+
+        let bgShowingA = true;
+
+        let isSeeking = false;
+
+
+        /* =========================================================
+           ELEMENTS
+        ========================================================= */
+
+        const $ = id =>
+            document.getElementById(id);
+
+
+        /* =========================================================
+           INITIALISE LUCIDE
+        ========================================================= */
+
+        function refreshIcons() {
+
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+
+        }
+
+
+        /* =========================================================
+           SHA256 / PKCE
+        ========================================================= */
+
+        async function sha256(plain) {
+
+            const encoder =
+                new TextEncoder();
+
+            const data =
+                encoder.encode(plain);
+
+            return await crypto.subtle.digest(
+                "SHA-256",
+                data
+            );
+
+        }
+
+
+        function base64urlEncode(buffer) {
+
+            return btoa(
+                String.fromCharCode(...new Uint8Array(buffer))
+            )
+                .replace(/\+/g, "-")
+                .replace(/\//g, "_")
+                .replace(/=+$/, "");
+
+        }
+
+
+        function randomString(length = 64) {
+
+            const chars =
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+
+            let result = "";
+
+            const array =
+                new Uint8Array(length);
+
+            crypto.getRandomValues(array);
+
+            for (let i = 0; i < length; i++) {
+
+                result +=
+                    chars[array[i] % chars.length];
+
+            }
+
+            return result;
+
+        }
+
+
+        /* =========================================================
+           SPOTIFY LOGIN
+        ========================================================= */
+
+        async function connectSpotify() {
+
+            const verifier =
+                randomString(64);
+
+            const challenge =
+                base64urlEncode(
+                    await sha256(verifier)
+                );
+
+            sessionStorage.setItem(
+                "spnp.code_verifier",
+                verifier
+            );
+
+            const params =
+                new URLSearchParams({
+
+                    client_id:
+                        SPOTIFY_CLIENT_ID,
+
+                    response_type:
+                        "code",
+
+                    redirect_uri:
+                        REDIRECT_URI,
+
+                    code_challenge_method:
+                        "S256",
+
+                    code_challenge:
+                        challenge,
+
+                    scope:
+                        SPOTIFY_SCOPES
+
+                });
+
+            window.location.href =
+                "https://accounts.spotify.com/authorize?" +
+                params.toString();
+
+        }
+
+
+        /* =========================================================
+           EXCHANGE AUTH CODE
+        ========================================================= */
+
+        async function exchangeCode(code) {
+
+            const verifier =
+                sessionStorage.getItem(
+                    "spnp.code_verifier"
+                );
+
+            if (!verifier) {
+                throw new Error(
+                    "Missing PKCE verifier."
+                );
+            }
+
+            const body =
+                new URLSearchParams({
+
+                    client_id:
+                        SPOTIFY_CLIENT_ID,
+
+                    grant_type:
+                        "authorization_code",
+
+                    code,
+
+                    redirect_uri:
+                        REDIRECT_URI,
+
+                    code_verifier:
+                        verifier
+
+                });
+
+            const response =
+                await fetch(
+                    "https://accounts.spotify.com/api/token",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type":
+                                "application/x-www-form-urlencoded"
+                        },
+                        body
+                    }
+                );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Could not exchange Spotify authorization code."
+                );
+
+            }
+
+            const data =
+                await response.json();
+
+            sessionStorage.removeItem(
+                "spnp.code_verifier"
+            );
+
+            saveSession(data);
+
+            window.history.replaceState(
+                {},
+                document.title,
+                REDIRECT_URI
+            );
+
+            await startApp();
+
+        }
+
+
+        /* =========================================================
+           SESSION
+        ========================================================= */
+
+        function saveSession(data) {
+
+            const expiresAt =
+                Date.now() +
+                (data.expires_in * 1000);
+
+            session = {
+                access_token:
+                    data.access_token,
+
+                refresh_token:
+                    data.refresh_token,
+
+                expires_at:
+                    expiresAt
+            };
+
+            localStorage.setItem(
+                "spnp.session",
+                JSON.stringify(session)
+            );
+
+        }
+
+
+        function loadSession() {
+
+            const saved =
+                localStorage.getItem(
+                    "spnp.session"
+                );
+
+            if (!saved) {
+                return null;
+            }
+
+            try {
+
+                session =
+                    JSON.parse(saved);
+
+                return session;
+
+            } catch {
+
+                localStorage.removeItem(
+                    "spnp.session"
+                );
+
+                return null;
+
+            }
+
+        }
+
+
+        /* =========================================================
+           REFRESH TOKEN
+        ========================================================= */
+
+        async function refreshToken() {
+
+            if (!session?.refresh_token) {
+                return false;
+            }
+
+            const body =
+                new URLSearchParams({
+
+                    client_id:
+                        SPOTIFY_CLIENT_ID,
+
+                    grant_type:
+                        "refresh_token",
+
+                    refresh_token:
+                        session.refresh_token
+
+                });
+
+            const response =
+                await fetch(
+                    "https://accounts.spotify.com/api/token",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/x-www-form-urlencoded"
+                        },
+
+                        body
+                    }
+                );
+
+            if (!response.ok) {
+
+                logout();
+
+                return false;
+
+            }
+
+            const data =
+                await response.json();
+
+            session.access_token =
+                data.access_token;
+
+            session.expires_at =
+                Date.now() +
+                data.expires_in * 1000;
+
+            if (data.refresh_token) {
+
+                session.refresh_token =
+                    data.refresh_token;
+
+            }
+
+            localStorage.setItem(
+                "spnp.session",
+                JSON.stringify(session)
+            );
+
+            return true;
+
+        }
+
+
+        async function ensureToken() {
+
+            if (!session) {
+                return false;
+            }
+
+            if (
+                Date.now() <
+                session.expires_at - 60000
+            ) {
+                return true;
+            }
+
+            return await refreshToken();
+
+        }
+
+
+        /* =========================================================
+           SPOTIFY API
+        ========================================================= */
+
+        async function spotifyFetch(
+            endpoint,
+            options = {}
+        ) {
+
+            if (!await ensureToken()) {
+                return null;
+            }
+
+            const response =
+                await fetch(
+                    "https://api.spotify.com/v1" +
+                    endpoint,
+                    {
+                        ...options,
+
+                        headers: {
+                            ...(options.headers || {}),
+
+                            Authorization:
+                                "Bearer " +
+                                session.access_token
+                        }
+                    }
+                );
+
+            if (response.status === 401) {
+
+                if (await refreshToken()) {
+
+                    return spotifyFetch(
+                        endpoint,
+                        options
+                    );
+
+                }
+
+                logout();
+
+                return null;
+            }
+
+            return response;
+
+        }
+
+
+        /* =========================================================
+           GET PLAYER
+        ========================================================= */
+
+        async function getPlaybackState() {
+
+            try {
+
+                const response =
+                    await spotifyFetch(
+                        "/me/player?additional_types=track,episode"
+                    );
+
+                if (!response) {
+                    return;
+                }
+
+                if (response.status === 204) {
+
+                    showNothingPlaying();
+
+                    return;
+
+                }
+
+                if (!response.ok) {
+
+                    console.warn(
+                        "Player request failed:",
+                        response.status
+                    );
+
+                    return;
+
+                }
+
+                const data =
+                    await response.json();
+
+                await onPlayback(data);
+
+            } catch (error) {
+
+                console.error(
+                    "Playback polling error:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /* =========================================================
+           PLAY / PAUSE
+        ========================================================= */
+
+        async function togglePlayPause() {
+
+            if (!session) {
+                return;
+            }
+
+            const endpoint =
+                isPlaying
+                    ? "/me/player/pause"
+                    : "/me/player/play";
+
+            const response =
+                await spotifyFetch(
+                    endpoint,
+                    {
+                        method: "PUT"
+                    }
+                );
+
+            if (
+                response &&
+                (
+                    response.ok ||
+                    response.status === 204
+                )
+            ) {
+
+                isPlaying =
+                    !isPlaying;
+
+                updatePlayPauseIcon();
+
+                setTimeout(
+                    getPlaybackState,
+                    250
+                );
+
+            }
+
+        }
+
+
+        /* =========================================================
+           NEXT
+        ========================================================= */
+
+        async function nextTrack() {
+
+            const response =
+                await spotifyFetch(
+                    "/me/player/next",
+                    {
+                        method: "POST"
+                    }
+                );
+
+            if (
+                response &&
+                (
+                    response.ok ||
+                    response.status === 204
+                )
+            ) {
+
+                setTimeout(
+                    getPlaybackState,
+                    500
+                );
+
+            }
+
+        }
+
+
+        /* =========================================================
+           PREVIOUS
+        ========================================================= */
+
+        async function previousTrack() {
+
+            const response =
+                await spotifyFetch(
+                    "/me/player/previous",
+                    {
+                        method: "POST"
+                    }
+                );
+
+            if (
+                response &&
+                (
+                    response.ok ||
+                    response.status === 204
+                )
+            ) {
+
+                setTimeout(
+                    getPlaybackState,
+                    500
+                );
+
+            }
+
+        }
+
+
+        /* =========================================================
+           VOLUME
+        ========================================================= */
+
+        async function setVolume(value) {
+
+            value =
+                Math.max(
+                    0,
+                    Math.min(100, Number(value))
+                );
+
+            currentVolume =
+                value;
+
+            const response =
+                await spotifyFetch(
+                    "/me/player/volume?volume_percent=" +
+                    encodeURIComponent(value),
+                    {
+                        method: "PUT"
+                    }
+                );
+
+            if (
+                response &&
+                !response.ok &&
+                response.status !== 204
+            ) {
+
+                console.warn(
+                    "Could not set volume."
+                );
+
+            }
+
+        }
+
+
+        /* =========================================================
+           SHUFFLE
+        ========================================================= */
+
+        async function toggleShuffle() {
+
+            shuffleState =
+                !shuffleState;
+
+            const response =
+                await spotifyFetch(
+                    "/me/player/shuffle?state=" +
+                    shuffleState,
+                    {
+                        method: "PUT"
+                    }
+                );
+
+            if (
+                response &&
+                (
+                    response.ok ||
+                    response.status === 204
+                )
+            ) {
+
+                updateShuffleButton();
+
+            } else {
+
+                shuffleState =
+                    !shuffleState;
+
+            }
+
+        }
+
+
+        /* =========================================================
+           REPEAT
+        ========================================================= */
+
+        async function cycleRepeat() {
+
+            const states =
+                [
+                    "off",
+                    "context",
+                    "track"
+                ];
+
+            const current =
+                states.indexOf(
+                    repeatState
+                );
+
+            repeatState =
+                states[
+                    (current + 1) %
+                    states.length
+                ];
+
+            const response =
+                await spotifyFetch(
+                    "/me/player/repeat?state=" +
+                    repeatState,
+                    {
+                        method: "PUT"
+                    }
+                );
+
+            if (
+                response &&
+                (
+                    response.ok ||
+                    response.status === 204
+                )
+            ) {
+
+                updateRepeatButton();
+
+            }
+
+        }
+
+
+        /* =========================================================
+           SEEK
+        ========================================================= */
+
+        async function seekTo(positionMs) {
+
+            if (!currentDuration) {
+                return;
+            }
+
+            positionMs =
+                Math.max(
+                    0,
+                    Math.min(
+                        currentDuration,
+                        positionMs
+                    )
+                );
+
+            const response =
+                await spotifyFetch(
+                    "/me/player/seek?position_ms=" +
+                    Math.round(positionMs),
+                    {
+                        method: "PUT"
+                    }
+                );
+
+            if (
+                response &&
+                (
+                    response.ok ||
+                    response.status === 204
+                )
+            ) {
+
+                currentProgress =
+                    positionMs;
+
+                updateProgress();
+
+            }
+
+        }
+
+
+        /* =========================================================
+           PLAYBACK UPDATE
+        ========================================================= */
+
+        async function onPlayback(data) {
+
+            if (!data) {
+                return;
+            }
+
+            isPlaying =
+                Boolean(
+                    data.is_playing
+                );
+
+            currentProgress =
+                data.progress_ms || 0;
+
+            currentDuration =
+                data.item?.duration_ms || 0;
+
+            currentVolume =
+                data.device?.volume_percent ??
+                currentVolume;
+
+            shuffleState =
+                Boolean(
+                    data.shuffle_state
+                );
+
+            repeatState =
+                data.repeat_state ||
+                "off";
+
+            updateConnection(
+                data.device
+            );
+
+            updateProgress();
+
+            updatePlayPauseIcon();
+
+            updateShuffleButton();
+
+            updateRepeatButton();
+
+            $("volumeSlider").value =
+                currentVolume;
+
+            if (!data.item) {
+
+                showNothingPlaying();
+
+                return;
+
+            }
+
+            const item =
+                data.item;
+
+            const trackId =
+                item.id;
+
+            const artwork =
+                item.album?.images?.[0]?.url ||
+                "";
+
+            const artists =
+                item.artists
+                    ?.map(
+                        artist =>
+                            artist.name
+                    )
+                    .join(", ") ||
+                "Unknown artist";
+
+            $("title").textContent =
+                item.name ||
+                "Unknown";
+
+            $("artists").textContent =
+                artists;
+
+            $("album").textContent =
+                item.album?.name ||
+                "";
+
+            $("settingsTrack").textContent =
+                `${item.name} — ${artists}`;
+
+            $("state-badge").textContent =
+                isPlaying
+                    ? "NOW PLAYING"
+                    : "PAUSED";
+
+            $("emptyState")
+                .classList.remove(
+                    "visible"
+                );
+
+            if (
+                trackId !== currentTrackId
+            ) {
+
+                currentTrackId =
+                    trackId;
+
+                await updateArtwork(
+                    artwork
+                );
+
+            }
+
+            $("artWrap")
+                .classList.toggle(
+                    "playing",
+                    isPlaying
+                );
+
+        }
+
+
+        /* =========================================================
+           NOTHING PLAYING
+        ========================================================= */
+
+        function showNothingPlaying() {
+
+            currentTrackId =
+                null;
+
+            isPlaying =
+                false;
+
+            currentProgress =
+                0;
+
+            currentDuration =
+                0;
+
+            $("title").textContent =
+                "Nothing Playing";
+
+            $("artists").textContent =
+                "Start playing something on Spotify";
+
+            $("album").textContent =
+                "";
+
+            $("state-badge").textContent =
+                "NOT PLAYING";
+
+            $("settingsTrack").textContent =
+                "Nothing playing";
+
+            $("emptyState")
+                .classList.add(
+                    "visible"
+                );
+
+            updateProgress();
+
+            updatePlayPauseIcon();
+
+        }
+
+
+        /* =========================================================
+           ARTWORK
+        ========================================================= */
+
+        async function updateArtwork(url) {
+
+            if (!url) {
+                return;
+            }
+
+            currentArtwork =
+                url;
+
+            $("art")
+                .classList.add(
+                    "loading"
+                );
+
+            const preload =
+                new Image();
+
+            preload.onload =
+                () => {
+
+                    $("art").src =
+                        url;
+
+                    $("art")
+                        .classList.remove(
+                            "loading"
+                        );
+
+                    setBackground(
+                        url
+                    );
+
+                    startAmbience(
+                        url
+                    );
+
+                };
+
+            preload.onerror =
+                () => {
+
+                    $("art")
+                        .classList.remove(
+                            "loading"
+                        );
+
+                };
+
+            preload.src =
+                url;
+
+        }
+
+
+        /* =========================================================
+           BACKGROUND CROSSFADE
+        ========================================================= */
+
+        function setBackground(url) {
+
+            const next =
+                bgShowingA
+                    ? $("bgB")
+                    : $("bgA");
+
+            const current =
+                bgShowingA
+                    ? $("bgA")
+                    : $("bgB");
+
+            next.src =
+                url;
+
+            next.onload =
+                () => {
+
+                    next.classList.add(
+                        "active"
+                    );
+
+                    current.classList.remove(
+                        "active"
+                    );
+
+                    bgShowingA =
+                        !bgShowingA;
+
+                };
+
+        }
+
+
+        /* =========================================================
+           ALBUM ART AMBIENCE
+        ========================================================= */
+
+        let ambienceAnimation =
+            null;
+
+        let ambienceImage =
+            null;
+
+        function startAmbience(url) {
+
+            const canvas =
+                $("artAmbience");
+
+            const ctx =
+                canvas.getContext(
+                    "2d"
+                );
+
+            const img =
+                new Image();
+
+            img.crossOrigin =
+                "anonymous";
+
+            img.onload =
+                () => {
+
+                    ambienceImage =
+                        img;
+
+                    resizeAmbience();
+
+                    if (
+                        ambienceAnimation
+                    ) {
+
+                        cancelAnimationFrame(
+                            ambienceAnimation
+                        );
+
+                    }
+
+                    animateAmbience();
+
+                };
+
+            img.src =
+                url;
+
+            function resizeAmbience() {
+
+                canvas.width =
+                    window.innerWidth;
+
+                canvas.height =
+                    window.innerHeight;
+
+            }
+
+            function animateAmbience() {
+
+                if (!ambienceImage) {
+                    return;
+                }
+
+                ctx.clearRect(
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                );
+
+                const size =
+                    Math.min(
+                        canvas.width,
+                        canvas.height
+                    ) * 0.7;
+
+                const x =
+                    canvas.width / 2 -
+                    size / 2;
+
+                const y =
+                    canvas.height / 2 -
+                    size / 2;
+
+                ctx.save();
+
+                ctx.globalAlpha =
+                    isPlaying
+                        ? 0.16
+                        : 0.08;
+
+                ctx.filter =
+                    "blur(35px)";
+
+                ctx.drawImage(
+                    ambienceImage,
+                    x,
+                    y,
+                    size,
+                    size
+                );
+
+                ctx.restore();
+
+                ambienceAnimation =
+                    requestAnimationFrame(
+                        animateAmbience
+                    );
+
+            }
+
+            window.addEventListener(
+                "resize",
+                resizeAmbience,
+                {
+                    passive: true
+                }
+            );
+
+        }
+
+
+        /* =========================================================
+           PROGRESS UI
+        ========================================================= */
+
+        function updateProgress() {
+
+            if (!currentDuration) {
+
+                $("barInner").style.width =
+                    "0%";
+
+                $("elapsed").textContent =
+                    "0:00";
+
+                $("duration").textContent =
+                    "0:00";
+
+                return;
+
+            }
+
+            const percentage =
+                Math.min(
+                    100,
+                    Math.max(
+                        0,
+                        (
+                            currentProgress /
+                            currentDuration
+                        ) * 100
+                    )
+                );
+
+            $("barInner").style.width =
+                percentage + "%";
+
+            $("elapsed").textContent =
+                formatTime(
+                    currentProgress
+                );
+
+            $("duration").textContent =
+                formatTime(
+                    currentDuration
+                );
+
+        }
+
+
+        function formatTime(ms) {
+
+            const seconds =
+                Math.floor(
+                    ms / 1000
+                );
+
+            const minutes =
+                Math.floor(
+                    seconds / 60
+                );
+
+            const remaining =
+                seconds % 60;
+
+            return (
+                minutes +
+                ":" +
+                String(
+                    remaining
+                ).padStart(2, "0")
+            );
+
+        }
+
+
+        /* =========================================================
+           PLAY / PAUSE ICON
+        ========================================================= */
+
+        function updatePlayPauseIcon() {
+
+            const button =
+                $("playPauseBtn");
+
+            button.innerHTML =
+                isPlaying
+                    ? `<i data-lucide="pause"></i>`
+                    : `<i data-lucide="play"></i>`;
+
+            button.setAttribute(
+                "aria-label",
+                isPlaying
+                    ? "Pause"
+                    : "Play"
+            );
+
+            refreshIcons();
+
+        }
+
+
+        /* =========================================================
+           SHUFFLE UI
+        ========================================================= */
+
+        function updateShuffleButton() {
+
+            $("shuffleBtn")
+                .classList.toggle(
+                    "active",
+                    shuffleState
+                );
+
+        }
+
+
+        /* =========================================================
+           REPEAT UI
+        ========================================================= */
+
+        function updateRepeatButton() {
+
+            const button =
+                $("repeatBtn");
+
+            button.classList.toggle(
+                "active",
+                repeatState !== "off"
+            );
+
+            button.title =
+                repeatState === "off"
+                    ? "Repeat off"
+                    : repeatState === "context"
+                        ? "Repeat all"
+                        : "Repeat track";
+
+        }
+
+
+        /* =========================================================
+           CONNECTION
+        ========================================================= */
+
+        function updateConnection(device) {
+
+            if (!device) {
+
+                $("connectionStatus").textContent =
+                    "Spotify connected";
+
+                $("deviceInfo").textContent =
+                    "No active device";
+
+                return;
+
+            }
+
+            $("connectionStatus").textContent =
+                device.name ||
+                "Spotify connected";
+
+            $("deviceInfo").textContent =
+                device.name ||
+                "Unknown device";
+
+        }
+
+
+        /* =========================================================
+           POLLING
+        ========================================================= */
+
+        function startPolling() {
+
+            stopPolling();
+
+            async function poll() {
+
+                await getPlaybackState();
+
+                pollTimer =
+                    setTimeout(
+                        poll,
+                        isPlaying
+                            ? 2000
+                            : 5000
+                    );
+
+            }
+
+            poll();
+
+        }
+
+
+        function stopPolling() {
+
+            if (pollTimer) {
+
+                clearTimeout(
+                    pollTimer
+                );
+
+                pollTimer =
+                    null;
+
+            }
+
+        }
+
+
+        /* =========================================================
+           SETTINGS
+        ========================================================= */
+
+        function openSettings() {
+
+            $("settingsModal")
+                .classList.add(
+                    "open"
+                );
+
+        }
+
+
+        function closeSettings() {
+
+            $("settingsModal")
+                .classList.remove(
+                    "open"
+                );
+
+        }
+
+
+        /* =========================================================
+           FULLSCREEN
+        ========================================================= */
+
+        async function toggleFullscreen() {
+
+            try {
+
+                if (!document.fullscreenElement) {
+
+                    await document.documentElement
+                        .requestFullscreen();
+
+                } else {
+
+                    await document.exitFullscreen();
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "Fullscreen unavailable:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /* =========================================================
+           LOGOUT
+        ========================================================= */
+
+        function logout() {
+
+            stopPolling();
+
+            session =
+                null;
+
+            currentTrackId =
+                null;
+
+            localStorage.removeItem(
+                "spnp.session"
+            );
+
+            sessionStorage.removeItem(
+                "spnp.code_verifier"
+            );
+
+            $("connectScreen")
+                .classList.remove(
+                    "hidden"
+                );
+
+            $("connectionStatus").textContent =
+                "Not connected";
+
+        }
+
+
+        /* =========================================================
+           START APP
+        ========================================================= */
+
+        async function startApp() {
+
+            if (!session) {
+                return;
+            }
+
+            $("connectScreen")
+                .classList.add(
+                    "hidden"
+                );
+
+            $("connectionStatus").textContent =
+                "Connecting…";
+
+            try {
+
+                const profileResponse =
+                    await spotifyFetch(
+                        "/me"
+                    );
+
+                if (
+                    profileResponse &&
+                    profileResponse.ok
+                ) {
+
+                    const profile =
+                        await profileResponse.json();
+
+                    $("accountInfo").textContent =
+                        profile.display_name ||
+                        profile.email ||
+                        "Spotify account";
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "Could not load profile:",
+                    error
+                );
+
+            }
+
+            await getPlaybackState();
+
+            startPolling();
+
+        }
+
+
+        /* =========================================================
+           HANDLE CALLBACK
+        ========================================================= */
+
+        async function handleCallback() {
+
+            const params =
+                new URLSearchParams(
+                    window.location.search
+                );
+
+            const code =
+                params.get("code");
+
+            const error =
+                params.get("error");
+
+            if (error) {
+
+                console.error(
+                    "Spotify auth error:",
+                    error
+                );
+
+                window.history.replaceState(
+                    {},
+                    document.title,
+                    REDIRECT_URI
+                );
+
+                return;
+
+            }
+
+            if (code) {
+
+                try {
+
+                    await exchangeCode(
+                        code
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        error
+                    );
+
+                    alert(
+                        "Spotify login failed. Check your redirect URI and try again."
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        /* =========================================================
+           EVENT LISTENERS
+        ========================================================= */
+
+        $("connectBtn")
+            .addEventListener(
+                "click",
+                connectSpotify
+            );
+
+
+        $("playPauseBtn")
+            .addEventListener(
+                "click",
+                togglePlayPause
+            );
+
+
+        $("nextBtn")
+            .addEventListener(
+                "click",
+                nextTrack
+            );
+
+
+        $("prevBtn")
+            .addEventListener(
+                "click",
+                previousTrack
+            );
+
+
+        $("shuffleBtn")
+            .addEventListener(
+                "click",
+                toggleShuffle
+            );
+
+
+        $("repeatBtn")
+            .addEventListener(
+                "click",
+                cycleRepeat
+            );
+
+
+        $("volumeSlider")
+            .addEventListener(
+                "input",
+                event => {
+
+                    currentVolume =
+                        Number(
+                            event.target.value
+                        );
+
+                }
+            );
+
+
+        $("volumeSlider")
+            .addEventListener(
+                "change",
+                event => {
+
+                    setVolume(
+                        event.target.value
+                    );
+
+                }
+            );
+
+
+        /* =========================================================
+           PROGRESS SEEK
+        ========================================================= */
+
+        $("progress")
+            .addEventListener(
+                "click",
+                event => {
+
+                    if (
+                        !currentDuration
+                    ) {
+                        return;
+                    }
+
+                    const rect =
+                        event.currentTarget
+                            .getBoundingClientRect();
+
+                    const percentage =
+                        (
+                            event.clientX -
+                            rect.left
+                        ) /
+                        rect.width;
+
+                    seekTo(
+                        currentDuration *
+                        percentage
+                    );
+
+                }
+            );
+
+
+        /* =========================================================
+           SETTINGS
+        ========================================================= */
+
+        $("settingsBtn")
+            .addEventListener(
+                "click",
+                openSettings
+            );
+
+
+        $("closeSettings")
+            .addEventListener(
+                "click",
+                closeSettings
+            );
+
+
+        $("settingsModal")
+            .addEventListener(
+                "click",
+                event => {
+
+                    if (
+                        event.target ===
+                        $("settingsModal")
+                    ) {
+
+                        closeSettings();
+
+                    }
+
+                }
+            );
+
+
+        $("fullscreenBtn")
+            .addEventListener(
+                "click",
+                toggleFullscreen
+            );
+
+
+        $("settingsFullscreen")
+            .addEventListener(
+                "click",
+                async () => {
+
+                    await toggleFullscreen();
+
+                    closeSettings();
+
+                }
+            );
+
+
+        $("logoutBtn")
+            .addEventListener(
+                "click",
+                () => {
+
+                    closeSettings();
+
+                    logout();
+
+                }
+            );
+
+
+        /* =========================================================
+           KEYBOARD CONTROLS
+        ========================================================= */
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.target.tagName ===
+                    "INPUT"
+                ) {
+                    return;
+                }
+
+                switch (event.code) {
+
+                    case "Space":
+
+                        event.preventDefault();
+
+                        togglePlayPause();
+
+                        break;
+
+                    case "ArrowRight":
+
+                        nextTrack();
+
+                        break;
+
+                    case "ArrowLeft":
+
+                        previousTrack();
+
+                        break;
+
+                    case "KeyF":
+
+                        toggleFullscreen();
+
+                        break;
+
+                }
+
+            }
+        );
+
+
+        /* =========================================================
+           FULLSCREEN ICON
+        ========================================================= */
+
+        document.addEventListener(
+            "fullscreenchange",
+            () => {
+
+                const icon =
+                    document.fullscreenElement
+                        ? "minimize"
+                        : "maximize";
+
+                $("fullscreenBtn").innerHTML =
+                    `<i data-lucide="${icon}"></i>`;
+
+                refreshIcons();
+
+            }
+        );
+
+
+        /* =========================================================
+           START
+        ========================================================= */
+
+        async function init() {
+
+            refreshIcons();
+
+            loadSession();
+
+            await handleCallback();
+
+            if (session) {
+
+                await startApp();
+
+            }
+
+        }
+
+
+        init();
+
+    </script>
+
+</body>
+</html>    /* Class to trigger animation */
     .card-animate {
       animation: cardIn 800ms cubic-bezier(.16,1,.3,1) 1 forwards;
     }
