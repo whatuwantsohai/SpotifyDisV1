@@ -1294,6 +1294,8 @@ body.modeVisualizer #backgroundOverlay {
 
 body.modeLyrics #header {
   opacity: 0.35;
+  /* Keep header controls above the lyrics layer so Display / Queue / Settings remain clickable. */
+  z-index: 70;
   transition: opacity 0.25s ease;
 }
 
@@ -3289,9 +3291,10 @@ body.ambientScreensaver #backgroundImage {
   }
 
   body.modeLyrics #lyricsExitButton {
-    /* Keep the exit control below the iPhone header so it never overlaps Logout. */
-    top: calc(68px + env(safe-area-inset-top));
+    /* Put the exit control in the lower-right, clear of the iPhone header/logout controls. */
+    top: auto;
     right: 14px;
+    bottom: calc(82px + env(safe-area-inset-bottom));
   }
 
   html, body { width:100%; min-width:0; overflow-x:hidden; }
