@@ -75,6 +75,19 @@ body {
     transform 8s ease;
 }
 
+#backgroundImageNext {
+  position: absolute;
+  inset: -5%;
+  width: 110%;
+  height: 110%;
+  object-fit: cover;
+  filter: blur(18px) brightness(0.55) saturate(1.2);
+  transform: scale(1.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.15s cubic-bezier(.22,.61,.36,1), filter 1.15s ease, transform 8s ease;
+}
+
 #backgroundOverlay {
   position: absolute;
   inset: 0;
@@ -1770,6 +1783,55 @@ body.modeLyrics #backgroundOverlay {
     linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.42));
 }
 
+/* Device-aware Lyrics layout: generous on PC, compact and thumb-friendly on phones. */
+body.devicePC #lyricsView {
+  padding-left: clamp(48px, 7vw, 110px);
+  padding-right: clamp(48px, 7vw, 110px);
+}
+body.devicePC #lyricsInner {
+  width: min(980px, 100%);
+}
+body.devicePC .lyricsLine {
+  font-size: clamp(34px, 3.7vw, 54px);
+  padding: 20px 0;
+}
+
+body.devicePhone #lyricsView {
+  padding-left: max(20px, calc(16px + env(safe-area-inset-left)));
+  padding-right: max(20px, calc(16px + env(safe-area-inset-right)));
+  padding-top: max(84px, calc(11vh + env(safe-area-inset-top)));
+  padding-bottom: max(88px, calc(12vh + env(safe-area-inset-bottom)));
+}
+body.devicePhone #lyricsInner {
+  width: 100%;
+  padding-top: 38vh;
+  padding-bottom: 38vh;
+}
+body.devicePhone .lyricsLine {
+  max-width: 100%;
+  font-size: clamp(26px, 7.2vw, 38px);
+  line-height: 1.14;
+  padding: 13px 0;
+  letter-spacing: -0.02em;
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  body.devicePhone #lyricsView {
+    padding-left: max(24px, calc(18px + env(safe-area-inset-left)));
+    padding-right: max(24px, calc(18px + env(safe-area-inset-right)));
+    padding-top: max(58px, calc(7vh + env(safe-area-inset-top)));
+    padding-bottom: max(60px, calc(8vh + env(safe-area-inset-bottom)));
+  }
+  body.devicePhone #lyricsInner {
+    padding-top: 30vh;
+    padding-bottom: 30vh;
+  }
+  body.devicePhone .lyricsLine {
+    font-size: clamp(22px, 4.8vh, 32px);
+    padding: 9px 0;
+  }
+}
+
 /* =========================
    VINYL MODE
 ========================= */
@@ -1811,14 +1873,14 @@ body.modeVinyl #backgroundOverlay {
   aspect-ratio: 1;
   border-radius: 50%;
   background:
-    repeating-radial-gradient(
-      circle,
-      #111 0 2px,
-      #181818 3px 4px
-    );
+    radial-gradient(circle at 36% 30%, rgba(255,255,255,0.10), transparent 16%),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.035) 0 9%, transparent 9.5%),
+    repeating-radial-gradient(circle, #0d0d0d 0 1.5px, #171717 2px 3.5px);
+  border: 1px solid rgba(255,255,255,0.10);
   box-shadow:
-    0 35px 100px rgba(0,0,0,0.75),
-    0 0 90px var(--ambient1, rgba(255,255,255,0.10));
+    0 35px 100px rgba(0,0,0,0.78),
+    0 0 90px var(--ambient1, rgba(255,255,255,0.10)),
+    inset 0 0 55px rgba(0,0,0,0.72);
   animation: vinylSpin 7s linear infinite;
   animation-play-state: paused;
   transform: translateZ(0);
@@ -1930,10 +1992,12 @@ body.modeVinyl #trackInfo {
   position: absolute;
   inset: 4.5%;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+  background: linear-gradient(125deg, rgba(255,255,255,0.13), transparent 22%, transparent 68%, rgba(255,255,255,0.035));
   box-shadow:
     inset 0 0 0 2px rgba(0,0,0,0.35),
-    inset 0 0 45px rgba(0,0,0,0.55);
+    inset 0 0 45px rgba(0,0,0,0.55),
+    0 0 22px rgba(255,255,255,0.025);
 }
 
 .vinylRecord::after {
@@ -3414,6 +3478,7 @@ body.ambientScreensaver #backgroundOverlay { background:rgba(0,0,0,.52); }
 
 <div id="background">
   <img id="backgroundImage" src="" alt="">
+  <img id="backgroundImageNext" src="" alt="" aria-hidden="true">
   <div id="backgroundOverlay"></div>
   <div id="ambientGlow"></div>
 </div>
@@ -4148,6 +4213,9 @@ const logoutButton =
 
 const backgroundImage =
   document.getElementById("backgroundImage");
+
+const backgroundImageNext =
+  document.getElementById("backgroundImageNext");
 
 const albumArt =
   document.getElementById("albumArt");
@@ -6325,6 +6393,44 @@ function renderHistory() {
    DOMINANT COLOUR
 ========================= */
 
+let ambientTransitionFrame = null;
+
+function transitionAmbientColours(targetR, targetG, targetB, duration = 1200) {
+  const root = document.documentElement;
+  const current = {
+    r: Number(root.dataset.ambientR ?? targetR),
+    g: Number(root.dataset.ambientG ?? targetG),
+    b: Number(root.dataset.ambientB ?? targetB)
+  };
+
+  root.dataset.ambientR = String(targetR);
+  root.dataset.ambientG = String(targetG);
+  root.dataset.ambientB = String(targetB);
+
+  if (ambientTransitionFrame) cancelAnimationFrame(ambientTransitionFrame);
+  const start = performance.now();
+  const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+  function frame(now) {
+    const t = Math.min(1, (now - start) / duration);
+    const e = ease(t);
+    const r = Math.round(current.r + (targetR - current.r) * e);
+    const g = Math.round(current.g + (targetG - current.g) * e);
+    const b = Math.round(current.b + (targetB - current.b) * e);
+    const primary = `rgba(${r},${g},${b},0.38)`;
+    const secondary = `rgba(${Math.min(255,r+35)},${Math.min(255,g+35)},${Math.min(255,b+35)},0.24)`;
+    const ambient3 = `rgba(${Math.max(0,255-r)},${Math.max(0,255-g)},${Math.max(0,255-b)},0.10)`;
+    const ambient4 = `rgba(${Math.round((r+255)/2)},${Math.round((g+255)/2)},${Math.round((b+255)/2)},0.08)`;
+    root.style.setProperty("--ambient1", primary);
+    root.style.setProperty("--ambient2", secondary);
+    root.style.setProperty("--ambient3", ambient3);
+    root.style.setProperty("--ambient4", ambient4);
+    startVisualizerColours(r,g,b);
+    if (t < 1) ambientTransitionFrame = requestAnimationFrame(frame);
+  }
+  ambientTransitionFrame = requestAnimationFrame(frame);
+}
+
 function extractDominantColours(
   imageUrl
 ) {
@@ -6456,31 +6562,7 @@ function extractDominantColours(
         const ambient4 =
           `rgba(${Math.round((r + 255) / 2)},${Math.round((g + 255) / 2)},${Math.round((b + 255) / 2)},0.08)`;
 
-        document.documentElement.style.setProperty(
-          "--ambient1",
-          primary
-        );
-
-        document.documentElement.style.setProperty(
-          "--ambient2",
-          secondary
-        );
-
-        document.documentElement.style.setProperty(
-          "--ambient3",
-          ambient3
-        );
-
-        document.documentElement.style.setProperty(
-          "--ambient4",
-          ambient4
-        );
-
-        startVisualizerColours(
-          r,
-          g,
-          b
-        );
+        transitionAmbientColours(r, g, b, 1250);
 
       } catch (error) {
 
@@ -6741,6 +6823,23 @@ visualizerAnimation =
   requestAnimationFrame(
     drawVisualizer
   );
+
+
+/* =========================
+   DISPLAY DEVICE DETECTION
+========================= */
+
+function updateDeviceClass() {
+  const phone =
+    window.innerWidth <= 600 ||
+    (window.matchMedia && window.matchMedia("(pointer: coarse)").matches && window.innerWidth <= 900);
+
+  document.body.classList.toggle("devicePhone", phone);
+  document.body.classList.toggle("devicePC", !phone);
+}
+
+updateDeviceClass();
+window.addEventListener("resize", updateDeviceClass);
 
 
 /* =========================
@@ -8282,11 +8381,25 @@ function updateArtwork(
   vinylArtwork.src =
     image;
 
-  backgroundImage.src =
-    image;
+  if (backgroundImageNext) {
+    backgroundImageNext.onload = () => {
+      backgroundImageNext.style.opacity = "1";
+      backgroundImageNext.style.transform = "scale(1.12)";
+      backgroundImage.style.opacity = "0";
 
-  backgroundImage.style.opacity =
-    "1";
+      setTimeout(() => {
+        backgroundImage.src = image;
+        backgroundImage.style.opacity = "1";
+        backgroundImage.style.transform = "scale(1.08)";
+        backgroundImageNext.style.opacity = "0";
+        backgroundImageNext.style.transform = "scale(1.08)";
+      }, 80);
+    };
+    backgroundImageNext.src = image;
+  } else {
+    backgroundImage.src = image;
+    backgroundImage.style.opacity = "1";
+  }
 
   albumArtDisplay.style.opacity =
     "1";
