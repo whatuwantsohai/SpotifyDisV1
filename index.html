@@ -1399,11 +1399,18 @@ body.lyricsFocusMode #lyricsView {
 }
 
 /* Universal UI hiding: hide only interface controls, never the player/artwork/lyrics. */
-#universalUiDock {
+#sessionControls {
   position: fixed;
   left: max(25px, env(safe-area-inset-left));
   bottom: max(20px, env(safe-area-inset-bottom));
   z-index: 210;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#universalUiDock {
+  position: static;
   display: flex;
   align-items: center;
 }
@@ -1438,8 +1445,7 @@ body.uiHidden #displayModeMenu,
 body.uiHidden #queuePanel,
 body.uiHidden #historyPanel,
 body.uiHidden #settingsPanel,
-body.uiHidden #playlistDropdown,
-body.uiHidden #sessionBadge {
+body.uiHidden #playlistDropdown {
   opacity: 0 !important;
   pointer-events: none !important;
 }
@@ -3487,10 +3493,6 @@ body.modeVisualizer #albumArtContainer {
      DISPLAY MODE MENU
 ========================= -->
 
-<div id="universalUiDock">
-  <button id="hideUiButton" class="lyricsToolButton universalHideButton" type="button" aria-label="Hide interface" title="Hide interface">Hide UI</button>
-</div>
-
 <div id="displayModeMenu">
 
   <div class="displayModeTitle">
@@ -3775,8 +3777,13 @@ body.modeVisualizer #albumArtContainer {
 
 </div>
 
-<div id="sessionBadge">
-  0 tracks · 0:00
+<div id="sessionControls">
+  <div id="sessionBadge">
+    0 tracks · 0:00
+  </div>
+  <div id="universalUiDock">
+    <button id="hideUiButton" class="lyricsToolButton universalHideButton" type="button" aria-label="Hide interface" title="Hide interface">Hide UI</button>
+  </div>
 </div>
 
 <!-- =========================
