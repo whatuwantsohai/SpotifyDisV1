@@ -282,16 +282,15 @@ body {
 #playlistSelector {
   position: relative;
 
-  display: inline-flex;
-  align-items: center;
+  display: block;
 
-  margin-top: 7px;
+  margin-top: 10px;
 }
 
 #playlistButton {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 9px;
 
   padding: 0;
 
@@ -319,8 +318,8 @@ body {
 }
 
 #playlistArrow {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
 
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
@@ -1443,10 +1442,6 @@ body {
 
 <script>
 
-/* =========================
-   SPOTIFY CONFIG
-========================= */
-
 const CLIENT_ID =
   "3f16de704ed44b8aac1ce33d94c4db45";
 
@@ -1458,11 +1453,6 @@ const SCOPES = [
   "user-read-playback-state",
   "user-modify-playback-state"
 ].join(" ");
-
-
-/* =========================
-   ELEMENTS
-========================= */
 
 const connectScreen =
   document.getElementById("connectScreen");
@@ -1536,11 +1526,6 @@ const deviceName =
 const clock =
   document.getElementById("clock");
 
-
-/* =========================
-   PKCE
-========================= */
-
 function generateRandomString(length) {
 
   const characters =
@@ -1562,7 +1547,6 @@ function generateRandomString(length) {
   return result;
 }
 
-
 async function sha256(plain) {
 
   const encoder =
@@ -1577,7 +1561,6 @@ async function sha256(plain) {
   );
 }
 
-
 function base64encode(input) {
 
   return btoa(
@@ -1591,7 +1574,6 @@ function base64encode(input) {
 
 }
 
-
 async function generateCodeChallenge(verifier) {
 
   const hashed =
@@ -1600,11 +1582,6 @@ async function generateCodeChallenge(verifier) {
   return base64encode(hashed);
 
 }
-
-
-/* =========================
-   LOGIN
-========================= */
 
 async function login() {
 
@@ -1647,11 +1624,6 @@ async function login() {
     params.toString();
 
 }
-
-
-/* =========================
-   TOKEN
-========================= */
 
 async function exchangeCode(code) {
 
@@ -1727,7 +1699,6 @@ async function exchangeCode(code) {
 
 }
 
-
 async function refreshToken() {
 
   const refresh =
@@ -1786,11 +1757,6 @@ async function refreshToken() {
 
 }
 
-
-/* =========================
-   API
-========================= */
-
 async function spotifyFetch(endpoint, options = {}) {
 
   const token =
@@ -1814,6 +1780,7 @@ async function spotifyFetch(endpoint, options = {}) {
             "Bearer " + token,
 
           ...(options.headers || {})
+
         }
 
       }
@@ -1846,11 +1813,6 @@ async function spotifyFetch(endpoint, options = {}) {
 
 }
 
-
-/* =========================
-   PLAYLIST
-========================= */
-
 async function getPlaylistName(
   contextUri
 ) {
@@ -1882,16 +1844,10 @@ async function getPlaylistName(
 
 }
 
-
-/* =========================
-   GET USER PLAYLISTS
-========================= */
-
 let userPlaylists = [];
 
 let playlistsLoaded =
   false;
-
 
 async function loadPlaylists() {
 
@@ -1926,7 +1882,6 @@ async function loadPlaylists() {
   renderPlaylists();
 
 }
-
 
 function renderPlaylists() {
 
@@ -1991,7 +1946,6 @@ function renderPlaylists() {
 
 }
 
-
 function updatePlaylistSelection() {
 
   const current =
@@ -2038,7 +1992,6 @@ function updatePlaylistSelection() {
   );
 
 }
-
 
 async function playPlaylist(
   playlist
@@ -2089,7 +2042,6 @@ async function playPlaylist(
 
 }
 
-
 function escapeHtml(text) {
 
   const div =
@@ -2103,11 +2055,6 @@ function escapeHtml(text) {
   return div.innerHTML;
 
 }
-
-
-/* =========================
-   PLAYLIST DROPDOWN
-========================= */
 
 function openPlaylistDropdown() {
 
@@ -2128,7 +2075,6 @@ function openPlaylistDropdown() {
 
 }
 
-
 function closePlaylistDropdown() {
 
   playlistSelector.classList.remove(
@@ -2141,7 +2087,6 @@ function closePlaylistDropdown() {
   );
 
 }
-
 
 playlistButton.addEventListener(
   "click",
@@ -2166,7 +2111,6 @@ playlistButton.addEventListener(
   }
 );
 
-
 playlistDropdown.addEventListener(
   "click",
   event => {
@@ -2176,7 +2120,6 @@ playlistDropdown.addEventListener(
   }
 );
 
-
 document.addEventListener(
   "click",
   () => {
@@ -2185,11 +2128,6 @@ document.addEventListener(
 
   }
 );
-
-
-/* =========================
-   TIME
-========================= */
 
 function formatTime(ms) {
 
@@ -2221,11 +2159,6 @@ function formatTime(ms) {
 
 }
 
-
-/* =========================
-   CLOCK
-========================= */
-
 function updateClock() {
 
   const now =
@@ -2250,11 +2183,6 @@ setInterval(
 );
 
 updateClock();
-
-
-/* =========================
-   STATUS
-========================= */
 
 function updateStatus(
   isPlaying
@@ -2287,7 +2215,6 @@ function updateStatus(
 
 }
 
-
 function updateStatusAndButton(
   isPlaying
 ) {
@@ -2301,11 +2228,6 @@ function updateStatusAndButton(
   );
 
 }
-
-
-/* =========================
-   PLAY BUTTON
-========================= */
 
 function updatePlayButton(
   isPlaying
@@ -2325,11 +2247,6 @@ function updatePlayButton(
 
 }
 
-
-/* =========================
-   CURRENT TRACK
-========================= */
-
 let currentTrackId =
   null;
 
@@ -2344,7 +2261,6 @@ let progressUpdatedAt =
 
 let progressTimer =
   null;
-
 
 async function showPlaying(data) {
 
@@ -2497,11 +2413,6 @@ async function showPlaying(data) {
 
 }
 
-
-/* =========================
-   PROGRESS TIMER
-========================= */
-
 function updateProgress() {
 
   if (!currentDuration)
@@ -2550,11 +2461,6 @@ progressTimer =
     250
   );
 
-
-/* =========================
-   POLLING
-========================= */
-
 async function updatePlayer() {
 
   const data =
@@ -2575,7 +2481,6 @@ async function updatePlayer() {
 let pollingInterval =
   null;
 
-
 function startSpotify() {
 
   connectScreen.style.display =
@@ -2595,11 +2500,6 @@ function startSpotify() {
 
 }
 
-
-/* =========================
-   CONTROLS
-========================= */
-
 previousButton.addEventListener(
   "click",
   async () => {
@@ -2618,7 +2518,6 @@ previousButton.addEventListener(
 
   }
 );
-
 
 playButton.addEventListener(
   "click",
@@ -2646,7 +2545,6 @@ playButton.addEventListener(
   }
 );
 
-
 nextButton.addEventListener(
   "click",
   async () => {
@@ -2665,11 +2563,6 @@ nextButton.addEventListener(
 
   }
 );
-
-
-/* =========================
-   SEEK
-========================= */
 
 progressBar.addEventListener(
   "click",
@@ -2717,14 +2610,8 @@ progressBar.addEventListener(
   }
 );
 
-
-/* =========================
-   VOLUME
-========================= */
-
 let lastVolume =
   100;
-
 
 function updateVolumeIcon() {
 
@@ -2751,7 +2638,6 @@ function updateVolumeIcon() {
   }
 
 }
-
 
 volumeSlider.addEventListener(
   "input",
@@ -2780,7 +2666,6 @@ volumeSlider.addEventListener(
 
   }
 );
-
 
 volumeIcon.addEventListener(
   "click",
@@ -2837,11 +2722,6 @@ volumeIcon.addEventListener(
   }
 );
 
-
-/* =========================
-   LOGOUT
-========================= */
-
 function logout() {
 
   localStorage.removeItem(
@@ -2864,11 +2744,6 @@ function logout() {
   );
 
 }
-
-
-/* =========================
-   AUTH CALLBACK
-========================= */
 
 async function handleCallback() {
 
@@ -2894,16 +2769,10 @@ async function handleCallback() {
 
 }
 
-
-/* =========================
-   START
-========================= */
-
 connectButton.addEventListener(
   "click",
   login
 );
-
 
 (async () => {
 
