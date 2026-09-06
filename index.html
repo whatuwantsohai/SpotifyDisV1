@@ -387,33 +387,6 @@
 
 
     /* =====================================================
-       CURRENT TIME CLOCK
-    ===================================================== */
-
-    #clock {
-      position: absolute;
-
-      left: 50%;
-
-      transform: translateX(-50%);
-
-      font-size: 18px;
-
-      font-weight: 600;
-
-      letter-spacing: 0.2px;
-
-      color:
-        rgba(255,255,255,0.88);
-
-      text-shadow:
-        0 2px 15px rgba(0,0,0,0.65);
-
-      white-space: nowrap;
-    }
-
-
-    /* =====================================================
        STATUS AREA
     ===================================================== */
 
@@ -425,6 +398,26 @@
       justify-content: flex-end;
 
       gap: 10px;
+    }
+
+
+    /* =====================================================
+       CURRENT CLOCK
+    ===================================================== */
+
+    #clock {
+      color: white;
+
+      font-size: 18px;
+
+      font-weight: 700;
+
+      letter-spacing: -0.4px;
+
+      white-space: nowrap;
+
+      text-shadow:
+        0 2px 15px rgba(0,0,0,0.65);
     }
 
 
@@ -522,6 +515,23 @@
 
 
     /* =====================================================
+       NOW PLAYING LAYOUT
+    ===================================================== */
+
+    #nowPlayingLayout {
+      width: min(1100px, 86vw);
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: flex-start;
+
+      gap: clamp(45px, 6vw, 90px);
+    }
+
+
+    /* =====================================================
        PLAYING AREA
     ===================================================== */
 
@@ -535,6 +545,56 @@
       align-items: flex-start;
 
       justify-content: center;
+
+      flex-shrink: 0;
+    }
+
+
+    /* =====================================================
+       SQUARE ALBUM ART
+    ===================================================== */
+
+    #albumArtContainer {
+      width: clamp(260px, 28vw, 390px);
+
+      aspect-ratio: 1 / 1;
+
+      flex-shrink: 0;
+
+      border-radius: 22px;
+
+      overflow: hidden;
+
+      background:
+        rgba(255,255,255,0.06);
+
+      border:
+        1px solid rgba(255,255,255,0.12);
+
+      box-shadow:
+        0 25px 70px rgba(0,0,0,0.55),
+        0 8px 30px rgba(0,0,0,0.35);
+
+      transform:
+        translateZ(0);
+
+      position: relative;
+    }
+
+
+    #albumArtDisplay {
+      width: 100%;
+      height: 100%;
+
+      display: block;
+
+      object-fit: cover;
+
+      background: #111;
+
+      transition:
+        opacity 0.4s ease,
+        transform 0.6s ease;
     }
 
 
@@ -932,9 +992,7 @@
     }
 
 
-    /* =====================================================
-       CSS VOLUME ICON
-    ===================================================== */
+    /* CSS VOLUME ICON */
 
     .volumeIcon {
       width: 19px;
@@ -1132,13 +1190,13 @@
       }
 
 
-      #clock {
-        font-size: 15px;
+      #statusArea {
+        gap: 6px;
       }
 
 
-      #statusArea {
-        gap: 6px;
+      #clock {
+        font-size: 15px;
       }
 
 
@@ -1157,6 +1215,34 @@
           10px;
 
         font-size: 9px;
+      }
+
+
+      #nowPlayingLayout {
+        width: 100%;
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        justify-content: center;
+
+        gap: 25px;
+
+        overflow-y: auto;
+
+        max-height: 100%;
+      }
+
+
+      #albumArtContainer {
+        width: min(55vw, 280px);
+
+        align-self: center;
+
+        order: -1;
+
+        border-radius: 18px;
       }
 
 
@@ -1233,9 +1319,20 @@
       }
 
 
+      #nowPlayingLayout {
+        gap: 40px;
+      }
+
+
       #playing {
         width:
           min(600px, 50vw);
+      }
+
+
+      #albumArtContainer {
+        width:
+          min(30vw, 280px);
       }
 
 
@@ -1275,11 +1372,6 @@
       #volumeContainer {
         margin-top: 10px;
       }
-
-
-      #clock {
-        font-size: 15px;
-      }
     }
 
 
@@ -1296,6 +1388,17 @@
           45px
           7vw
           20px;
+      }
+
+
+      #nowPlayingLayout {
+        gap: 25px;
+      }
+
+
+      #albumArtContainer {
+        width:
+          min(28vh, 210px);
       }
 
 
@@ -1339,6 +1442,11 @@
       #playButton {
         width: 48px;
         height: 48px;
+      }
+
+
+      #clock {
+        font-size: 14px;
       }
     }
 
@@ -1387,10 +1495,16 @@
 
   <div id="app">
 
+    <!-- FULLSCREEN ALBUM ART -->
+
     <div id="background"></div>
+
+    <!-- FADE -->
 
     <div id="backgroundOverlay"></div>
 
+
+    <!-- CONTENT -->
 
     <div id="content">
 
@@ -1404,14 +1518,11 @@
         </div>
 
 
-        <!-- LIVE CURRENT TIME -->
-
-        <div id="clock">
-          8:00 PM
-        </div>
-
-
         <div id="statusArea">
+
+          <div id="clock">
+            --:--
+          </div>
 
           <div id="deviceName">
             —
@@ -1431,137 +1542,159 @@
 
       <!-- NOW PLAYING -->
 
-      <div id="playing">
+      <div id="nowPlayingLayout">
 
 
-        <!-- Kept for JavaScript compatibility -->
+        <!-- TRACK INFORMATION / CONTROLS -->
 
-        <img
-          id="albumArt"
-          src=""
-          alt="Album artwork"
-        >
+        <div id="playing">
 
 
-        <!-- TRACK INFORMATION -->
+          <!-- Kept for JavaScript compatibility -->
 
-        <div id="trackInfo">
+          <img
+            id="albumArt"
+            src=""
+            alt="Album artwork"
+          >
 
-          <div id="trackName">
-            Nothing Playing
+
+          <!-- TRACK INFORMATION -->
+
+          <div id="trackInfo">
+
+            <div id="trackName">
+              Nothing Playing
+            </div>
+
+            <div id="artistName">
+              —
+            </div>
+
+            <div id="playlistName">
+              No playlist
+            </div>
+
           </div>
 
-          <div id="artistName">
-            —
+
+          <!-- PROGRESS -->
+
+          <div id="progressContainer">
+
+            <div id="progressBar">
+
+              <div id="progress"></div>
+
+            </div>
+
+
+            <div id="time">
+
+              <span id="currentTime">
+                0:00
+              </span>
+
+              <span id="duration">
+                0:00
+              </span>
+
+            </div>
+
           </div>
 
-          <div id="playlistName">
-            No playlist
+
+          <!-- CONTROLS -->
+
+          <div id="controls">
+
+            <button
+              class="control"
+              id="previousButton"
+              type="button"
+              title="Previous"
+              aria-label="Previous track"
+            >
+              <span class="icon-previous"></span>
+            </button>
+
+
+            <button
+              class="control"
+              id="playButton"
+              type="button"
+              title="Play / Pause"
+              aria-label="Play or pause"
+            >
+              <span class="icon-play"></span>
+            </button>
+
+
+            <button
+              class="control"
+              id="nextButton"
+              type="button"
+              title="Next"
+              aria-label="Next track"
+            >
+              <span class="icon-next"></span>
+            </button>
+
+          </div>
+
+
+          <!-- VOLUME -->
+
+          <div id="volumeContainer">
+
+            <button
+              id="volumeButton"
+              type="button"
+              title="Mute"
+              aria-label="Mute"
+            >
+
+              <span class="volumeIcon">
+
+                <span class="volumeWave"></span>
+
+                <span class="volumeWave large"></span>
+
+              </span>
+
+            </button>
+
+
+            <input
+              id="volumeSlider"
+              type="range"
+              min="0"
+              max="100"
+              value="50"
+              step="1"
+            >
+
+
+            <span id="volumePercentage">
+              50%
+            </span>
+
           </div>
 
         </div>
 
 
-        <!-- PROGRESS -->
+        <!-- =================================================
+             SQUARE ALBUM ART
+        ================================================= -->
 
-        <div id="progressContainer">
+        <div id="albumArtContainer">
 
-          <div id="progressBar">
-
-            <div id="progress"></div>
-
-          </div>
-
-
-          <div id="time">
-
-            <span id="currentTime">
-              0:00
-            </span>
-
-            <span id="duration">
-              0:00
-            </span>
-
-          </div>
-
-        </div>
-
-
-        <!-- CONTROLS -->
-
-        <div id="controls">
-
-          <button
-            class="control"
-            id="previousButton"
-            type="button"
-            title="Previous"
-            aria-label="Previous track"
+          <img
+            id="albumArtDisplay"
+            src=""
+            alt="Current album artwork"
           >
-            <span class="icon-previous"></span>
-          </button>
-
-
-          <button
-            class="control"
-            id="playButton"
-            type="button"
-            title="Play / Pause"
-            aria-label="Play or pause"
-          >
-            <span class="icon-play"></span>
-          </button>
-
-
-          <button
-            class="control"
-            id="nextButton"
-            type="button"
-            title="Next"
-            aria-label="Next track"
-          >
-            <span class="icon-next"></span>
-          </button>
-
-        </div>
-
-
-        <!-- VOLUME -->
-
-        <div id="volumeContainer">
-
-          <button
-            id="volumeButton"
-            type="button"
-            title="Mute"
-            aria-label="Mute"
-          >
-
-            <span class="volumeIcon">
-
-              <span class="volumeWave"></span>
-
-              <span class="volumeWave large"></span>
-
-            </span>
-
-          </button>
-
-
-          <input
-            id="volumeSlider"
-            type="range"
-            min="0"
-            max="100"
-            value="50"
-            step="1"
-          >
-
-
-          <span id="volumePercentage">
-            50%
-          </span>
 
         </div>
 
@@ -1637,6 +1770,18 @@
     const albumArt =
       document.getElementById(
         "albumArt"
+      );
+
+
+    const albumArtDisplay =
+      document.getElementById(
+        "albumArtDisplay"
+      );
+
+
+    const albumArtContainer =
+      document.getElementById(
+        "albumArtContainer"
       );
 
 
@@ -1776,37 +1921,6 @@
     let syncedIsPlaying = false;
 
     let syncTimestamp = Date.now();
-
-
-    /* =====================================================
-       LIVE CURRENT CLOCK
-    ===================================================== */
-
-    function updateClock() {
-
-      const now =
-        new Date();
-
-
-      clock.textContent =
-        now.toLocaleTimeString(
-          [],
-          {
-            hour: "numeric",
-            minute: "2-digit"
-          }
-        );
-
-    }
-
-
-    updateClock();
-
-
-    setInterval(
-      updateClock,
-      1000
-    );
 
 
     /* =====================================================
@@ -1992,6 +2106,10 @@
 
     }
 
+
+    /* =====================================================
+       INLINE BUTTON SUPPORT
+    ===================================================== */
 
     window.login = login;
 
@@ -2552,6 +2670,14 @@
         background.style.backgroundImage =
           `url("${image}")`;
 
+
+        /* =================================================
+           SQUARE ALBUM ART
+        ================================================= */
+
+        albumArtDisplay.src =
+          image;
+
       }
 
 
@@ -2570,20 +2696,16 @@
       currentTrackId =
         track.id || null;
 
-
       syncedProgressMs =
         trackProgress;
 
-
       syncedDurationMs =
         trackDuration;
-
 
       syncedIsPlaying =
         Boolean(
           data.is_playing
         );
-
 
       syncTimestamp =
         Date.now();
@@ -2596,15 +2718,6 @@
 
 
       updatePlaybackDisplay();
-
-
-      /* ===================================================
-         PLAY BUTTON
-      =================================================== */
-
-      updatePlayButton(
-        data.is_playing
-      );
 
 
       /* ===================================================
@@ -2634,6 +2747,11 @@
       =================================================== */
 
       updateStatus(
+        data.is_playing
+      );
+
+
+      updatePlayButton(
         data.is_playing
       );
 
@@ -2692,22 +2810,6 @@
         );
 
       }
-
-    }
-
-
-    /* =====================================================
-       PLAY BUTTON ICON
-    ===================================================== */
-
-    function updatePlayButton(
-      isPlaying
-    ) {
-
-      playButton.innerHTML =
-        isPlaying
-          ? '<span class="icon-pause"></span>'
-          : '<span class="icon-play"></span>';
 
     }
 
@@ -2812,34 +2914,11 @@
       syncedProgressMs =
         0;
 
-
       syncedDurationMs =
         0;
 
-
       syncedIsPlaying =
         false;
-
-
-      syncTimestamp =
-        Date.now();
-
-
-      updatePlayButton(
-        false
-      );
-
-
-      currentTime.textContent =
-        "0:00";
-
-
-      duration.textContent =
-        "0:00";
-
-
-      progress.style.width =
-        "0%";
 
     }
 
@@ -2878,6 +2957,29 @@
             "0"
           )
       );
+
+    }
+
+
+    /* =====================================================
+       CURRENT REAL-WORLD CLOCK
+    ===================================================== */
+
+    function updateClock() {
+
+      const now =
+        new Date();
+
+
+      clock.textContent =
+        now.toLocaleTimeString(
+          [],
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          }
+        );
 
     }
 
@@ -3107,22 +3209,20 @@
         syncedProgressMs =
           position;
 
-
         syncedDurationMs =
           durationMs;
-
 
         syncedIsPlaying =
           Boolean(
             data.is_playing
           );
 
-
         syncTimestamp =
           Date.now();
 
 
         updatePlaybackDisplay();
+
 
       }
 
@@ -3135,6 +3235,45 @@
         );
 
       }
+
+    }
+
+
+    /* =====================================================
+       PLAY BUTTON ICON
+    ===================================================== */
+
+    function updatePlayButton(
+      isPlaying
+    ) {
+
+      playButton.innerHTML =
+        isPlaying
+          ? '<span class="icon-pause"></span>'
+          : '<span class="icon-play"></span>';
+
+    }
+
+
+    /* =====================================================
+       STATUS + PLAY BUTTON SYNC
+    ===================================================== */
+
+    const originalUpdateStatus =
+      updateStatus;
+
+
+    function updateStatusAndButton(
+      isPlaying
+    ) {
+
+      originalUpdateStatus(
+        isPlaying
+      );
+
+      updatePlayButton(
+        isPlaying
+      );
 
     }
 
@@ -3553,6 +3692,9 @@
        INITIALIZE
     ===================================================== */
 
+    updateClock();
+
+
     (async function init() {
 
       await handleCallback();
@@ -3572,11 +3714,22 @@
 
 
     /* =====================================================
-       LIVE TRACK TIMER
+       LIVE CLOCK
+    ===================================================== */
+
+    setInterval(
+      updateClock,
+      1000
+    );
+
+
+    /* =====================================================
+       LIVE TIMER
        
-       Updates locally every 250ms.
-       Spotify is checked every 5 seconds
-       to correct any drift.
+       This runs locally every 250ms.
+       Spotify is still checked every 5 seconds,
+       but the displayed timer doesn't wait for
+       the API request to update.
     ===================================================== */
 
     setInterval(
