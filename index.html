@@ -1289,84 +1289,48 @@ body.modeVisualizer #backgroundOverlay {
 }
 
 /* =========================
-   LYRICS / LYRICS FOCUS
+   FEATURE 25 — LYRICS FOCUS
 ========================= */
 
 body.modeLyrics #header {
+  opacity: 0.35;
+  /* Keep header controls above the lyrics layer so Display / Queue / Settings remain clickable. */
   z-index: 70;
+  transition: opacity 0.25s ease;
+}
+
+body.modeLyrics #header:hover {
+  opacity: 1;
 }
 
 body.modeLyrics #lyricsView {
-  background: radial-gradient(circle at 50% 45%, rgba(255,255,255,0.035), transparent 42%);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255,255,255,0.035), transparent 42%);
 }
 
-.lyricsToolbar {
-  position: fixed;
-  top: max(82px, calc(68px + env(safe-area-inset-top)));
-  right: max(24px, env(safe-area-inset-right));
-  z-index: 80;
-  display: flex;
-  gap: 8px;
+body.modeLyrics .lyricsHint {
+  display: block;
 }
 
-.lyricsToolButton {
-  min-width: 72px;
-  min-height: 40px;
-  padding: 8px 12px;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 999px;
-  background: rgba(20,20,20,0.72);
-  color: rgba(255,255,255,0.82);
-  font: 700 11px/1 inherit;
+body.modeLyrics .lyricsLine {
+  max-width: 1000px;
   cursor: pointer;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
 }
 
-.lyricsToolButton:hover { background: rgba(255,255,255,0.12); color: white; }
-
-body.lyricsFocusMode .lyricsToolbar {
-  top: max(18px, calc(10px + env(safe-area-inset-top)));
-  right: max(18px, calc(10px + env(safe-area-inset-right)));
+body.modeLyrics .lyricsLine:hover {
+  color: rgba(255,255,255,0.65);
 }
 
-body.lyricsFocusMode .lyricsToolButton {
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  padding: 0;
-  font-size: 0;
+body.modeLyrics .lyricsLine.active {
+  filter: drop-shadow(0 8px 30px rgba(0,0,0,0.25));
 }
 
-body.lyricsFocusMode .lyricsToolButton::before {
-  content: "×";
-  font-size: 24px;
-  font-weight: 400;
-}
-
-body.lyricsFocusMode #lyricsView {
-  z-index: 60;
-  padding-top: max(72px, calc(54px + env(safe-area-inset-top)));
-  padding-bottom: max(90px, calc(70px + env(safe-area-inset-bottom)));
-}
-
-body.lyricsFocusMode #header,
-body.lyricsFocusMode #content {
-  opacity: 0;
-  pointer-events: none;
-}
-
-body.lyricsFocusMode #backgroundImage { filter: blur(28px) brightness(0.32) saturate(1.35); }
-body.lyricsFocusMode #backgroundOverlay { background: rgba(0,0,0,0.48); }
-body.lyricsFocusMode .lyricsLine { max-width: 1000px; cursor: pointer; }
-body.lyricsFocusMode .lyricsLine:hover { color: rgba(255,255,255,0.72); }
-body.lyricsFocusMode .lyricsLine.active { filter: drop-shadow(0 8px 30px rgba(0,0,0,0.25)); }
-
+body.modeLyrics
 .lyricsHint {
   display: none;
   position: fixed;
   left: 50%;
-  bottom: max(18px, calc(14px + env(safe-area-inset-bottom)));
+  bottom: 28px;
   transform: translateX(-50%);
   padding: 7px 11px;
   border-radius: 999px;
@@ -1377,8 +1341,6 @@ body.lyricsFocusMode .lyricsLine.active { filter: drop-shadow(0 8px 30px rgba(0,
   pointer-events: none;
   backdrop-filter: blur(12px);
 }
-
-body.modeLyrics .lyricsHint { display: block; }
 
 /* =========================
    FEATURE 29 — BATTERY-CONSCIOUS MODE
@@ -1971,22 +1933,6 @@ body.modeClock #playlistSelector {
 body.modeClock #playing {
   width: 100%;
   text-align: center;
-  display: flex;
-  justify-content: center;
-}
-
-body.modeClock #trackInfo {
-  width: min(900px, 100%);
-  margin-inline: auto;
-  text-align: center;
-}
-
-body.modeClock #trackName,
-body.modeClock #artistName {
-  width: 100%;
-  text-align: center;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 body.modeClock #trackName {
@@ -2178,47 +2124,6 @@ body.modeVisualizer #backgroundImage {
     filter: blur(8px);
   }
 }
-/* =========================
-   LYRICS FOCUS CONTROLS
-========================= */
-
-function exitLyricsFocusMode() {
-  lyricsFocusActive = false;
-  document.body.classList.remove("lyricsFocusMode");
-  if (lyricsFocusButton) {
-    lyricsFocusButton.textContent = "Focus";
-    lyricsFocusButton.setAttribute("aria-label", "Enter lyrics focus mode");
-    lyricsFocusButton.title = "Enter lyrics focus mode";
-  }
-  wakeDisplay();
-}
-
-function enterLyricsFocusMode() {
-  if (appSettings.displayMode !== "lyrics") return;
-  lyricsFocusActive = true;
-  document.body.classList.add("lyricsFocusMode");
-  if (lyricsFocusButton) {
-    lyricsFocusButton.textContent = "×";
-    lyricsFocusButton.setAttribute("aria-label", "Exit lyrics focus mode");
-    lyricsFocusButton.title = "Exit lyrics focus mode";
-  }
-  wakeDisplay();
-}
-
-if (lyricsFocusButton) {
-  lyricsFocusButton.addEventListener("click", () => {
-    if (lyricsFocusActive) exitLyricsFocusMode();
-    else enterLyricsFocusMode();
-  });
-}
-
-window.addEventListener("keydown", event => {
-  if ((event.key === "Escape" || event.key === "Esc") && lyricsFocusActive) {
-    event.preventDefault();
-    exitLyricsFocusMode();
-  }
-});
-
 /* =========================
    DISPLAY MODE MENU
 ========================= */
@@ -3263,6 +3168,14 @@ body.ambientScreensaver #backgroundImage {
 
 /* iPhone 13 / narrow mobile optimization */
 @media (max-width: 430px) {
+  body.modeLyrics #lyricsView {
+    z-index: 50;
+    padding-top: max(86px, calc(74px + env(safe-area-inset-top))) !important;
+    padding-bottom: max(96px, calc(84px + env(safe-area-inset-bottom))) !important;
+  }
+
+  body.modeLyrics
+
   html, body { width:100%; min-width:0; overflow-x:hidden; }
   body { -webkit-text-size-adjust:100%; padding-bottom: env(safe-area-inset-bottom); }
   .app, .shell, .container, main { width:100%; max-width:100%; box-sizing:border-box; }
@@ -3280,9 +3193,6 @@ body.ambientScreensaver #backgroundImage {
   .queueItem .queueActions button { min-width:40px; padding:0 6px; }
   .queueItem .queueMeta, .queueItem small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .lyricsView { padding:0 18px !important; }
-  #lyricsView { padding-left:18px !important; padding-right:18px !important; }
-  .lyricsToolbar { top:max(66px, calc(58px + env(safe-area-inset-top))); right:14px; }
-  body.lyricsFocusMode .lyricsToolbar { top:max(18px, calc(10px + env(safe-area-inset-top))); right:14px; }
   .lyricsInner { max-width:100% !important; padding-bottom:calc(120px + env(safe-area-inset-bottom)); }
   .lyricsLine { font-size:clamp(21px, 6vw, 30px) !important; line-height:1.35 !important; padding:10px 0 !important; }
   .lyricsHint { bottom:calc(12px + env(safe-area-inset-bottom)); font-size:12px; }
@@ -3463,17 +3373,7 @@ body.ambientScreensaver #backgroundImage {
     <span>Visualizer</span>
     <span class="displayModeCheck">✓</span>
   </button>
-
-  <button
-    class="displayModeOption"
-    data-mode="lyrics"
-    type="button"
-  >
-    <span>Lyrics</span>
-    <span class="displayModeCheck">✓</span>
-  </button>
-
-  <button
+<button
     class="displayModeOption"
     data-mode="artworkFull"
     type="button"
@@ -3506,12 +3406,9 @@ body.ambientScreensaver #backgroundImage {
 </div>
 
 <div id="lyricsView" aria-live="polite">
-  <div class="lyricsToolbar">
-    <button id="lyricsFocusButton" type="button" class="lyricsToolButton" aria-label="Enter lyrics focus mode" title="Enter lyrics focus mode">Focus</button>
-  </div>
   <div id="lyricsInner"></div>
   <div id="lyricsFallback">No synced lyrics available.</div>
-  <div class="lyricsHint">Tap a line to seek · Focus hides the interface</div>
+  <div class="lyricsHint">Tap a line to seek</div>
 </div>
 
 <div id="vinylMode" aria-hidden="true">
@@ -4124,9 +4021,6 @@ const lyricsInner =
 const lyricsFallback =
   document.getElementById("lyricsFallback");
 
-const lyricsFocusButton =
-  document.getElementById("lyricsFocusButton");
-
 const vinylArtwork =
   document.getElementById("vinylArtwork");
 
@@ -4203,9 +4097,6 @@ let lyricsLines =
 
 let lyricsActiveIndex =
   -1;
-
-let lyricsFocusActive =
-  false;
 
 /* Feature 19/20: local queue controls.
    Spotify's public queue API is read-only for existing entries, so
@@ -6661,14 +6552,17 @@ function resolveDisplayMode() {
 
 function applySettings() {
 
+  if (appSettings.displayMode === "lyrics") {
+    appSettings.displayMode = "normal";
+  }
+
   document.body.classList.remove(
     "modeMinimal",
     "modeClock",
     "modeArtwork",
     "modeVisualizer",
     "modeArtworkFull",
-    "modeVinyl",
-    "modeLyrics"
+    "modeVinyl"
   );
 
   const activeDisplayMode =
@@ -7154,17 +7048,6 @@ function renderLyrics(lines) {
 
   lyricsActiveIndex =
     -1;
-
-  lyricsInner.querySelectorAll(".lyricsLine").forEach(element => {
-    element.addEventListener("click", () => {
-      const index = Number(element.dataset.index);
-      const line = lyricsLines[index];
-      if (!line) return;
-      seekToPosition(line.time);
-      lyricsActiveIndex = -1;
-      updateLyricsPosition(line.time);
-    });
-  });
 }
 
 function updateLyricsPosition(elapsed) {
@@ -7417,10 +7300,6 @@ displayModeOptions.forEach(
 
         appSettings.displayMode =
           option.dataset.mode;
-
-        if (appSettings.displayMode !== "lyrics") {
-          exitLyricsFocusMode();
-        }
 
         saveSettings();
 
@@ -8671,35 +8550,62 @@ nextButton.addEventListener(
    SEEK
 ========================= */
 
-async function seekToPosition(positionMs) {
-  if (!currentDuration) return;
-
-  const position = Math.max(0, Math.min(currentDuration, Number(positionMs) || 0));
-
-  const result = await spotifyFetch(
-    "/me/player/seek?position_ms=" + Math.floor(position),
-    { method: "PUT" }
-  );
-
-  if (result && result.__spotifyError) return;
-
-  currentProgress = position;
-  progressUpdatedAt = Date.now();
-  updateProgress();
-  wakeDisplay();
-}
-
 progressBar.addEventListener(
   "click",
   async event => {
 
-    if (!currentDuration) return;
+    if (!currentDuration)
+      return;
 
-    const rect = progressBar.getBoundingClientRect();
-    const percentage = (event.clientX - rect.left) / rect.width;
-    const position = Math.max(0, Math.min(1, percentage)) * currentDuration;
+    const rect =
+      progressBar.getBoundingClientRect();
 
-    await seekToPosition(position);
+    const percentage =
+      (
+        event.clientX -
+        rect.left
+      ) /
+      rect.width;
+
+    const position =
+      Math.max(
+        0,
+        Math.min(
+          1,
+          percentage
+        )
+      ) *
+      currentDuration;
+
+    const result =
+      await spotifyFetch(
+        "/me/player/seek?position_ms=" +
+        Math.floor(position),
+        {
+          method:
+            "PUT"
+        }
+      );
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+
+      return;
+
+    }
+
+    currentProgress =
+      position;
+
+    progressUpdatedAt =
+      Date.now();
+
+    updateProgress();
+
+    wakeDisplay();
+
   }
 );
 
@@ -8834,8 +8740,6 @@ volumeIcon.addEventListener(
 ========================= */
 
 function logout() {
-
-  exitLyricsFocusMode();
 
   console.log(
     "Logging out of SpotifyDis..."
