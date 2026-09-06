@@ -3289,7 +3289,8 @@ body.ambientScreensaver #backgroundImage {
   }
 
   body.modeLyrics #lyricsExitButton {
-    top: max(12px, env(safe-area-inset-top));
+    /* Keep the exit control below the iPhone header so it never overlaps Logout. */
+    top: calc(68px + env(safe-area-inset-top));
     right: 14px;
   }
 
