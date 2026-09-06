@@ -3258,6 +3258,38 @@ body.ambientScreensaver #backgroundImage {
     header, nav { padding-top:max(10px, env(safe-area-inset-top)); }
   }
 }
+
+/* Artwork mode: keep track text below the album artwork. */
+body.modeArtwork #trackInfo {
+  margin-top: 28px;
+}
+@media (max-width: 430px) {
+  body.modeArtwork #trackInfo {
+    margin-top: 20px;
+  }
+}
+
+/* Display mode menu: keep all options reachable on short/landscape screens. */
+#displayModeMenu {
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  #displayModeMenu {
+    max-height: calc(100vh - 90px);
+  }
+}
+
+/* Consistent album-art size: Normal and Visualizer match Minimal. */
+body.modeNormal #albumArt,
+body.modeVisualizer #albumArt {
+  width: var(--minimal-art-size, 320px);
+  height: var(--minimal-art-size, 320px);
+  object-fit: cover;
+}
+
 </style>
 </head>
 
