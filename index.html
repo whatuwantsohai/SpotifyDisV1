@@ -1398,11 +1398,11 @@ body.lyricsFocusMode #lyricsView {
   padding-bottom: max(90px, calc(70px + env(safe-area-inset-bottom)));
 }
 
-/* Universal UI hiding: every display mode can enter a clean viewing state. */
+/* Universal UI hiding: hide only interface controls, never the player/artwork/lyrics. */
 #universalUiDock {
   position: fixed;
-  top: max(68px, calc(54px + env(safe-area-inset-top)));
-  left: max(25px, calc(18px + env(safe-area-inset-left)));
+  left: max(25px, env(safe-area-inset-left));
+  bottom: max(20px, env(safe-area-inset-bottom));
   z-index: 210;
   display: flex;
   align-items: center;
@@ -1410,13 +1410,25 @@ body.lyricsFocusMode #lyricsView {
 
 #universalUiDock .universalHideButton {
   min-width: 68px;
+  min-height: 30px;
+  padding: 6px 11px;
+  font-size: 10px;
 }
 
-body.modeLyrics #universalUiDock {
-  left: max(18px, calc(10px + env(safe-area-inset-left) + min(260px, 55vw) + 10px));
+/* Lyrics controls sit below the top-right Logout button instead of crowding it. */
+body.modeLyrics .lyricsToolbar {
+  top: max(64px, calc(52px + env(safe-area-inset-top)));
+  right: max(25px, calc(18px + env(safe-area-inset-right)));
 }
 
-body.uiHidden #header,
+/* Lyrics track info sits directly below the SpotifyDis logo. */
+body.modeLyrics .lyricsTrackInfo {
+  top: max(58px, calc(48px + env(safe-area-inset-top)));
+  left: max(25px, calc(18px + env(safe-area-inset-left)));
+}
+
+/* Hide UI means hide the chrome/buttons/text overlays only. The actual player remains visible. */
+body.uiHidden #headerActions,
 body.uiHidden #universalUiDock,
 body.uiHidden .lyricsTrackInfo,
 body.uiHidden .lyricsToolbar,
@@ -1426,23 +1438,11 @@ body.uiHidden #displayModeMenu,
 body.uiHidden #queuePanel,
 body.uiHidden #historyPanel,
 body.uiHidden #settingsPanel,
-body.uiHidden #playlistDropdown {
+body.uiHidden #playlistDropdown,
+body.uiHidden #sessionBadge {
   opacity: 0 !important;
   pointer-events: none !important;
 }
-
-body.uiHidden #content #trackInfo,
-body.uiHidden #content #progressContainer,
-body.uiHidden #content #controls,
-body.uiHidden #content #volumeContainer,
-body.uiHidden #content #playlistSelector {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-body.uiHidden #lyricsView,
-body.uiHidden #nowPlayingLayout,
-body.uiHidden #vinylMode {
   cursor: pointer;
 }
 
@@ -3323,9 +3323,8 @@ body.ambientScreensaver #backgroundImage {
   .queueItem .queueMeta, .queueItem small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .lyricsView { padding:0 18px !important; }
   #lyricsView { padding-left:18px !important; padding-right:18px !important; }
-  .lyricsTrackInfo { top:max(62px, calc(50px + env(safe-area-inset-top))); left:12px; max-width:56vw; }
-  #universalUiDock { top:max(62px, calc(50px + env(safe-area-inset-top))); left:12px; right:auto; }
-  body.modeLyrics #universalUiDock { left:calc(12px + 48vw + 8px); right:auto; }
+  .lyricsTrackInfo { top:max(58px, calc(48px + env(safe-area-inset-top))); left:12px; max-width:58vw; }
+  #universalUiDock { left:12px; right:auto; bottom:max(12px, env(safe-area-inset-bottom)); }
   .lyricsToolbar { top:max(62px, calc(50px + env(safe-area-inset-top))); right:12px; }
   body.lyricsFocusMode .lyricsToolbar { top:max(62px, calc(50px + env(safe-area-inset-top))); right:12px; }
   .lyricsInner { max-width:100% !important; padding-bottom:calc(120px + env(safe-area-inset-bottom)); }
@@ -3377,13 +3376,13 @@ body.modeArtwork #trackInfo {
 /* Normal + Visualizer: slightly smaller artwork for a cleaner layout. */
 body.modeNormal #albumArtContainer,
 body.modeVisualizer #albumArtContainer {
-  width: clamp(260px, 27vw, 380px);
+  width: clamp(240px, 24vw, 340px);
 }
 
 @media (max-width: 600px) {
   body.modeNormal #albumArtContainer,
   body.modeVisualizer #albumArtContainer {
-    width: min(52vw, 260px);
+    width: min(48vw, 240px);
   }
 }
 
