@@ -7748,11 +7748,18 @@ async function showPlaying(data) {
       .join(", ");
 
 
+  // Treat every different Spotify item as a real track change.  The old
+  // check required currentTrackId to already be truthy, which made the
+  // first observed item and some externally-triggered changes easy to miss.
+  const incomingTrackKey =
+    track.id ||
+    track.uri ||
+    track.href ||
+    `${track.name || ""}\u0000${track.artists?.map(a => a.name).join(",") || ""}`;
+
   const isNewTrack =
-    currentTrackId &&
-    track.id &&
-    currentTrackId !==
-    track.id;
+    currentTrackId !== null &&
+    currentTrackId !== incomingTrackKey;
 
 
   if (isNewTrack) {
@@ -7850,7 +7857,7 @@ async function showPlaying(data) {
 
 
   currentTrackId =
-    track.id;
+    incomingTrackKey;
 
   if (
     isNewTrack ||
@@ -8035,8 +8042,8 @@ function startSpotify() {
       setInterval(
         updatePlayer,
         appSettings.batterySaver
-          ? 30000
-          : 10000
+          ? 15000
+          : (status.classList.contains("playing") ? 3000 : 10000)
       );
 
   }
@@ -8057,12 +8064,23 @@ function restartPlaybackPolling() {
     setInterval(
       updatePlayer,
       appSettings.batterySaver
-        ? 30000
-        : 10000
+        ? 15000
+        : (status.classList.contains("playing") ? 3000 : 10000)
     );
 
 }
 
+
+// Spotify can be controlled from another device. Refresh immediately when
+// this page regains focus/visibility so external skips are reflected without
+// waiting for the next polling tick.
+window.addEventListener("focus", () => {
+  updatePlayer();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) updatePlayer();
+});
 
 /* =========================
    PREVIOUS
@@ -8090,6 +8108,8 @@ previousButton.addEventListener(
       return;
 
     }
+
+    setTimeout(updatePlayer, 400);
 
   }
 );
