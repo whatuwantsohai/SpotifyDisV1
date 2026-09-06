@@ -1626,6 +1626,7 @@ async function sha256(plain) {
     "SHA-256",
     data
   );
+
 }
 
 
@@ -1886,12 +1887,66 @@ async function refreshToken() {
 
 
 /* =========================
-   SPOTIFY FETCH
+   SPOTIFY RATE LIMITING
 ========================= */
+
+/*
+ * Normal 429:
+ * Spotify tells us how long to wait
+ * through Retry-After.
+ */
 
 let spotifyRateLimitUntil =
   0;
 
+
+/*
+ * Development Mode quota:
+ *
+ * QUOTA_EXCEEDED is different from
+ * a normal temporary 30-second
+ * rate limit.
+ *
+ * We use an increasing cooldown so
+ * SpotifyDis does not repeatedly hit
+ * the same exhausted quota bucket.
+ */
+
+let spotifyQuotaExceededUntil =
+  0;
+
+let spotifyQuotaBackoff =
+  60000;
+
+
+/*
+ * Maximum quota cooldown:
+ * 30 minutes.
+ */
+
+const MAX_QUOTA_BACKOFF =
+  30 * 60 * 1000;
+
+
+/*
+ * Playlist cache:
+ * playlists don't need to be downloaded
+ * every time the page opens.
+ */
+
+const PLAYLIST_CACHE_KEY =
+  "spotify_playlists_cache";
+
+const PLAYLIST_CACHE_TIME_KEY =
+  "spotify_playlists_cache_time";
+
+const PLAYLIST_CACHE_TTL =
+  15 * 60 * 1000;
+
+
+/* =========================
+   SPOTIFY FETCH
+========================= */
 
 async function spotifyFetch(
   endpoint,
@@ -1909,11 +1964,7 @@ async function spotifyFetch(
 
 
   /*
-   * Spotify has temporarily rate-limited
-   * this application.
-   *
-   * Do not make another request until
-   * the cooldown has expired.
+   * NORMAL RATE-LIMIT COOLDOWN
    */
 
   if (
@@ -1921,10 +1972,49 @@ async function spotifyFetch(
     spotifyRateLimitUntil
   ) {
 
+    const remaining =
+      Math.ceil(
+        (
+          spotifyRateLimitUntil -
+          Date.now()
+        ) / 1000
+      );
+
     return {
       __spotifyError: true,
       status: 429,
-      rateLimited: true
+      rateLimited: true,
+      retryAfter:
+        remaining
+    };
+
+  }
+
+
+  /*
+   * DEVELOPMENT QUOTA COOLDOWN
+   */
+
+  if (
+    Date.now() <
+    spotifyQuotaExceededUntil
+  ) {
+
+    const remaining =
+      Math.ceil(
+        (
+          spotifyQuotaExceededUntil -
+          Date.now()
+        ) / 1000
+      );
+
+    return {
+      __spotifyError: true,
+      status: 429,
+      rateLimited: true,
+      quotaExceeded: true,
+      retryAfter:
+        remaining
     };
 
   }
@@ -1952,7 +2042,9 @@ async function spotifyFetch(
       );
 
 
-    /* TOKEN EXPIRED */
+    /* =========================
+       TOKEN EXPIRED
+    ========================= */
 
     if (response.status === 401) {
 
@@ -1980,20 +2072,115 @@ async function spotifyFetch(
     }
 
 
-    /* NO CONTENT */
+    /* =========================
+       NO CONTENT
+    ========================= */
 
     if (response.status === 204)
       return null;
 
 
-    /* RATE LIMITED */
+    /* =========================
+       RATE LIMITED / QUOTA
+    ========================= */
 
     if (response.status === 429) {
+
+      let errorData =
+        null;
+
+      try {
+
+        errorData =
+          await response.json();
+
+      } catch (error) {
+
+        errorData =
+          null;
+
+      }
+
+
+      const reason =
+        errorData?.error?.reason ||
+        errorData?.reason ||
+        "";
+
+
+      /*
+       * DEVELOPMENT MODE QUOTA
+       */
+
+      if (
+        reason ===
+        "QUOTA_EXCEEDED"
+      ) {
+
+        const cooldown =
+          spotifyQuotaBackoff;
+
+
+        spotifyQuotaExceededUntil =
+          Date.now() +
+          cooldown;
+
+
+        /*
+         * Increase the cooldown
+         * for the next quota error.
+         */
+
+        spotifyQuotaBackoff =
+          Math.min(
+            spotifyQuotaBackoff * 2,
+            MAX_QUOTA_BACKOFF
+          );
+
+
+        console.error(
+          "Spotify Development Mode quota exceeded."
+        );
+
+        console.error(
+          "SpotifyDis will stop making API requests for " +
+          Math.ceil(
+            cooldown / 60000
+          ) +
+          " minute(s)."
+        );
+
+        console.error(
+          "Spotify response:",
+          errorData
+        );
+
+
+        return {
+          __spotifyError: true,
+          status: 429,
+          rateLimited: true,
+          quotaExceeded: true,
+          retryAfter:
+            Math.ceil(
+              cooldown / 1000
+            ),
+          error:
+            errorData
+        };
+
+      }
+
+
+      /*
+       * NORMAL TEMPORARY RATE LIMIT
+       */
 
       const retryAfterHeader =
         response.headers.get(
           "Retry-After"
         );
+
 
       let retryAfterSeconds =
         Number(
@@ -2022,20 +2209,6 @@ async function spotifyFetch(
         );
 
 
-      let errorData = null;
-
-      try {
-
-        errorData =
-          await response.json();
-
-      } catch (error) {
-
-        errorData = null;
-
-      }
-
-
       console.warn(
         "Spotify API rate limited. Retrying after " +
         retryAfterSeconds +
@@ -2057,11 +2230,14 @@ async function spotifyFetch(
     }
 
 
-    /* OTHER ERROR */
+    /* =========================
+       OTHER ERROR
+    ========================= */
 
     if (!response.ok) {
 
-      let errorData = null;
+      let errorData =
+        null;
 
       try {
 
@@ -2070,9 +2246,11 @@ async function spotifyFetch(
 
       } catch (error) {
 
-        errorData = null;
+        errorData =
+          null;
 
       }
+
 
       console.error(
         "Spotify API error:",
@@ -2080,13 +2258,28 @@ async function spotifyFetch(
         errorData
       );
 
+
       return {
         __spotifyError: true,
-        status: response.status,
-        error: errorData
+        status:
+          response.status,
+        error:
+          errorData
       };
 
     }
+
+
+    /*
+     * Successful Spotify request.
+     *
+     * Reset the quota backoff because
+     * the application is successfully
+     * communicating with Spotify again.
+     */
+
+    spotifyQuotaBackoff =
+      60000;
 
 
     return await response.json();
@@ -2109,23 +2302,177 @@ async function spotifyFetch(
    PLAYLIST DATA
 ========================= */
 
-let userPlaylists = [];
+let userPlaylists =
+  [];
 
-let playlistsLoaded = false;
+let playlistsLoaded =
+  false;
 
 
-/*
- * Spotify returns playlists in pages.
- * This loads every page instead of only
- * the first 50 playlists.
- */
+/* =========================
+   PLAYLIST CACHE
+========================= */
+
+function loadCachedPlaylists() {
+
+  const cached =
+    localStorage.getItem(
+      PLAYLIST_CACHE_KEY
+    );
+
+  const cachedTime =
+    Number(
+      localStorage.getItem(
+        PLAYLIST_CACHE_TIME_KEY
+      ) || 0
+    );
+
+
+  if (
+    !cached ||
+    !cachedTime
+  ) {
+
+    return false;
+
+  }
+
+
+  if (
+    Date.now() -
+    cachedTime >
+    PLAYLIST_CACHE_TTL
+  ) {
+
+    return false;
+
+  }
+
+
+  try {
+
+    const parsed =
+      JSON.parse(
+        cached
+      );
+
+
+    if (
+      !Array.isArray(
+        parsed
+      )
+    ) {
+
+      return false;
+
+    }
+
+
+    userPlaylists =
+      parsed.filter(
+        playlist =>
+          playlist &&
+          playlist.id
+      );
+
+
+    if (
+      !userPlaylists.length
+    ) {
+
+      return false;
+
+    }
+
+
+    playlistsLoaded =
+      true;
+
+
+    renderPlaylists();
+
+
+    console.log(
+      "Loaded playlists from cache."
+    );
+
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      "Playlist cache error:",
+      error
+    );
+
+    return false;
+
+  }
+
+}
+
+
+function cachePlaylists() {
+
+  try {
+
+    localStorage.setItem(
+      PLAYLIST_CACHE_KEY,
+      JSON.stringify(
+        userPlaylists
+      )
+    );
+
+    localStorage.setItem(
+      PLAYLIST_CACHE_TIME_KEY,
+      String(
+        Date.now()
+      )
+    );
+
+  } catch (error) {
+
+    console.warn(
+      "Unable to cache playlists:",
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================
+   LOAD PLAYLISTS
+========================= */
 
 async function loadPlaylists() {
+
+  /*
+   * Use cached playlists first.
+   *
+   * This means opening SpotifyDis
+   * normally does not immediately
+   * request /me/playlists again.
+   */
+
+  if (
+    loadCachedPlaylists()
+  ) {
+
+    return;
+
+  }
+
 
   playlistDropdown.innerHTML =
     '<div id="playlistLoading">Loading playlists...</div>';
 
-  userPlaylists = [];
+
+  userPlaylists =
+    [];
+
 
   let url =
     "/me/playlists?limit=50";
@@ -2136,7 +2483,9 @@ async function loadPlaylists() {
     while (url) {
 
       const data =
-        await spotifyFetch(url);
+        await spotifyFetch(
+          url
+        );
 
 
       if (
@@ -2152,6 +2501,29 @@ async function loadPlaylists() {
 
 
         if (
+          data &&
+          data.quotaExceeded
+        ) {
+
+          /*
+           * If we have an older cache,
+           * use it instead of showing
+           * an empty playlist selector.
+           */
+
+          if (
+            loadCachedPlaylists()
+          ) {
+
+            return;
+
+          }
+
+
+          playlistDropdown.innerHTML =
+            '<div id="playlistLoading">Spotify playlist quota reached</div>';
+
+        } else if (
           data &&
           data.status === 429
         ) {
@@ -2205,6 +2577,10 @@ async function loadPlaylists() {
     playlistsLoaded =
       true;
 
+
+    cachePlaylists();
+
+
     renderPlaylists();
 
 
@@ -2215,8 +2591,10 @@ async function loadPlaylists() {
       error
     );
 
+
     playlistDropdown.innerHTML =
       '<div id="playlistLoading">Unable to load playlists</div>';
+
 
     playlistsLoaded =
       false;
@@ -2229,22 +2607,6 @@ async function loadPlaylists() {
 /* =========================
    PLAYLIST NAME
 ========================= */
-
-/*
- * IMPORTANT:
- *
- * This function ONLY searches the
- * already-loaded playlist list.
- *
- * It NO LONGER calls:
- *
- * /playlists/{playlistId}
- *
- * every time the player updates.
- *
- * This prevents the repeated 429
- * requests that were causing the issue.
- */
 
 function getPlaylistName(
   contextUri
@@ -2275,7 +2637,8 @@ function getPlaylistName(
   const existingPlaylist =
     userPlaylists.find(
       playlist =>
-        playlist.id === playlistId
+        playlist.id ===
+        playlistId
     );
 
 
@@ -2522,65 +2885,6 @@ function updatePlaylistSelection() {
 
 
 /* =========================
-   DETECT CURRENT PLAYLIST
-========================= */
-
-function detectCurrentPlaylist(
-  data
-) {
-
-  if (
-    !data ||
-    data.__spotifyError ||
-    !data.item
-  )
-    return;
-
-
-  const contextUri =
-    data.context?.uri || "";
-
-
-  if (
-    !contextUri.includes(
-      "spotify:playlist:"
-    )
-  )
-    return;
-
-
-  const playlistId =
-    contextUri.split(
-      "spotify:playlist:"
-    )[1];
-
-
-  const playlist =
-    userPlaylists.find(
-      item =>
-        item.id === playlistId
-    );
-
-
-  if (playlist) {
-
-    playlistName.textContent =
-      playlist.name;
-
-    playlistName.dataset.playlistId =
-      playlist.id;
-
-    playlistName.dataset.playlistUri =
-      playlist.uri;
-
-    updatePlaylistSelection();
-
-  }
-
-}
-
-
-/* =========================
    PLAY PLAYLIST
 ========================= */
 
@@ -2598,9 +2902,23 @@ async function playPlaylist(
     );
 
 
+  /*
+   * Do not alter the current UI if
+   * Spotify is rate limited.
+   */
+
   if (
     devices &&
-    !devices.__spotifyError &&
+    devices.__spotifyError
+  ) {
+
+    return;
+
+  }
+
+
+  if (
+    devices &&
     devices.devices
   ) {
 
@@ -2641,56 +2959,78 @@ async function playPlaylist(
     }
 
 
-    await spotifyFetch(
-      "/me/player/play?device_id=" +
-      encodeURIComponent(
-        activeDevice.id
-      ),
-      {
+    const result =
+      await spotifyFetch(
+        "/me/player/play?device_id=" +
+        encodeURIComponent(
+          activeDevice.id
+        ),
+        {
 
-        method:
-          "PUT",
+          method:
+            "PUT",
 
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
 
-        body:
-          JSON.stringify({
+          body:
+            JSON.stringify({
 
-            context_uri:
-              playlist.uri
+              context_uri:
+                playlist.uri
 
-          })
+            })
 
-      }
-    );
+        }
+      );
+
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+
+      return;
+
+    }
 
   } else {
 
-    await spotifyFetch(
-      "/me/player/play",
-      {
+    const result =
+      await spotifyFetch(
+        "/me/player/play",
+        {
 
-        method:
-          "PUT",
+          method:
+            "PUT",
 
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
 
-        body:
-          JSON.stringify({
+          body:
+            JSON.stringify({
 
-            context_uri:
-              playlist.uri
+              context_uri:
+                playlist.uri
 
-          })
+            })
 
-      }
-    );
+        }
+      );
+
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+
+      return;
+
+    }
 
   }
 
@@ -2712,10 +3052,13 @@ async function playPlaylist(
   closePlaylistDropdown();
 
 
-  setTimeout(
-    updatePlayer,
-    700
-  );
+  /*
+   * Do not immediately hammer
+   * /me/player again.
+   *
+   * The normal 10-second poll will
+   * pick up the new track.
+   */
 
 }
 
@@ -2739,6 +3082,19 @@ function openPlaylistDropdown() {
   if (!playlistsLoaded) {
 
     loadPlaylists();
+
+  } else {
+
+    /*
+     * IMPORTANT:
+     *
+     * Do NOT call /me/player here.
+     *
+     * We already get current playback
+     * through the normal polling loop.
+     */
+
+    updatePlaylistSelection();
 
   }
 
@@ -3009,11 +3365,31 @@ setInterval(
 
 function showPlaying(data) {
 
+  /*
+   * IMPORTANT:
+   *
+   * If Spotify gives us a 429,
+   * quota error, network error, etc.,
+   * DO NOT erase the current display.
+   */
+
   if (
     !data ||
-    data.__spotifyError ||
-    !data.item
+    data.__spotifyError
   ) {
+
+    return;
+
+  }
+
+
+  /*
+   * No active playback.
+   *
+   * This is different from an API error.
+   */
+
+  if (!data.item) {
 
     trackName.textContent =
       "Nothing Playing";
@@ -3021,14 +3397,28 @@ function showPlaying(data) {
     artistName.textContent =
       "—";
 
-    playlistName.textContent =
-      "No playlist";
 
-    playlistName.dataset.playlistId =
-      "";
+    /*
+     * Keep playlist information
+     * if Spotify still gives us
+     * the current context.
+     */
 
-    playlistName.dataset.playlistUri =
-      "";
+    if (
+      !data.context?.uri
+    ) {
+
+      playlistName.textContent =
+        "No playlist";
+
+      playlistName.dataset.playlistId =
+        "";
+
+      playlistName.dataset.playlistUri =
+        "";
+
+    }
+
 
     status.textContent =
       "Idle";
@@ -3039,7 +3429,9 @@ function showPlaying(data) {
     );
 
     deviceName.textContent =
+      data.device?.name ||
       "No device";
+
 
     currentProgress =
       0;
@@ -3137,11 +3529,9 @@ function showPlaying(data) {
 
 
   /*
-   * Playlist name is now resolved
-   * ONLY from the playlists already
-   * loaded into userPlaylists.
-   *
-   * No extra Spotify request.
+   * Playlist name is resolved
+   * ONLY from our local playlist
+   * cache/list.
    */
 
   const playlist =
@@ -3154,6 +3544,15 @@ function showPlaying(data) {
 
     playlistName.textContent =
       playlist;
+
+  } else if (
+    !contextUri.includes(
+      "spotify:playlist:"
+    )
+  ) {
+
+    playlistName.textContent =
+      "No playlist";
 
   }
 
@@ -3223,12 +3622,12 @@ let updatePlayerInFlight =
 async function updatePlayer() {
 
   /*
-   * Prevent another player request
-   * from starting while the previous
-   * one is still running.
+   * Prevent overlapping requests.
    */
 
-  if (updatePlayerInFlight)
+  if (
+    updatePlayerInFlight
+  )
     return;
 
 
@@ -3245,13 +3644,11 @@ async function updatePlayer() {
 
 
     /*
-     * IMPORTANT:
+     * Only update the UI with
+     * real Spotify playback data.
      *
-     * Do not send a 429/error object
-     * into showPlaying().
-     *
-     * This keeps the existing display
-     * intact during temporary API errors.
+     * Errors leave the last valid
+     * screen untouched.
      */
 
     if (
@@ -3309,19 +3706,30 @@ previousButton.addEventListener(
   "click",
   async () => {
 
-    await spotifyFetch(
-      "/me/player/previous",
-      {
-        method:
-          "POST"
-      }
-    );
+    const result =
+      await spotifyFetch(
+        "/me/player/previous",
+        {
+          method:
+            "POST"
+        }
+      );
 
 
-    setTimeout(
-      updatePlayer,
-      400
-    );
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+
+      return;
+
+    }
+
+
+    /*
+     * Let the normal player polling
+     * detect the new track.
+     */
 
   }
 );
@@ -3341,20 +3749,40 @@ playButton.addEventListener(
       );
 
 
-    await spotifyFetch(
-      isPlaying
-        ? "/me/player/pause"
-        : "/me/player/play",
-      {
-        method:
-          "PUT"
-      }
+    const result =
+      await spotifyFetch(
+        isPlaying
+          ? "/me/player/pause"
+          : "/me/player/play",
+        {
+          method:
+            "PUT"
+        }
+      );
+
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+
+      return;
+
+    }
+
+
+    /*
+     * Optimistically update the UI
+     * without immediately making
+     * another /me/player request.
+     */
+
+    updateStatus(
+      !isPlaying
     );
 
-
-    setTimeout(
-      updatePlayer,
-      300
+    updatePlayButton(
+      !isPlaying
     );
 
   }
@@ -3369,19 +3797,24 @@ nextButton.addEventListener(
   "click",
   async () => {
 
-    await spotifyFetch(
-      "/me/player/next",
-      {
-        method:
-          "POST"
-      }
-    );
+    const result =
+      await spotifyFetch(
+        "/me/player/next",
+        {
+          method:
+            "POST"
+        }
+      );
 
 
-    setTimeout(
-      updatePlayer,
-      400
-    );
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+
+      return;
+
+    }
 
   }
 );
@@ -3422,14 +3855,25 @@ progressBar.addEventListener(
       currentDuration;
 
 
-    await spotifyFetch(
-      "/me/player/seek?position_ms=" +
-      Math.floor(position),
-      {
-        method:
-          "PUT"
-      }
-    );
+    const result =
+      await spotifyFetch(
+        "/me/player/seek?position_ms=" +
+        Math.floor(position),
+        {
+          method:
+            "PUT"
+        }
+      );
+
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+
+      return;
+
+    }
 
 
     currentProgress =
@@ -3607,10 +4051,16 @@ function logout() {
   }
 
 
-  /* Clear rate limit */
+  /* Clear rate limits */
 
   spotifyRateLimitUntil =
     0;
+
+  spotifyQuotaExceededUntil =
+    0;
+
+  spotifyQuotaBackoff =
+    60000;
 
 
   /* Clear ALL Spotify authentication data */
@@ -3625,6 +4075,19 @@ function logout() {
 
   localStorage.removeItem(
     "spotify_code_verifier"
+  );
+
+
+  /*
+   * Clear playlist cache.
+   */
+
+  localStorage.removeItem(
+    PLAYLIST_CACHE_KEY
+  );
+
+  localStorage.removeItem(
+    PLAYLIST_CACHE_TIME_KEY
   );
 
 
@@ -3744,11 +4207,13 @@ async function handleCallback() {
       error
     );
 
+
     window.history.replaceState(
       {},
       document.title,
       REDIRECT_URI
     );
+
 
     return false;
 
