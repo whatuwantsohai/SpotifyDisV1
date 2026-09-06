@@ -1327,10 +1327,6 @@ body.modeLyrics .lyricsLine.active {
 
 body.modeLyrics
 
-body.modeLyrics #lyricsExitButton:active {
-  transform: scale(0.94);
-}
-
 .lyricsHint {
   display: none;
   position: fixed;
@@ -2130,34 +2126,1087 @@ body.modeVisualizer #backgroundImage {
   }
 }
 /* =========================
-   FEATURE 25 — LYRICS FOCUS CONTROLS
+   DISPLAY MODE MENU
 ========================= */
 
-lyricsInner.addEventListener(
+/* =========================
+   DISPLAY MODE MENU
+========================= */
+
+function closeDisplayModeMenu() {
+
+  displayModeMenu.classList.remove(
+    "open"
+  );
+
+}
+
+
+displayModeButton.addEventListener(
   "click",
-  async event => {
+  event => {
 
-    const line =
-      event.target.closest(".lyricsLine");
+    event.stopPropagation();
 
-    if (!line || !lyricsLines.length)
-      return;
+    closeSettings();
 
-    const index =
-      Number(line.dataset.index);
+    closeQueue();
 
-    const lyric =
-      lyricsLines[index];
+    historyPanel.classList.remove(
+      "open"
+    );
 
-    if (!lyric)
-      return;
+    const buttonRect = displayModeButton.getBoundingClientRect();
+    const menuWidth = Math.min(220, window.innerWidth - 24);
+    const rightEdge = Math.min(
+      window.innerWidth - 12,
+      Math.max(menuWidth + 12, buttonRect.right)
+    );
+    const leftEdge = Math.max(
+      12,
+      Math.min(buttonRect.right - menuWidth, rightEdge - menuWidth)
+    );
+
+    displayModeMenu.style.left = `${leftEdge}px`;
+    displayModeMenu.style.right = "auto";
+    displayModeMenu.style.top = `${Math.max(12, buttonRect.bottom + 8)}px`;
+
+    displayModeMenu.classList.toggle(
+      "open"
+    );
+
+    wakeDisplay();
+
+  }
+);
+
+
+displayModeMenu.addEventListener(
+  "click",
+  event => {
+
+    event.stopPropagation();
+
+  }
+);
+
+
+displayModeOptions.forEach(
+  option => {
+
+    option.addEventListener(
+      "click",
+      () => {
+
+        appSettings.displayMode =
+          option.dataset.mode;
+
+        saveSettings();
+
+        applySettings();
+
+        closeDisplayModeMenu();
+
+        wakeDisplay();
+
+      }
+    );
+
+  }
+);
+
+
+window.addEventListener(
+  "resize",
+  () => {
+    if (appSettings.displayMode === "auto") {
+      applySettings();
+    }
+  }
+);
+
+ambientToggle.addEventListener(
+  "change",
+  () => {
+
+    appSettings.ambient =
+      ambientToggle.checked;
+
+    saveSettings();
+
+    if (
+      !appSettings.ambient
+    ) {
+
+      document.documentElement.style.setProperty(
+        "--ambient1",
+        "rgba(255,255,255,0.08)"
+      );
+
+      document.documentElement.style.setProperty(
+        "--ambient2",
+        "rgba(255,255,255,0.04)"
+      );
+
+    } else if (
+      lastArtworkUrl
+    ) {
+
+      extractDominantColours(
+        lastArtworkUrl
+      );
+
+    }
+
+  }
+);
+
+
+dynamicBgToggle.addEventListener(
+  "change",
+  () => {
+
+    appSettings.dynamicBackground =
+      dynamicBgToggle.checked;
+
+    saveSettings();
+
+    applySettings();
+
+  }
+);
+
+
+transitionSelect.addEventListener(
+  "change",
+  () => {
+
+    appSettings.transitions =
+      transitionSelect.value;
+
+    saveSettings();
+
+  }
+);
+
+
+dimmingToggle.addEventListener(
+  "change",
+  () => {
+
+    appSettings.dimming =
+      dimmingToggle.checked;
+
+    saveSettings();
+
+    if (
+      !appSettings.dimming
+    ) {
+
+      document.body.classList.remove(
+        "autoDim"
+      );
+
+    }
+
+  }
+);
+
+
+screensaverToggle.addEventListener(
+  "change",
+  () => {
+
+    appSettings.screensaver =
+      screensaverToggle.checked;
+
+    saveSettings();
+
+  }
+);
+
+
+dayNightToggle.addEventListener(
+  "change",
+  () => {
+
+    appSettings.dayNight =
+      dayNightToggle.checked;
+
+    saveSettings();
+
+    updateDayNight();
+
+  }
+);
+
+batterySaverToggle.addEventListener(
+  "change",
+  () => {
+
+    appSettings.batterySaver =
+      batterySaverToggle.checked;
+
+    saveSettings();
+    applySettings();
+    restartPlaybackPolling();
+
+  }
+);
+
+
+/* =========================
+   DAY / NIGHT
+========================= */
+
+function updateDayNight() {
+
+  if (
+    !appSettings.dayNight
+  ) {
+
+    document.body.classList.remove(
+      "dayMode"
+    );
+
+    return;
+
+  }
+
+  const hour =
+    new Date().getHours();
+
+  const isDay =
+    hour >= 7 &&
+    hour < 19;
+
+  document.body.classList.toggle(
+    "dayMode",
+    isDay
+  );
+
+}
+
+
+setInterval(
+  updateDayNight,
+  60000
+);
+
+updateDayNight();
+
+
+/* =========================
+   DISPLAY DIMMING
+========================= */
+
+let lastInteraction =
+  Date.now();
+
+const DIM_AFTER =
+  5 * 60 * 1000;
+
+const SCREENSAVER_AFTER =
+  15 * 60 * 1000;
+
+
+function registerInteraction() {
+
+  lastInteraction =
+    Date.now();
+
+  wakeDisplay();
+
+}
+
+
+function wakeDisplay() {
+
+  document.body.classList.remove(
+    "autoDim",
+    "ambientScreensaver"
+  );
+
+}
+
+
+[
+  "mousemove",
+  "mousedown",
+  "touchstart",
+  "touchmove",
+  "keydown",
+  "pointerdown"
+].forEach(
+  eventName => {
+
+    document.addEventListener(
+      eventName,
+      registerInteraction,
+      {
+        passive:
+          true
+      }
+    );
+
+  }
+);
+
+
+setInterval(
+  () => {
+
+    const idle =
+      Date.now() -
+      lastInteraction;
+
+    if (
+      appSettings.screensaver &&
+      idle >=
+      SCREENSAVER_AFTER
+    ) {
+
+      document.body.classList.add(
+        "ambientScreensaver"
+      );
+
+      document.body.classList.remove(
+        "autoDim"
+      );
+
+    } else if (
+      appSettings.dimming &&
+      idle >=
+      DIM_AFTER
+    ) {
+
+      document.body.classList.add(
+        "autoDim"
+      );
+
+      document.body.classList.remove(
+        "ambientScreensaver"
+      );
+
+    } else {
+
+      document.body.classList.remove(
+        "autoDim",
+        "ambientScreensaver"
+      );
+
+    }
+
+  },
+  5000
+);
+
+
+/* =========================
+   FULLSCREEN
+========================= */
+
+fullscreenButton.addEventListener(
+  "click",
+  async () => {
+
+    try {
+
+      if (
+        !document.fullscreenElement
+      ) {
+
+        await document.documentElement.requestFullscreen();
+
+      } else {
+
+        await document.exitFullscreen();
+
+      }
+
+    } catch (error) {
+
+      console.warn(
+        "Fullscreen unavailable:",
+        error
+      );
+
+    }
+
+  }
+);
+
+
+document.addEventListener(
+  "fullscreenchange",
+  () => {
+
+    fullscreenButton.title =
+      document.fullscreenElement
+        ? "Exit fullscreen"
+        : "Fullscreen";
+
+  }
+);
+
+
+/* =========================
+   SETTINGS PANEL
+========================= */
+
+function closeSettings() {
+
+  settingsPanel.classList.remove(
+    "open"
+  );
+
+}
+
+
+settingsButton.addEventListener(
+  "click",
+  event => {
+
+    event.stopPropagation();
+
+    historyPanel.classList.remove(
+      "open"
+    );
+
+    closeQueue();
+
+    settingsPanel.classList.toggle(
+      "open"
+    );
+
+  }
+);
+
+
+settingsPanel.addEventListener(
+  "click",
+  event => {
+
+    event.stopPropagation();
+
+  }
+);
+
+
+/* =========================
+   HISTORY PANEL
+========================= */
+
+historyButton.addEventListener(
+  "click",
+  event => {
+
+    event.stopPropagation();
+
+    closeSettings();
+
+    closeQueue();
+
+    renderHistory();
+
+    historyPanel.classList.toggle(
+      "open"
+    );
+
+  }
+);
+
+
+historyClose.addEventListener(
+  "click",
+  () => {
+
+    historyPanel.classList.remove(
+      "open"
+    );
+
+  }
+);
+
+
+historyPanel.addEventListener(
+  "click",
+  event => {
+
+    event.stopPropagation();
+
+  }
+);
+
+
+document.addEventListener(
+  "click",
+  () => {
+
+    closePlaylistDropdown();
+
+    closeSettings();
+
+    closeDisplayModeMenu();
+
+    closeQueue();
+
+    historyPanel.classList.remove(
+      "open"
+    );
+
+  }
+);
+
+/* =========================
+   CLEAR HISTORY
+========================= */
+
+clearHistoryButton.addEventListener(
+  "click",
+  () => {
+
+    listeningHistory =
+      [];
+
+    lastHistoryTrackId =
+      null;
+
+    saveHistory();
+
+    renderHistory();
+
+  }
+);
+
+
+/* =========================
+   RESET SETTINGS
+========================= */
+
+resetSettingsButton.addEventListener(
+  "click",
+  () => {
+
+    appSettings =
+      {
+        ...defaultSettings
+      };
+
+    saveSettings();
+
+    applySettings();
+
+  }
+);
+
+
+/* =========================
+   TRACK TRANSITION
+========================= */
+
+function playTrackTransition() {
+
+  if (
+    appSettings.transitions ===
+    "off"
+  ) {
+
+    return Promise.resolve();
+
+  }
+
+  const className =
+    appSettings.transitions ===
+    "cinematic"
+      ? "cinematicTransition"
+      : "transitioning";
+
+  document.body.classList.add(
+    className
+  );
+
+  return new Promise(
+    resolve => {
+
+      setTimeout(
+        () => {
+
+          document.body.classList.remove(
+            className
+          );
+
+          resolve();
+
+        },
+        appSettings.transitions ===
+        "cinematic"
+          ? 550
+          : 350
+      );
+
+    }
+  );
+
+}
+
+
+function playTrackArrival() {
+
+  if (
+    appSettings.transitions === "off"
+  ) {
+    return;
+  }
+
+  document.body.classList.remove(
+    "trackTransitionIn"
+  );
+
+  // Force a fresh animation frame so repeated tracks cannot reuse
+  // the previous animation state.
+  requestAnimationFrame(() => {
+    document.body.classList.add(
+      "trackTransitionIn"
+    );
+
+    setTimeout(() => {
+      document.body.classList.remove(
+        "trackTransitionIn"
+      );
+    }, 700);
+  });
+
+}
+
+
+/* =========================
+   ARTWORK
+========================= */
+
+let lastArtworkUrl =
+  "";
+
+
+function updateArtwork(
+  image
+) {
+
+  if (!image)
+    return;
+
+  if (
+    image ===
+    lastArtworkUrl
+  ) {
+
+    return;
+
+  }
+
+  lastArtworkUrl =
+    image;
+
+  albumArt.src =
+    image;
+
+  albumArtDisplay.src =
+    image;
+
+  vinylArtwork.src =
+    image;
+
+  backgroundImage.src =
+    image;
+
+  backgroundImage.style.opacity =
+    "1";
+
+  albumArtDisplay.style.opacity =
+    "1";
+
+  if (
+    appSettings.ambient
+  ) {
+
+    extractDominantColours(
+      image
+    );
+
+  }
+
+  if (
+    appSettings.dynamicBackground
+  ) {
+
+    backgroundImage.style.transform =
+      "scale(1.12)";
+
+    setTimeout(
+      () => {
+
+        backgroundImage.style.transform =
+          "scale(1.08)";
+
+      },
+      100
+    );
+
+  }
+
+}
+
+
+/* =========================
+   NOW PLAYING
+========================= */
+
+async function showPlaying(data) {
+
+  if (
+    !data ||
+    data.__spotifyError
+  ) {
+
+    return;
+
+  }
+
+
+  if (!data.item) {
+
+    if (trackEndTimer) {
+
+      clearTimeout(
+        trackEndTimer
+      );
+
+      trackEndTimer =
+        null;
+
+    }
+
+    trackName.textContent =
+      "Nothing Playing";
+
+    artistName.textContent =
+      "—";
+
+    if (
+      !data.context?.uri
+    ) {
+
+      playlistName.textContent =
+        "No playlist";
+
+      playlistName.dataset.playlistId =
+        "";
+
+      playlistName.dataset.playlistUri =
+        "";
+
+    }
+
+    status.textContent =
+      "Idle";
+
+    status.classList.remove(
+      "playing",
+      "paused"
+    );
+
+    document.body.classList.remove(
+      "isPlaying"
+    );
+
+    lyricsRequestId++;
+    lyricsTrackId = null;
+    lyricsLines = [];
+    lyricsActiveIndex = -1;
+    lyricsView.classList.remove(
+      "hasFallback"
+    );
+    lyricsInner.innerHTML = "";
+
+    deviceName.textContent =
+      data.device?.name ||
+      "No device";
+
+    currentProgress =
+      0;
+
+    currentDuration =
+      0;
+
+    progress.style.width =
+      "0%";
+
+    currentTime.textContent =
+      "0:00";
+
+    duration.textContent =
+      "0:00";
+
+    return;
+
+  }
+
+
+  const track =
+    data.item;
+
+  const image =
+    track.album?.images?.[0]?.url;
+
+  const artists =
+    track.artists
+      ?.map(
+        artist =>
+          artist.name
+      )
+      .join(", ");
+
+
+  const isNewTrack =
+    currentTrackId &&
+    track.id &&
+    currentTrackId !==
+    track.id;
+
+
+  if (isNewTrack) {
+
+    await playTrackTransition();
+
+  }
+
+
+  trackName.textContent =
+    track.name ||
+    "Unknown Track";
+
+  artistName.textContent =
+    artists ||
+    "Unknown Artist";
+
+
+  currentProgress =
+    data.progress_ms || 0;
+
+  currentDuration =
+    track.duration_ms || 0;
+
+  progressUpdatedAt =
+    Date.now();
+
+
+  currentTime.textContent =
+    formatTime(
+      currentProgress
+    );
+
+  duration.textContent =
+    formatTime(
+      currentDuration
+    );
+
+
+  if (image) {
+
+    updateArtwork(
+      image
+    );
+
+  }
+
+
+  const contextUri =
+    data.context?.uri || "";
+
+  const playlist =
+    getPlaylistName(
+      contextUri
+    );
+
+
+  if (playlist) {
+
+    playlistName.textContent =
+      playlist;
+
+  } else if (
+    !contextUri.includes(
+      "spotify:playlist:"
+    )
+  ) {
+
+    playlistName.textContent =
+      "No playlist";
+
+  }
+
+
+  if (
+    contextUri.includes(
+      "spotify:playlist:"
+    )
+  ) {
+
+    const playlistId =
+      contextUri.split(
+        "spotify:playlist:"
+      )[1];
+
+    playlistName.dataset.playlistId =
+      playlistId;
+
+    playlistName.dataset.playlistUri =
+      contextUri;
+
+  } else {
+
+    playlistName.dataset.playlistId =
+      "";
+
+    playlistName.dataset.playlistUri =
+      "";
+
+  }
+
+
+  updatePlaylistSelection();
+
+
+  deviceName.textContent =
+    data.device?.name ||
+    "No device";
+
+
+  updateStatus(
+    data.is_playing
+  );
+
+  if (
+    appSettings.displayMode === "auto"
+  ) {
+    applySettings();
+  }
+
+  updatePlayButton(
+    data.is_playing
+  );
+
+  if (isNewTrack) {
+    playTrackArrival();
+  }
+
+
+  if (
+    isNewTrack ||
+    currentTrackId === null
+  ) {
+
+    addHistoryTrack(
+      track
+    );
+
+  }
+
+
+  currentTrackId =
+    track.id;
+
+  if (
+    isNewTrack ||
+    lyricsTrackId !== track.id
+  ) {
+    loadLyrics(track);
+  }
+
+  scheduleTrackEndCheck();
+
+}
+
+
+/* =========================
+   UPDATE PLAYER
+========================= */
+
+let updatePlayerInFlight =
+  false;
+
+
+async function updatePlayer() {
+
+  if (
+    updatePlayerInFlight
+  )
+    return;
+
+
+  updatePlayerInFlight =
+    true;
+
+
+  try {
+
+    const data =
+      await spotifyFetch(
+        "/me/player"
+      );
+
+    if (
+      data &&
+      !data.__spotifyError
+    ) {
+
+      await showPlaying(
+        data
+      );
+
+    }
+
+  } finally {
+
+    updatePlayerInFlight =
+      false;
+
+  }
+
+}
+
+
+let pollingInterval =
+  null;
+
+let trackEndTimer =
+  null;
+
+
+async function playPriorityNextIfAvailable() {
+
+  while (priorityNextQueue.length) {
+
+    const next =
+      priorityNextQueue.shift();
+
+    const uri =
+      queueItemUri(next.item);
+
+    if (!uri)
+      continue;
 
     const result =
       await spotifyFetch(
-        "/me/player/seek?position_ms=" +
-        Math.max(0, Math.floor(lyric.time)),
+        "/me/player/play",
         {
-          method: "PUT"
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            uris: [uri]
+          })
         }
       );
 
@@ -2165,47 +3214,698 @@ lyricsInner.addEventListener(
       result &&
       result.__spotifyError
     ) {
+      priorityNextQueue.unshift(next);
+      return false;
+    }
+
+    setTimeout(
+      updatePlayer,
+      250
+    );
+
+    return true;
+  }
+
+  return false;
+}
+
+function scheduleTrackEndCheck() {
+
+  if (trackEndTimer) {
+
+    clearTimeout(
+      trackEndTimer
+    );
+
+    trackEndTimer =
+      null;
+
+  }
+
+  if (
+    !currentDuration ||
+    !status.classList.contains(
+      "playing"
+    )
+  ) {
+
+    return;
+
+  }
+
+  const remaining =
+    currentDuration -
+    getCurrentElapsed();
+
+  if (remaining <= 0) {
+
+    trackEndTimer =
+      setTimeout(
+        async () => {
+          const handled =
+            await playPriorityNextIfAvailable();
+
+          if (!handled) {
+            await updatePlayer();
+          }
+        },
+        150
+      );
+
+    return;
+
+  }
+
+  trackEndTimer =
+    setTimeout(
+      updatePlayer,
+      remaining + 150
+    );
+
+}
+
+
+function startSpotify() {
+
+  connectScreen.style.display =
+    "none";
+
+  updatePlayer();
+
+  if (!pollingInterval) {
+
+    pollingInterval =
+      setInterval(
+        updatePlayer,
+        appSettings.batterySaver
+          ? 30000
+          : 10000
+      );
+
+  }
+
+}
+
+function restartPlaybackPolling() {
+
+  if (!pollingInterval) {
+    return;
+  }
+
+  clearInterval(
+    pollingInterval
+  );
+
+  pollingInterval =
+    setInterval(
+      updatePlayer,
+      appSettings.batterySaver
+        ? 30000
+        : 10000
+    );
+
+}
+
+
+/* =========================
+   PREVIOUS
+========================= */
+
+previousButton.addEventListener(
+  "click",
+  async () => {
+
+    const result =
+      await spotifyFetch(
+        "/me/player/previous",
+        {
+          method:
+            "POST"
+        }
+      );
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+
+      return;
+
+    }
+
+  }
+);
+
+
+/* =========================
+   PLAY / PAUSE
+========================= */
+
+playButton.addEventListener(
+  "click",
+  async () => {
+
+    const isPlaying =
+      status.classList.contains(
+        "playing"
+      );
+
+    const result =
+      await spotifyFetch(
+        isPlaying
+          ? "/me/player/pause"
+          : "/me/player/play",
+        {
+          method:
+            "PUT"
+        }
+      );
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+
+      return;
+
+    }
+
+    updateStatus(
+      !isPlaying
+    );
+
+    updatePlayButton(
+      !isPlaying
+    );
+
+    wakeDisplay();
+
+  }
+);
+
+
+/* =========================
+   NEXT
+========================= */
+
+nextButton.addEventListener(
+  "click",
+  async () => {
+
+    if (
+      await playPriorityNextIfAvailable()
+    ) {
+      wakeDisplay();
       return;
     }
 
+    const result =
+      await spotifyFetch(
+        "/me/player/next",
+        {
+          method:
+            "POST"
+        }
+      );
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+
+      return;
+
+    }
+
+    setTimeout(
+      updatePlayer,
+      250
+    );
+
+  }
+);
+
+
+/* =========================
+   SEEK
+========================= */
+
+progressBar.addEventListener(
+  "click",
+  async event => {
+
+    if (!currentDuration)
+      return;
+
+    const rect =
+      progressBar.getBoundingClientRect();
+
+    const percentage =
+      (
+        event.clientX -
+        rect.left
+      ) /
+      rect.width;
+
+    const position =
+      Math.max(
+        0,
+        Math.min(
+          1,
+          percentage
+        )
+      ) *
+      currentDuration;
+
+    const result =
+      await spotifyFetch(
+        "/me/player/seek?position_ms=" +
+        Math.floor(position),
+        {
+          method:
+            "PUT"
+        }
+      );
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+
+      return;
+
+    }
+
     currentProgress =
-      lyric.time;
+      position;
 
     progressUpdatedAt =
       Date.now();
 
-    lyricsActiveIndex =
-      -1;
-
     updateProgress();
+
     wakeDisplay();
+
   }
 );
-
-// Desktop keyboard support.
-document.addEventListener(
-  "keydown",
-  event => {
-    if (event.key === "Escape" || event.key === "Esc") {
-      exitLyricsMode();
-    }
-  }
-);
-
-// Touch/click support for iPhone and other touch devices.
-["click", "pointerup", "touchend"].forEach(eventName => {
-  lyricsExitButton.addEventListener(eventName, event => {
-    event.preventDefault();
-    event.stopPropagation();
-    exitLyricsMode();
-  }, { passive: false });
-});
 
 
 /* =========================
-   DISPLAY MODE MENU
+   VOLUME
 ========================= */
 
+let lastVolume =
+  100;
+
+
+function updateVolumeIcon() {
+
+  if (
+    Number(
+      volumeSlider.value
+    ) === 0
+  ) {
+
+    volumeIcon.innerHTML =
+      `
+        <span class="icon-muted"></span>
+        <span class="icon-muted-line"></span>
+      `;
+
+  } else {
+
+    volumeIcon.innerHTML =
+      `
+        <span class="icon-volume"></span>
+        <span class="icon-volume-wave"></span>
+      `;
+
+  }
+
+}
+
+
+volumeSlider.addEventListener(
+  "input",
+  async () => {
+
+    const volume =
+      Number(
+        volumeSlider.value
+      );
+
+    volumePercentage.textContent =
+      volume + "%";
+
+    lastVolume =
+      volume;
+
+    updateVolumeIcon();
+
+    await spotifyFetch(
+      "/me/player/volume?volume_percent=" +
+      volume,
+      {
+        method:
+          "PUT"
+      }
+    );
+
+  }
+);
+
+
+volumeIcon.addEventListener(
+  "click",
+  async () => {
+
+    const current =
+      Number(
+        volumeSlider.value
+      );
+
+    if (current > 0) {
+
+      lastVolume =
+        current;
+
+      volumeSlider.value =
+        0;
+
+      volumePercentage.textContent =
+        "0%";
+
+      updateVolumeIcon();
+
+      await spotifyFetch(
+        "/me/player/volume?volume_percent=0",
+        {
+          method:
+            "PUT"
+        }
+      );
+
+    } else {
+
+      const restored =
+        lastVolume || 100;
+
+      volumeSlider.value =
+        restored;
+
+      volumePercentage.textContent =
+        restored + "%";
+
+      updateVolumeIcon();
+
+      await spotifyFetch(
+        "/me/player/volume?volume_percent=" +
+        restored,
+        {
+          method:
+            "PUT"
+        }
+      );
+
+    }
+
+    wakeDisplay();
+
+  }
+);
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+function logout() {
+
+  console.log(
+    "Logging out of SpotifyDis..."
+  );
+
+  if (pollingInterval) {
+
+    clearInterval(
+      pollingInterval
+    );
+
+    pollingInterval =
+      null;
+
+  }
+
+  if (trackEndTimer) {
+
+    clearTimeout(
+      trackEndTimer
+    );
+
+    trackEndTimer =
+      null;
+
+  }
+
+  spotifyRateLimitUntil =
+    0;
+
+  spotifyQuotaExceededUntil =
+    0;
+
+  spotifyQuotaBackoff =
+    60000;
+
+  localStorage.removeItem(
+    "spotify_access_token"
+  );
+
+  localStorage.removeItem(
+    "spotify_refresh_token"
+  );
+
+  localStorage.removeItem(
+    "spotify_code_verifier"
+  );
+
+  localStorage.removeItem(
+    PLAYLIST_CACHE_KEY
+  );
+
+  localStorage.removeItem(
+    PLAYLIST_CACHE_TIME_KEY
+  );
+
+  playlistsLoaded =
+    false;
+
+  userPlaylists =
+    [];
+
+  playlistDropdown.innerHTML =
+    '<div id="playlistLoading">Loading playlists...</div>';
+
+  playlistName.textContent =
+    "No playlist";
+
+  playlistName.dataset.playlistId =
+    "";
+
+  playlistName.dataset.playlistUri =
+    "";
+
+  trackName.textContent =
+    "Nothing Playing";
+
+  artistName.textContent =
+    "—";
+
+  deviceName.textContent =
+    "No device";
+
+  status.textContent =
+    "Offline";
+
+  status.classList.remove(
+    "playing",
+    "paused"
+  );
+
+  updatePlayButton(
+    false
+  );
+
+  currentProgress =
+    0;
+
+  currentDuration =
+    0;
+
+  currentTrackId =
+    null;
+
+  lastHistoryTrackId =
+    null;
+
+  currentTime.textContent =
+    "0:00";
+
+  duration.textContent =
+    "0:00";
+
+  progress.style.width =
+    "0%";
+
+  backgroundImage.style.opacity =
+    "0";
+
+  albumArtDisplay.style.opacity =
+    "0";
+
+  closePlaylistDropdown();
+
+  closeSettings();
+
+  historyPanel.classList.remove(
+    "open"
+  );
+
+  closeQueue();
+
+  sessionQueueItems = [];
+  priorityNextQueue = [];
+  queueRemovedIds.clear();
+  queueLoaded = false;
+
+  lyricsRequestId++;
+  lyricsTrackId = null;
+  lyricsLines = [];
+  lyricsActiveIndex = -1;
+  lyricsInner.innerHTML = "";
+  lyricsView.classList.remove(
+    "hasFallback"
+  );
+
+  document.body.classList.remove(
+    "isPlaying"
+  );
+
+  connectScreen.style.display =
+    "flex";
+
+}
+
+
+/* =========================
+   CALLBACK
+========================= */
+
+async function handleCallback() {
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const code =
+    params.get("code");
+
+  const error =
+    params.get("error");
+
+  if (error) {
+
+    console.error(
+      "Spotify authorization error:",
+      error
+    );
+
+    window.history.replaceState(
+      {},
+      document.title,
+      REDIRECT_URI
+    );
+
+    return false;
+
+  }
+
+  if (code) {
+
+    return await exchangeCode(
+      code
+    );
+
+  }
+
+  return false;
+
+}
+
+
+/* =========================
+   BUTTONS
+========================= */
+
+connectButton.addEventListener(
+  "click",
+  login
+);
+
+
+logoutButton.addEventListener(
+  "click",
+  logout
+);
+
+
+/* =========================
+   INITIALISE LOCAL SYSTEMS
+========================= */
+
+loadHistory();
+
+loadSettings();
+
+renderHistory();
+
+updateSessionTime();
+
+
+/* =========================
+   START APP
+========================= */
+
+(async () => {
+
+  const callback =
+    await handleCallback();
+
+  if (callback)
+    return;
+
+  const token =
+    localStorage.getItem(
+      "spotify_access_token"
+    );
+
+  if (token) {
+
+    startSpotify();
+
+  } else {
+
+    connectScreen.style.display =
+      "flex";
+
+  }
+
+})();
+
+</script>
+
+</body>
+</html>
 #displayModeMenu {
   position: fixed;
 
@@ -7314,1780 +9014,3 @@ async function loadLyrics(track) {
 }
 
 
-/* =========================
-   DISPLAY MODE MENU
-========================= */
-
-function closeDisplayModeMenu() {
-
-  displayModeMenu.classList.remove(
-    "open"
-  );
-
-}
-
-
-displayModeButton.addEventListener(
-  "click",
-  event => {
-
-    event.stopPropagation();
-
-    closeSettings();
-
-    closeQueue();
-
-    historyPanel.classList.remove(
-      "open"
-    );
-
-    const buttonRect = displayModeButton.getBoundingClientRect();
-    const menuWidth = Math.min(220, window.innerWidth - 24);
-    const rightEdge = Math.min(
-      window.innerWidth - 12,
-      Math.max(menuWidth + 12, buttonRect.right)
-    );
-    const leftEdge = Math.max(
-      12,
-      Math.min(buttonRect.right - menuWidth, rightEdge - menuWidth)
-    );
-
-    displayModeMenu.style.left = `${leftEdge}px`;
-    displayModeMenu.style.right = "auto";
-    displayModeMenu.style.top = `${Math.max(12, buttonRect.bottom + 8)}px`;
-
-    displayModeMenu.classList.toggle(
-      "open"
-    );
-
-    wakeDisplay();
-
-  }
-);
-
-
-displayModeMenu.addEventListener(
-  "click",
-  event => {
-
-    event.stopPropagation();
-
-  }
-);
-
-
-displayModeOptions.forEach(
-  option => {
-
-    option.addEventListener(
-      "click",
-      () => {
-
-        appSettings.displayMode =
-          option.dataset.mode;
-
-        saveSettings();
-
-        applySettings();
-
-        closeDisplayModeMenu();
-
-        wakeDisplay();
-
-      }
-    );
-
-  }
-);
-
-
-window.addEventListener(
-  "resize",
-  () => {
-    if (appSettings.displayMode === "auto") {
-      applySettings();
-    }
-  }
-);
-
-ambientToggle.addEventListener(
-  "change",
-  () => {
-
-    appSettings.ambient =
-      ambientToggle.checked;
-
-    saveSettings();
-
-    if (
-      !appSettings.ambient
-    ) {
-
-      document.documentElement.style.setProperty(
-        "--ambient1",
-        "rgba(255,255,255,0.08)"
-      );
-
-      document.documentElement.style.setProperty(
-        "--ambient2",
-        "rgba(255,255,255,0.04)"
-      );
-
-    } else if (
-      lastArtworkUrl
-    ) {
-
-      extractDominantColours(
-        lastArtworkUrl
-      );
-
-    }
-
-  }
-);
-
-
-dynamicBgToggle.addEventListener(
-  "change",
-  () => {
-
-    appSettings.dynamicBackground =
-      dynamicBgToggle.checked;
-
-    saveSettings();
-
-    applySettings();
-
-  }
-);
-
-
-transitionSelect.addEventListener(
-  "change",
-  () => {
-
-    appSettings.transitions =
-      transitionSelect.value;
-
-    saveSettings();
-
-  }
-);
-
-
-dimmingToggle.addEventListener(
-  "change",
-  () => {
-
-    appSettings.dimming =
-      dimmingToggle.checked;
-
-    saveSettings();
-
-    if (
-      !appSettings.dimming
-    ) {
-
-      document.body.classList.remove(
-        "autoDim"
-      );
-
-    }
-
-  }
-);
-
-
-screensaverToggle.addEventListener(
-  "change",
-  () => {
-
-    appSettings.screensaver =
-      screensaverToggle.checked;
-
-    saveSettings();
-
-  }
-);
-
-
-dayNightToggle.addEventListener(
-  "change",
-  () => {
-
-    appSettings.dayNight =
-      dayNightToggle.checked;
-
-    saveSettings();
-
-    updateDayNight();
-
-  }
-);
-
-batterySaverToggle.addEventListener(
-  "change",
-  () => {
-
-    appSettings.batterySaver =
-      batterySaverToggle.checked;
-
-    saveSettings();
-    applySettings();
-    restartPlaybackPolling();
-
-  }
-);
-
-
-/* =========================
-   DAY / NIGHT
-========================= */
-
-function updateDayNight() {
-
-  if (
-    !appSettings.dayNight
-  ) {
-
-    document.body.classList.remove(
-      "dayMode"
-    );
-
-    return;
-
-  }
-
-  const hour =
-    new Date().getHours();
-
-  const isDay =
-    hour >= 7 &&
-    hour < 19;
-
-  document.body.classList.toggle(
-    "dayMode",
-    isDay
-  );
-
-}
-
-
-setInterval(
-  updateDayNight,
-  60000
-);
-
-updateDayNight();
-
-
-/* =========================
-   DISPLAY DIMMING
-========================= */
-
-let lastInteraction =
-  Date.now();
-
-const DIM_AFTER =
-  5 * 60 * 1000;
-
-const SCREENSAVER_AFTER =
-  15 * 60 * 1000;
-
-
-function registerInteraction() {
-
-  lastInteraction =
-    Date.now();
-
-  wakeDisplay();
-
-}
-
-
-function wakeDisplay() {
-
-  document.body.classList.remove(
-    "autoDim",
-    "ambientScreensaver"
-  );
-
-}
-
-
-[
-  "mousemove",
-  "mousedown",
-  "touchstart",
-  "touchmove",
-  "keydown",
-  "pointerdown"
-].forEach(
-  eventName => {
-
-    document.addEventListener(
-      eventName,
-      registerInteraction,
-      {
-        passive:
-          true
-      }
-    );
-
-  }
-);
-
-
-setInterval(
-  () => {
-
-    const idle =
-      Date.now() -
-      lastInteraction;
-
-    if (
-      appSettings.screensaver &&
-      idle >=
-      SCREENSAVER_AFTER
-    ) {
-
-      document.body.classList.add(
-        "ambientScreensaver"
-      );
-
-      document.body.classList.remove(
-        "autoDim"
-      );
-
-    } else if (
-      appSettings.dimming &&
-      idle >=
-      DIM_AFTER
-    ) {
-
-      document.body.classList.add(
-        "autoDim"
-      );
-
-      document.body.classList.remove(
-        "ambientScreensaver"
-      );
-
-    } else {
-
-      document.body.classList.remove(
-        "autoDim",
-        "ambientScreensaver"
-      );
-
-    }
-
-  },
-  5000
-);
-
-
-/* =========================
-   FULLSCREEN
-========================= */
-
-fullscreenButton.addEventListener(
-  "click",
-  async () => {
-
-    try {
-
-      if (
-        !document.fullscreenElement
-      ) {
-
-        await document.documentElement.requestFullscreen();
-
-      } else {
-
-        await document.exitFullscreen();
-
-      }
-
-    } catch (error) {
-
-      console.warn(
-        "Fullscreen unavailable:",
-        error
-      );
-
-    }
-
-  }
-);
-
-
-document.addEventListener(
-  "fullscreenchange",
-  () => {
-
-    fullscreenButton.title =
-      document.fullscreenElement
-        ? "Exit fullscreen"
-        : "Fullscreen";
-
-  }
-);
-
-
-/* =========================
-   SETTINGS PANEL
-========================= */
-
-function closeSettings() {
-
-  settingsPanel.classList.remove(
-    "open"
-  );
-
-}
-
-
-settingsButton.addEventListener(
-  "click",
-  event => {
-
-    event.stopPropagation();
-
-    historyPanel.classList.remove(
-      "open"
-    );
-
-    closeQueue();
-
-    settingsPanel.classList.toggle(
-      "open"
-    );
-
-  }
-);
-
-
-settingsPanel.addEventListener(
-  "click",
-  event => {
-
-    event.stopPropagation();
-
-  }
-);
-
-
-/* =========================
-   HISTORY PANEL
-========================= */
-
-historyButton.addEventListener(
-  "click",
-  event => {
-
-    event.stopPropagation();
-
-    closeSettings();
-
-    closeQueue();
-
-    renderHistory();
-
-    historyPanel.classList.toggle(
-      "open"
-    );
-
-  }
-);
-
-
-historyClose.addEventListener(
-  "click",
-  () => {
-
-    historyPanel.classList.remove(
-      "open"
-    );
-
-  }
-);
-
-
-historyPanel.addEventListener(
-  "click",
-  event => {
-
-    event.stopPropagation();
-
-  }
-);
-
-
-document.addEventListener(
-  "click",
-  () => {
-
-    closePlaylistDropdown();
-
-    closeSettings();
-
-    closeDisplayModeMenu();
-
-    closeQueue();
-
-    historyPanel.classList.remove(
-      "open"
-    );
-
-  }
-);
-
-/* =========================
-   CLEAR HISTORY
-========================= */
-
-clearHistoryButton.addEventListener(
-  "click",
-  () => {
-
-    listeningHistory =
-      [];
-
-    lastHistoryTrackId =
-      null;
-
-    saveHistory();
-
-    renderHistory();
-
-  }
-);
-
-
-/* =========================
-   RESET SETTINGS
-========================= */
-
-resetSettingsButton.addEventListener(
-  "click",
-  () => {
-
-    appSettings =
-      {
-        ...defaultSettings
-      };
-
-    saveSettings();
-
-    applySettings();
-
-  }
-);
-
-
-/* =========================
-   TRACK TRANSITION
-========================= */
-
-function playTrackTransition() {
-
-  if (
-    appSettings.transitions ===
-    "off"
-  ) {
-
-    return Promise.resolve();
-
-  }
-
-  const className =
-    appSettings.transitions ===
-    "cinematic"
-      ? "cinematicTransition"
-      : "transitioning";
-
-  document.body.classList.add(
-    className
-  );
-
-  return new Promise(
-    resolve => {
-
-      setTimeout(
-        () => {
-
-          document.body.classList.remove(
-            className
-          );
-
-          resolve();
-
-        },
-        appSettings.transitions ===
-        "cinematic"
-          ? 550
-          : 350
-      );
-
-    }
-  );
-
-}
-
-
-function playTrackArrival() {
-
-  if (
-    appSettings.transitions === "off"
-  ) {
-    return;
-  }
-
-  document.body.classList.remove(
-    "trackTransitionIn"
-  );
-
-  // Force a fresh animation frame so repeated tracks cannot reuse
-  // the previous animation state.
-  requestAnimationFrame(() => {
-    document.body.classList.add(
-      "trackTransitionIn"
-    );
-
-    setTimeout(() => {
-      document.body.classList.remove(
-        "trackTransitionIn"
-      );
-    }, 700);
-  });
-
-}
-
-
-/* =========================
-   ARTWORK
-========================= */
-
-let lastArtworkUrl =
-  "";
-
-
-function updateArtwork(
-  image
-) {
-
-  if (!image)
-    return;
-
-  if (
-    image ===
-    lastArtworkUrl
-  ) {
-
-    return;
-
-  }
-
-  lastArtworkUrl =
-    image;
-
-  albumArt.src =
-    image;
-
-  albumArtDisplay.src =
-    image;
-
-  vinylArtwork.src =
-    image;
-
-  backgroundImage.src =
-    image;
-
-  backgroundImage.style.opacity =
-    "1";
-
-  albumArtDisplay.style.opacity =
-    "1";
-
-  if (
-    appSettings.ambient
-  ) {
-
-    extractDominantColours(
-      image
-    );
-
-  }
-
-  if (
-    appSettings.dynamicBackground
-  ) {
-
-    backgroundImage.style.transform =
-      "scale(1.12)";
-
-    setTimeout(
-      () => {
-
-        backgroundImage.style.transform =
-          "scale(1.08)";
-
-      },
-      100
-    );
-
-  }
-
-}
-
-
-/* =========================
-   NOW PLAYING
-========================= */
-
-async function showPlaying(data) {
-
-  if (
-    !data ||
-    data.__spotifyError
-  ) {
-
-    return;
-
-  }
-
-
-  if (!data.item) {
-
-    if (trackEndTimer) {
-
-      clearTimeout(
-        trackEndTimer
-      );
-
-      trackEndTimer =
-        null;
-
-    }
-
-    trackName.textContent =
-      "Nothing Playing";
-
-    artistName.textContent =
-      "—";
-
-    if (
-      !data.context?.uri
-    ) {
-
-      playlistName.textContent =
-        "No playlist";
-
-      playlistName.dataset.playlistId =
-        "";
-
-      playlistName.dataset.playlistUri =
-        "";
-
-    }
-
-    status.textContent =
-      "Idle";
-
-    status.classList.remove(
-      "playing",
-      "paused"
-    );
-
-    document.body.classList.remove(
-      "isPlaying"
-    );
-
-    lyricsRequestId++;
-    lyricsTrackId = null;
-    lyricsLines = [];
-    lyricsActiveIndex = -1;
-    lyricsView.classList.remove(
-      "hasFallback"
-    );
-    lyricsInner.innerHTML = "";
-
-    deviceName.textContent =
-      data.device?.name ||
-      "No device";
-
-    currentProgress =
-      0;
-
-    currentDuration =
-      0;
-
-    progress.style.width =
-      "0%";
-
-    currentTime.textContent =
-      "0:00";
-
-    duration.textContent =
-      "0:00";
-
-    return;
-
-  }
-
-
-  const track =
-    data.item;
-
-  const image =
-    track.album?.images?.[0]?.url;
-
-  const artists =
-    track.artists
-      ?.map(
-        artist =>
-          artist.name
-      )
-      .join(", ");
-
-
-  const isNewTrack =
-    currentTrackId &&
-    track.id &&
-    currentTrackId !==
-    track.id;
-
-
-  if (isNewTrack) {
-
-    await playTrackTransition();
-
-  }
-
-
-  trackName.textContent =
-    track.name ||
-    "Unknown Track";
-
-  artistName.textContent =
-    artists ||
-    "Unknown Artist";
-
-
-  currentProgress =
-    data.progress_ms || 0;
-
-  currentDuration =
-    track.duration_ms || 0;
-
-  progressUpdatedAt =
-    Date.now();
-
-
-  currentTime.textContent =
-    formatTime(
-      currentProgress
-    );
-
-  duration.textContent =
-    formatTime(
-      currentDuration
-    );
-
-
-  if (image) {
-
-    updateArtwork(
-      image
-    );
-
-  }
-
-
-  const contextUri =
-    data.context?.uri || "";
-
-  const playlist =
-    getPlaylistName(
-      contextUri
-    );
-
-
-  if (playlist) {
-
-    playlistName.textContent =
-      playlist;
-
-  } else if (
-    !contextUri.includes(
-      "spotify:playlist:"
-    )
-  ) {
-
-    playlistName.textContent =
-      "No playlist";
-
-  }
-
-
-  if (
-    contextUri.includes(
-      "spotify:playlist:"
-    )
-  ) {
-
-    const playlistId =
-      contextUri.split(
-        "spotify:playlist:"
-      )[1];
-
-    playlistName.dataset.playlistId =
-      playlistId;
-
-    playlistName.dataset.playlistUri =
-      contextUri;
-
-  } else {
-
-    playlistName.dataset.playlistId =
-      "";
-
-    playlistName.dataset.playlistUri =
-      "";
-
-  }
-
-
-  updatePlaylistSelection();
-
-
-  deviceName.textContent =
-    data.device?.name ||
-    "No device";
-
-
-  updateStatus(
-    data.is_playing
-  );
-
-  if (
-    appSettings.displayMode === "auto"
-  ) {
-    applySettings();
-  }
-
-  updatePlayButton(
-    data.is_playing
-  );
-
-  if (isNewTrack) {
-    playTrackArrival();
-  }
-
-
-  if (
-    isNewTrack ||
-    currentTrackId === null
-  ) {
-
-    addHistoryTrack(
-      track
-    );
-
-  }
-
-
-  currentTrackId =
-    track.id;
-
-  if (
-    isNewTrack ||
-    lyricsTrackId !== track.id
-  ) {
-    loadLyrics(track);
-  }
-
-  scheduleTrackEndCheck();
-
-}
-
-
-/* =========================
-   UPDATE PLAYER
-========================= */
-
-let updatePlayerInFlight =
-  false;
-
-
-async function updatePlayer() {
-
-  if (
-    updatePlayerInFlight
-  )
-    return;
-
-
-  updatePlayerInFlight =
-    true;
-
-
-  try {
-
-    const data =
-      await spotifyFetch(
-        "/me/player"
-      );
-
-    if (
-      data &&
-      !data.__spotifyError
-    ) {
-
-      await showPlaying(
-        data
-      );
-
-    }
-
-  } finally {
-
-    updatePlayerInFlight =
-      false;
-
-  }
-
-}
-
-
-let pollingInterval =
-  null;
-
-let trackEndTimer =
-  null;
-
-
-async function playPriorityNextIfAvailable() {
-
-  while (priorityNextQueue.length) {
-
-    const next =
-      priorityNextQueue.shift();
-
-    const uri =
-      queueItemUri(next.item);
-
-    if (!uri)
-      continue;
-
-    const result =
-      await spotifyFetch(
-        "/me/player/play",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            uris: [uri]
-          })
-        }
-      );
-
-    if (
-      result &&
-      result.__spotifyError
-    ) {
-      priorityNextQueue.unshift(next);
-      return false;
-    }
-
-    setTimeout(
-      updatePlayer,
-      250
-    );
-
-    return true;
-  }
-
-  return false;
-}
-
-function scheduleTrackEndCheck() {
-
-  if (trackEndTimer) {
-
-    clearTimeout(
-      trackEndTimer
-    );
-
-    trackEndTimer =
-      null;
-
-  }
-
-  if (
-    !currentDuration ||
-    !status.classList.contains(
-      "playing"
-    )
-  ) {
-
-    return;
-
-  }
-
-  const remaining =
-    currentDuration -
-    getCurrentElapsed();
-
-  if (remaining <= 0) {
-
-    trackEndTimer =
-      setTimeout(
-        async () => {
-          const handled =
-            await playPriorityNextIfAvailable();
-
-          if (!handled) {
-            await updatePlayer();
-          }
-        },
-        150
-      );
-
-    return;
-
-  }
-
-  trackEndTimer =
-    setTimeout(
-      updatePlayer,
-      remaining + 150
-    );
-
-}
-
-
-function startSpotify() {
-
-  connectScreen.style.display =
-    "none";
-
-  updatePlayer();
-
-  if (!pollingInterval) {
-
-    pollingInterval =
-      setInterval(
-        updatePlayer,
-        appSettings.batterySaver
-          ? 30000
-          : 10000
-      );
-
-  }
-
-}
-
-function restartPlaybackPolling() {
-
-  if (!pollingInterval) {
-    return;
-  }
-
-  clearInterval(
-    pollingInterval
-  );
-
-  pollingInterval =
-    setInterval(
-      updatePlayer,
-      appSettings.batterySaver
-        ? 30000
-        : 10000
-    );
-
-}
-
-
-/* =========================
-   PREVIOUS
-========================= */
-
-previousButton.addEventListener(
-  "click",
-  async () => {
-
-    const result =
-      await spotifyFetch(
-        "/me/player/previous",
-        {
-          method:
-            "POST"
-        }
-      );
-
-    if (
-      result &&
-      result.__spotifyError
-    ) {
-
-      return;
-
-    }
-
-  }
-);
-
-
-/* =========================
-   PLAY / PAUSE
-========================= */
-
-playButton.addEventListener(
-  "click",
-  async () => {
-
-    const isPlaying =
-      status.classList.contains(
-        "playing"
-      );
-
-    const result =
-      await spotifyFetch(
-        isPlaying
-          ? "/me/player/pause"
-          : "/me/player/play",
-        {
-          method:
-            "PUT"
-        }
-      );
-
-    if (
-      result &&
-      result.__spotifyError
-    ) {
-
-      return;
-
-    }
-
-    updateStatus(
-      !isPlaying
-    );
-
-    updatePlayButton(
-      !isPlaying
-    );
-
-    wakeDisplay();
-
-  }
-);
-
-
-/* =========================
-   NEXT
-========================= */
-
-nextButton.addEventListener(
-  "click",
-  async () => {
-
-    if (
-      await playPriorityNextIfAvailable()
-    ) {
-      wakeDisplay();
-      return;
-    }
-
-    const result =
-      await spotifyFetch(
-        "/me/player/next",
-        {
-          method:
-            "POST"
-        }
-      );
-
-    if (
-      result &&
-      result.__spotifyError
-    ) {
-
-      return;
-
-    }
-
-    setTimeout(
-      updatePlayer,
-      250
-    );
-
-  }
-);
-
-
-/* =========================
-   SEEK
-========================= */
-
-progressBar.addEventListener(
-  "click",
-  async event => {
-
-    if (!currentDuration)
-      return;
-
-    const rect =
-      progressBar.getBoundingClientRect();
-
-    const percentage =
-      (
-        event.clientX -
-        rect.left
-      ) /
-      rect.width;
-
-    const position =
-      Math.max(
-        0,
-        Math.min(
-          1,
-          percentage
-        )
-      ) *
-      currentDuration;
-
-    const result =
-      await spotifyFetch(
-        "/me/player/seek?position_ms=" +
-        Math.floor(position),
-        {
-          method:
-            "PUT"
-        }
-      );
-
-    if (
-      result &&
-      result.__spotifyError
-    ) {
-
-      return;
-
-    }
-
-    currentProgress =
-      position;
-
-    progressUpdatedAt =
-      Date.now();
-
-    updateProgress();
-
-    wakeDisplay();
-
-  }
-);
-
-
-/* =========================
-   VOLUME
-========================= */
-
-let lastVolume =
-  100;
-
-
-function updateVolumeIcon() {
-
-  if (
-    Number(
-      volumeSlider.value
-    ) === 0
-  ) {
-
-    volumeIcon.innerHTML =
-      `
-        <span class="icon-muted"></span>
-        <span class="icon-muted-line"></span>
-      `;
-
-  } else {
-
-    volumeIcon.innerHTML =
-      `
-        <span class="icon-volume"></span>
-        <span class="icon-volume-wave"></span>
-      `;
-
-  }
-
-}
-
-
-volumeSlider.addEventListener(
-  "input",
-  async () => {
-
-    const volume =
-      Number(
-        volumeSlider.value
-      );
-
-    volumePercentage.textContent =
-      volume + "%";
-
-    lastVolume =
-      volume;
-
-    updateVolumeIcon();
-
-    await spotifyFetch(
-      "/me/player/volume?volume_percent=" +
-      volume,
-      {
-        method:
-          "PUT"
-      }
-    );
-
-  }
-);
-
-
-volumeIcon.addEventListener(
-  "click",
-  async () => {
-
-    const current =
-      Number(
-        volumeSlider.value
-      );
-
-    if (current > 0) {
-
-      lastVolume =
-        current;
-
-      volumeSlider.value =
-        0;
-
-      volumePercentage.textContent =
-        "0%";
-
-      updateVolumeIcon();
-
-      await spotifyFetch(
-        "/me/player/volume?volume_percent=0",
-        {
-          method:
-            "PUT"
-        }
-      );
-
-    } else {
-
-      const restored =
-        lastVolume || 100;
-
-      volumeSlider.value =
-        restored;
-
-      volumePercentage.textContent =
-        restored + "%";
-
-      updateVolumeIcon();
-
-      await spotifyFetch(
-        "/me/player/volume?volume_percent=" +
-        restored,
-        {
-          method:
-            "PUT"
-        }
-      );
-
-    }
-
-    wakeDisplay();
-
-  }
-);
-
-
-/* =========================
-   LOGOUT
-========================= */
-
-function logout() {
-
-  console.log(
-    "Logging out of SpotifyDis..."
-  );
-
-  if (pollingInterval) {
-
-    clearInterval(
-      pollingInterval
-    );
-
-    pollingInterval =
-      null;
-
-  }
-
-  if (trackEndTimer) {
-
-    clearTimeout(
-      trackEndTimer
-    );
-
-    trackEndTimer =
-      null;
-
-  }
-
-  spotifyRateLimitUntil =
-    0;
-
-  spotifyQuotaExceededUntil =
-    0;
-
-  spotifyQuotaBackoff =
-    60000;
-
-  localStorage.removeItem(
-    "spotify_access_token"
-  );
-
-  localStorage.removeItem(
-    "spotify_refresh_token"
-  );
-
-  localStorage.removeItem(
-    "spotify_code_verifier"
-  );
-
-  localStorage.removeItem(
-    PLAYLIST_CACHE_KEY
-  );
-
-  localStorage.removeItem(
-    PLAYLIST_CACHE_TIME_KEY
-  );
-
-  playlistsLoaded =
-    false;
-
-  userPlaylists =
-    [];
-
-  playlistDropdown.innerHTML =
-    '<div id="playlistLoading">Loading playlists...</div>';
-
-  playlistName.textContent =
-    "No playlist";
-
-  playlistName.dataset.playlistId =
-    "";
-
-  playlistName.dataset.playlistUri =
-    "";
-
-  trackName.textContent =
-    "Nothing Playing";
-
-  artistName.textContent =
-    "—";
-
-  deviceName.textContent =
-    "No device";
-
-  status.textContent =
-    "Offline";
-
-  status.classList.remove(
-    "playing",
-    "paused"
-  );
-
-  updatePlayButton(
-    false
-  );
-
-  currentProgress =
-    0;
-
-  currentDuration =
-    0;
-
-  currentTrackId =
-    null;
-
-  lastHistoryTrackId =
-    null;
-
-  currentTime.textContent =
-    "0:00";
-
-  duration.textContent =
-    "0:00";
-
-  progress.style.width =
-    "0%";
-
-  backgroundImage.style.opacity =
-    "0";
-
-  albumArtDisplay.style.opacity =
-    "0";
-
-  closePlaylistDropdown();
-
-  closeSettings();
-
-  historyPanel.classList.remove(
-    "open"
-  );
-
-  closeQueue();
-
-  sessionQueueItems = [];
-  priorityNextQueue = [];
-  queueRemovedIds.clear();
-  queueLoaded = false;
-
-  lyricsRequestId++;
-  lyricsTrackId = null;
-  lyricsLines = [];
-  lyricsActiveIndex = -1;
-  lyricsInner.innerHTML = "";
-  lyricsView.classList.remove(
-    "hasFallback"
-  );
-
-  document.body.classList.remove(
-    "isPlaying"
-  );
-
-  connectScreen.style.display =
-    "flex";
-
-}
-
-
-/* =========================
-   CALLBACK
-========================= */
-
-async function handleCallback() {
-
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
-
-  const code =
-    params.get("code");
-
-  const error =
-    params.get("error");
-
-  if (error) {
-
-    console.error(
-      "Spotify authorization error:",
-      error
-    );
-
-    window.history.replaceState(
-      {},
-      document.title,
-      REDIRECT_URI
-    );
-
-    return false;
-
-  }
-
-  if (code) {
-
-    return await exchangeCode(
-      code
-    );
-
-  }
-
-  return false;
-
-}
-
-
-/* =========================
-   BUTTONS
-========================= */
-
-connectButton.addEventListener(
-  "click",
-  login
-);
-
-
-logoutButton.addEventListener(
-  "click",
-  logout
-);
-
-
-/* =========================
-   INITIALISE LOCAL SYSTEMS
-========================= */
-
-loadHistory();
-
-loadSettings();
-
-renderHistory();
-
-updateSessionTime();
-
-
-/* =========================
-   START APP
-========================= */
-
-(async () => {
-
-  const callback =
-    await handleCallback();
-
-  if (callback)
-    return;
-
-  const token =
-    localStorage.getItem(
-      "spotify_access_token"
-    );
-
-  if (token) {
-
-    startSpotify();
-
-  } else {
-
-    connectScreen.style.display =
-      "flex";
-
-  }
-
-})();
-
-</script>
-
-</body>
-</html>
