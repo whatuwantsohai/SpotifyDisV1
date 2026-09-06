@@ -403,7 +403,7 @@ body.dayMode #backgroundImage {
 ========================= */
 
 #albumArtContainer {
-  width: clamp(320px, 34vw, 480px);
+  width: clamp(300px, 32vw, 440px);
   aspect-ratio: 1 / 1;
 
   flex-shrink: 0;
@@ -6273,6 +6273,17 @@ async function showPlaying(data) {
 
   if (!data.item) {
 
+    if (trackEndTimer) {
+
+      clearTimeout(
+        trackEndTimer
+      );
+
+      trackEndTimer =
+        null;
+
+    }
+
     trackName.textContent =
       "Nothing Playing";
 
@@ -6481,6 +6492,8 @@ async function showPlaying(data) {
   currentTrackId =
     track.id;
 
+  scheduleTrackEndCheck();
+
 }
 
 
@@ -6534,6 +6547,58 @@ async function updatePlayer() {
 
 let pollingInterval =
   null;
+
+let trackEndTimer =
+  null;
+
+
+function scheduleTrackEndCheck() {
+
+  if (trackEndTimer) {
+
+    clearTimeout(
+      trackEndTimer
+    );
+
+    trackEndTimer =
+      null;
+
+  }
+
+  if (
+    !currentDuration ||
+    !status.classList.contains(
+      "playing"
+    )
+  ) {
+
+    return;
+
+  }
+
+  const remaining =
+    currentDuration -
+    getCurrentElapsed();
+
+  if (remaining <= 0) {
+
+    trackEndTimer =
+      setTimeout(
+        updatePlayer,
+        150
+      );
+
+    return;
+
+  }
+
+  trackEndTimer =
+    setTimeout(
+      updatePlayer,
+      remaining + 150
+    );
+
+}
 
 
 function startSpotify() {
@@ -6869,6 +6934,17 @@ function logout() {
     );
 
     pollingInterval =
+      null;
+
+  }
+
+  if (trackEndTimer) {
+
+    clearTimeout(
+      trackEndTimer
+    );
+
+    trackEndTimer =
       null;
 
   }
