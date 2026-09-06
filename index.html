@@ -1889,6 +1889,10 @@ async function refreshToken() {
    SPOTIFY FETCH
 ========================= */
 
+let spotifyRateLimitUntil =
+  0;
+
+
 async function spotifyFetch(
   endpoint,
   options = {},
@@ -1902,6 +1906,29 @@ async function spotifyFetch(
 
   if (!token)
     return null;
+
+
+  /*
+   * Spotify has temporarily rate-limited
+   * this application.
+   *
+   * Do not make another request until
+   * the cooldown has expired.
+   */
+
+  if (
+    Date.now() <
+    spotifyRateLimitUntil
+  ) {
+
+    return {
+      __spotifyError: true,
+      status: 429,
+      rateLimited: true
+    };
+
+  }
+
 
   try {
 
@@ -1959,7 +1986,78 @@ async function spotifyFetch(
       return null;
 
 
-    /* ERROR */
+    /* RATE LIMITED */
+
+    if (response.status === 429) {
+
+      const retryAfterHeader =
+        response.headers.get(
+          "Retry-After"
+        );
+
+      let retryAfterSeconds =
+        Number(
+          retryAfterHeader
+        );
+
+
+      if (
+        !Number.isFinite(
+          retryAfterSeconds
+        ) ||
+        retryAfterSeconds <= 0
+      ) {
+
+        retryAfterSeconds =
+          10;
+
+      }
+
+
+      spotifyRateLimitUntil =
+        Date.now() +
+        (
+          retryAfterSeconds *
+          1000
+        );
+
+
+      let errorData = null;
+
+      try {
+
+        errorData =
+          await response.json();
+
+      } catch (error) {
+
+        errorData = null;
+
+      }
+
+
+      console.warn(
+        "Spotify API rate limited. Retrying after " +
+        retryAfterSeconds +
+        " seconds.",
+        errorData
+      );
+
+
+      return {
+        __spotifyError: true,
+        status: 429,
+        rateLimited: true,
+        retryAfter:
+          retryAfterSeconds,
+        error:
+          errorData
+      };
+
+    }
+
+
+    /* OTHER ERROR */
 
     if (!response.ok) {
 
@@ -2040,6 +2138,7 @@ async function loadPlaylists() {
       const data =
         await spotifyFetch(url);
 
+
       if (
         !data ||
         data.__spotifyError ||
@@ -2051,10 +2150,25 @@ async function loadPlaylists() {
           data
         );
 
-        playlistDropdown.innerHTML =
-          '<div id="playlistLoading">Unable to load playlists</div>';
 
-        playlistsLoaded = false;
+        if (
+          data &&
+          data.status === 429
+        ) {
+
+          playlistDropdown.innerHTML =
+            '<div id="playlistLoading">Spotify is temporarily rate limited</div>';
+
+        } else {
+
+          playlistDropdown.innerHTML =
+            '<div id="playlistLoading">Unable to load playlists</div>';
+
+        }
+
+
+        playlistsLoaded =
+          false;
 
         return;
 
@@ -2088,11 +2202,11 @@ async function loadPlaylists() {
     }
 
 
-    playlistsLoaded = true;
+    playlistsLoaded =
+      true;
 
     renderPlaylists();
 
-    await detectCurrentPlaylist();
 
   } catch (error) {
 
@@ -2104,7 +2218,8 @@ async function loadPlaylists() {
     playlistDropdown.innerHTML =
       '<div id="playlistLoading">Unable to load playlists</div>';
 
-    playlistsLoaded = false;
+    playlistsLoaded =
+      false;
 
   }
 
@@ -2115,12 +2230,29 @@ async function loadPlaylists() {
    PLAYLIST NAME
 ========================= */
 
-async function getPlaylistName(
+/*
+ * IMPORTANT:
+ *
+ * This function ONLY searches the
+ * already-loaded playlist list.
+ *
+ * It NO LONGER calls:
+ *
+ * /playlists/{playlistId}
+ *
+ * every time the player updates.
+ *
+ * This prevents the repeated 429
+ * requests that were causing the issue.
+ */
+
+function getPlaylistName(
   contextUri
 ) {
 
   if (!contextUri)
     return "";
+
 
   if (
     !contextUri.includes(
@@ -2150,24 +2282,6 @@ async function getPlaylistName(
   if (existingPlaylist) {
 
     return existingPlaylist.name;
-
-  }
-
-
-  const data =
-    await spotifyFetch(
-      "/playlists/" +
-      playlistId +
-      "?fields=name"
-    );
-
-
-  if (
-    data &&
-    !data.__spotifyError
-  ) {
-
-    return data.name || "";
 
   }
 
@@ -2278,7 +2392,8 @@ function renderPlaylists() {
         "playlistTitle";
 
       title.textContent =
-        playlist.name || "Untitled Playlist";
+        playlist.name ||
+        "Untitled Playlist";
 
 
       const subtitle =
@@ -2410,13 +2525,9 @@ function updatePlaylistSelection() {
    DETECT CURRENT PLAYLIST
 ========================= */
 
-async function detectCurrentPlaylist() {
-
-  const data =
-    await spotifyFetch(
-      "/me/player"
-    );
-
+function detectCurrentPlaylist(
+  data
+) {
 
   if (
     !data ||
@@ -2628,10 +2739,6 @@ function openPlaylistDropdown() {
   if (!playlistsLoaded) {
 
     loadPlaylists();
-
-  } else {
-
-    detectCurrentPlaylist();
 
   }
 
@@ -2900,7 +3007,7 @@ setInterval(
    NOW PLAYING
 ========================= */
 
-async function showPlaying(data) {
+function showPlaying(data) {
 
   if (
     !data ||
@@ -3029,15 +3136,26 @@ async function showPlaying(data) {
     data.context?.uri || "";
 
 
+  /*
+   * Playlist name is now resolved
+   * ONLY from the playlists already
+   * loaded into userPlaylists.
+   *
+   * No extra Spotify request.
+   */
+
   const playlist =
-    await getPlaylistName(
+    getPlaylistName(
       contextUri
     );
 
 
-  playlistName.textContent =
-    playlist ||
-    "No playlist";
+  if (playlist) {
+
+    playlistName.textContent =
+      playlist;
+
+  }
 
 
   if (
@@ -3098,19 +3216,59 @@ async function showPlaying(data) {
    UPDATE PLAYER
 ========================= */
 
+let updatePlayerInFlight =
+  false;
+
+
 async function updatePlayer() {
 
-  const data =
-    await spotifyFetch(
-      "/me/player"
-    );
+  /*
+   * Prevent another player request
+   * from starting while the previous
+   * one is still running.
+   */
+
+  if (updatePlayerInFlight)
+    return;
 
 
-  if (data) {
+  updatePlayerInFlight =
+    true;
 
-    await showPlaying(
-      data
-    );
+
+  try {
+
+    const data =
+      await spotifyFetch(
+        "/me/player"
+      );
+
+
+    /*
+     * IMPORTANT:
+     *
+     * Do not send a 429/error object
+     * into showPlaying().
+     *
+     * This keeps the existing display
+     * intact during temporary API errors.
+     */
+
+    if (
+      data &&
+      !data.__spotifyError
+    ) {
+
+      showPlaying(
+        data
+      );
+
+    }
+
+  } finally {
+
+    updatePlayerInFlight =
+      false;
 
   }
 
@@ -3135,7 +3293,7 @@ function startSpotify() {
     pollingInterval =
       setInterval(
         updatePlayer,
-        5000
+        10000
       );
 
   }
@@ -3447,6 +3605,12 @@ function logout() {
       null;
 
   }
+
+
+  /* Clear rate limit */
+
+  spotifyRateLimitUntil =
+    0;
 
 
   /* Clear ALL Spotify authentication data */
