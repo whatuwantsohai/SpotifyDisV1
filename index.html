@@ -284,6 +284,13 @@ body.dayMode #backgroundImage {
   transform: scale(0.95);
 }
 
+#fullscreenButton {
+  position: fixed;
+  right: max(18px, calc(14px + env(safe-area-inset-right)));
+  bottom: max(18px, calc(14px + env(safe-area-inset-bottom)));
+  z-index: 210;
+}
+
 #fullscreenIcon {
   width: 15px;
   height: 15px;
@@ -1343,17 +1350,17 @@ body.modeLyrics #lyricsView {
 
 .lyricsToolbar {
   position: fixed;
-  top: max(82px, calc(68px + env(safe-area-inset-top)));
-  right: max(24px, env(safe-area-inset-right));
+  top: max(18px, calc(10px + env(safe-area-inset-top)));
+  right: max(18px, calc(10px + env(safe-area-inset-right)));
   z-index: 80;
   display: flex;
   gap: 8px;
 }
 
 .lyricsToolButton {
-  min-width: 72px;
-  min-height: 40px;
-  padding: 8px 12px;
+  min-width: 64px;
+  min-height: 38px;
+  padding: 8px 11px;
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 999px;
   background: rgba(20,20,20,0.72);
@@ -1390,6 +1397,17 @@ body.lyricsFocusMode #lyricsView {
   padding-top: max(72px, calc(54px + env(safe-area-inset-top)));
   padding-bottom: max(90px, calc(70px + env(safe-area-inset-bottom)));
 }
+
+body.lyricsUiHidden #header,
+body.lyricsUiHidden .lyricsTrackInfo,
+body.lyricsUiHidden .lyricsToolbar,
+body.lyricsUiHidden .lyricsHint,
+body.lyricsUiHidden #fullscreenButton {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+body.lyricsUiHidden #lyricsView { cursor: pointer; }
 
 body.lyricsFocusMode .lyricsTrackInfo { opacity: 0; pointer-events: none; }
 
@@ -1604,12 +1622,12 @@ body.modeLyrics #lyricsView {
 }
 
 #lyricsInner {
-  width: min(1000px, 100%);
+  width: min(920px, 100%);
   min-height: 100%;
-  margin: 0 auto;
+  margin: 0;
   padding: 42vh 0 42vh;
   box-sizing: border-box;
-  text-align: center;
+  text-align: left;
   transform: translate3d(0, var(--lyrics-shift, 0px), 0);
   transition: transform 520ms cubic-bezier(.22,.61,.36,1);
   will-change: transform;
@@ -1618,9 +1636,9 @@ body.modeLyrics #lyricsView {
 }
 
 .lyricsLine {
-  margin: 0 auto;
-  padding: 14px 0;
-  max-width: 900px;
+  margin: 0;
+  padding: 18px 0;
+  max-width: 920px;
   font-size: clamp(32px, 4.5vw, 52px);
   line-height: 1.12;
   font-weight: 800;
@@ -1689,9 +1707,24 @@ body.modeLyrics #backgroundOverlay {
 }
 
 body.modeLyrics #ambientGlow {
-  opacity: 0.95;
-  filter: blur(95px) saturate(1.5);
-  animation-duration: 18s;
+  opacity: 1;
+  filter: blur(82px) saturate(1.85) contrast(1.08);
+  animation-duration: 22s;
+  transform: scale(1.12);
+}
+
+body.modeLyrics #background {
+  background:
+    radial-gradient(circle at 72% 38%, var(--ambient1, rgba(255,255,255,0.18)), transparent 38%),
+    radial-gradient(circle at 24% 76%, var(--ambient2, rgba(255,255,255,0.12)), transparent 42%),
+    radial-gradient(circle at 82% 82%, var(--ambient3, rgba(255,255,255,0.07)), transparent 34%),
+    #050505;
+}
+
+body.modeLyrics #backgroundOverlay {
+  background:
+    radial-gradient(circle at 52% 50%, rgba(0,0,0,0.05), rgba(0,0,0,0.58) 72%),
+    linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.42));
 }
 
 /* =========================
@@ -3253,10 +3286,10 @@ body.ambientScreensaver #backgroundImage {
   .queueItem .queueMeta, .queueItem small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .lyricsView { padding:0 18px !important; }
   #lyricsView { padding-left:18px !important; padding-right:18px !important; }
-  .lyricsToolbar { top:max(66px, calc(58px + env(safe-area-inset-top))); right:14px; }
-  body.lyricsFocusMode .lyricsToolbar { top:max(18px, calc(10px + env(safe-area-inset-top))); right:14px; }
+  .lyricsToolbar { top:max(14px, calc(10px + env(safe-area-inset-top))); right:12px; }
+  body.lyricsFocusMode .lyricsToolbar { top:max(14px, calc(10px + env(safe-area-inset-top))); right:12px; }
   .lyricsInner { max-width:100% !important; padding-bottom:calc(120px + env(safe-area-inset-bottom)); }
-  .lyricsLine { font-size:clamp(32px, 9vw, 44px) !important; line-height:1.12 !important; padding:16px 0 !important; }
+  .lyricsLine { font-size:clamp(30px, 8.5vw, 42px) !important; line-height:1.12 !important; padding:15px 0 !important; max-width:100% !important; }
   .lyricsTrackInfo { max-width:48vw; }
   .lyricsTrackInfo img { width:34px; height:34px; }
   .lyricsHint { bottom:calc(12px + env(safe-area-inset-bottom)); font-size:12px; }
@@ -3270,7 +3303,7 @@ body.ambientScreensaver #backgroundImage {
 @media (max-width: 430px) and (orientation: landscape) {
   .cover, .album-art, .artwork { width:38vh; height:38vh; max-width:none; max-height:none; }
   .main, .content, .page { padding:8px 14px !important; }
-  .lyricsLine { font-size:clamp(28px, 6vh, 38px) !important; padding:10px 0 !important; }
+  .lyricsLine { font-size:clamp(27px, 6vh, 37px) !important; padding:11px 0 !important; max-width:100% !important; }
 }
 @supports (padding: max(0px)) {
   @media (max-width: 430px) {
@@ -3512,6 +3545,7 @@ body.modeVisualizer #albumArt {
   </div>
   <div class="lyricsToolbar">
     <button id="lyricsFocusButton" type="button" class="lyricsToolButton" aria-label="Enter lyrics focus mode" title="Enter lyrics focus mode">Focus</button>
+    <button id="lyricsHideUiButton" type="button" class="lyricsToolButton" aria-label="Hide interface" title="Hide interface">Hide UI</button>
   </div>
   <div id="lyricsInner"></div>
   <div id="lyricsFallback">No synced lyrics available.</div>
@@ -4121,6 +4155,8 @@ const queueList =
 
 const lyricsView =
   document.getElementById("lyricsView");
+const lyricsHideUiButton =
+  document.getElementById("lyricsHideUiButton");
 
 const lyricsInner =
   document.getElementById("lyricsInner");
@@ -4223,6 +4259,7 @@ let lyricsFocusActive =
 
 function exitLyricsFocusMode() {
   lyricsFocusActive = false;
+  document.body.classList.remove("lyricsUiHidden");
   document.body.classList.remove("lyricsFocusMode");
 
   if (lyricsFocusButton) {
@@ -4261,6 +4298,21 @@ if (lyricsFocusButton) {
     }
   });
 }
+
+if (lyricsHideUiButton) {
+  lyricsHideUiButton.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    document.body.classList.add("lyricsUiHidden");
+  });
+}
+
+lyricsView.addEventListener("pointerdown", event => {
+  if (!document.body.classList.contains("lyricsUiHidden")) return;
+  if (event.target.closest(".lyricsLine")) return;
+  document.body.classList.remove("lyricsUiHidden");
+  wakeDisplay();
+});
 
 window.addEventListener("keydown", event => {
   if ((event.key === "Escape" || event.key === "Esc") && lyricsFocusActive) {
@@ -7506,6 +7558,7 @@ displayModeOptions.forEach(
       "click",
       () => {
 
+        document.body.classList.remove("lyricsUiHidden");
         appSettings.displayMode =
           option.dataset.mode;
 
