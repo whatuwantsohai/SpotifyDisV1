@@ -1325,31 +1325,7 @@ body.modeLyrics .lyricsLine.active {
   filter: drop-shadow(0 8px 30px rgba(0,0,0,0.25));
 }
 
-#lyricsExitButton {
-  position: fixed;
-  top: max(18px, calc(10px + env(safe-area-inset-top)));
-  right: max(18px, calc(10px + env(safe-area-inset-right)));
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 50%;
-  background: rgba(15,15,15,0.72);
-  color: rgba(255,255,255,0.82);
-  font-size: 28px;
-  line-height: 1;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-body.modeLyrics #lyricsExitButton {
-  display: flex;
-}
+body.modeLyrics
 
 body.modeLyrics #lyricsExitButton:active {
   transform: scale(0.94);
@@ -2205,22 +2181,6 @@ lyricsInner.addEventListener(
     wakeDisplay();
   }
 );
-
-function exitLyricsMode() {
-  // Check the rendered mode too, because Auto mode can render Lyrics
-  // without appSettings.displayMode literally being "lyrics".
-  const lyricsIsVisible =
-    document.body.classList.contains("modeLyrics") ||
-    appSettings.displayMode === "lyrics";
-
-  if (!lyricsIsVisible) return;
-
-  appSettings.displayMode = "normal";
-  saveSettings();
-  applySettings();
-  closeDisplayModeMenu();
-  wakeDisplay();
-}
 
 // Desktop keyboard support.
 document.addEventListener(
@@ -3290,12 +3250,7 @@ body.ambientScreensaver #backgroundImage {
     padding-bottom: max(96px, calc(84px + env(safe-area-inset-bottom))) !important;
   }
 
-  body.modeLyrics #lyricsExitButton {
-    /* Put the exit control in the lower-right, clear of the iPhone header/logout controls. */
-    top: auto;
-    right: 14px;
-    bottom: calc(82px + env(safe-area-inset-bottom));
-  }
+  body.modeLyrics
 
   html, body { width:100%; min-width:0; overflow-x:hidden; }
   body { -webkit-text-size-adjust:100%; padding-bottom: env(safe-area-inset-bottom); }
@@ -3537,10 +3492,9 @@ body.ambientScreensaver #backgroundImage {
 </div>
 
 <div id="lyricsView" aria-live="polite">
-  <button id="lyricsExitButton" type="button" aria-label="Exit lyrics mode" title="Exit lyrics mode">×</button>
   <div id="lyricsInner"></div>
   <div id="lyricsFallback">No synced lyrics available.</div>
-  <div class="lyricsHint">Tap × to exit · Tap a line to seek</div>
+  <div class="lyricsHint">Tap a line to seek</div>
 </div>
 
 <div id="vinylMode" aria-hidden="true">
@@ -4146,9 +4100,6 @@ const queueList =
 
 const lyricsView =
   document.getElementById("lyricsView");
-
-const lyricsExitButton =
-  document.getElementById("lyricsExitButton");
 
 const lyricsInner =
   document.getElementById("lyricsInner");
