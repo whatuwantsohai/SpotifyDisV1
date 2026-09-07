@@ -3912,6 +3912,135 @@ button,
 }
 
 </style>
+
+<style id="smart-title-two-row">
+#trackInfo{
+  min-width:0 !important;
+  width:100% !important;
+}
+#trackName{
+  width:100% !important;
+  max-width:100% !important;
+  margin:0 !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  overflow-wrap:break-word !important;
+  word-break:normal !important;
+  text-wrap:pretty !important;
+  display:block !important;
+  max-height:none !important;
+  -webkit-line-clamp:unset !important;
+  transition:font-size .18s ease, opacity .45s ease, transform .45s ease !important;
+}
+@media (max-width:600px){
+  #trackName{font-size:clamp(22px,7vw,42px) !important;line-height:1.04 !important;}
+}
+@media (prefers-reduced-motion:reduce){
+  #trackName{transition:none !important;}
+}
+</style>
+
+
+<style id="display-only-queue">
+#queueList{user-select:none;}
+#queueList .queueItem{
+  cursor:default !important;
+  grid-template-columns:44px minmax(0,1fr) !important;
+}
+#queueList .queueItem:hover{
+  transform:none !important;
+  background:rgba(255,255,255,.045);
+}
+#queueList .queueDragHandle,
+#queueList .queueActions,
+#queueList .queueNotice,
+#queueList .queueAction{
+  display:none !important;
+}
+</style>
+
+
+<style id="final-visual-touchup">
+/* Cleaner player hierarchy */
+#trackInfo{position:relative;}
+#artistName{opacity:.78;letter-spacing:.01em;}
+#albumName.now-playing-album{
+  color:rgba(255,255,255,.50);
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:.015em;
+}
+
+/* Subtle artwork depth without changing artwork timing */
+#albumArtContainer{
+  box-shadow:0 20px 48px rgba(0,0,0,.22);
+}
+#albumArtDisplay,#vinylArtwork,#lyricsTrackArt{
+  backface-visibility:hidden;
+}
+
+/* Cleaner progress interaction */
+#progressBar{
+  touch-action:none;
+  user-select:none;
+}
+#progressPreview{
+  pointer-events:none;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Better control feedback */
+.control{
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.control:focus-visible{
+  outline:2px solid rgba(255,255,255,.7);
+  outline-offset:3px;
+}
+.control:active{transform:scale(.95);}
+
+/* Queue is calm and informational */
+#queueList .queueItem{
+  transition:background-color .16s ease, opacity .16s ease;
+}
+#queueList .queueArtwork{
+  border-radius:8px;
+}
+
+/* Lyrics readability */
+.lyricsLine{
+  text-wrap:pretty;
+}
+.lyricsLine.active{
+  text-shadow:0 0 22px rgba(255,255,255,.10);
+}
+
+/* Never let text selection/touch highlighting make the player feel messy */
+button,#queueList,.control,#progressBar{
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* Respect reduced-motion users */
+@media (prefers-reduced-motion:reduce){
+  *,
+  *::before,
+  *::after{
+    scroll-behavior:auto !important;
+  }
+  #albumArtDisplay,
+  #vinylArtwork,
+  .queueItem,
+  .lyricsLine,
+  .control,
+  #progress{
+    transition:none !important;
+    animation:none !important;
+  }
+}
+</style>
+
 </head>
 
 <body>
@@ -4102,12 +4231,7 @@ button,
     <div class="queueTitle">Queue</div>
     <button id="queueClose" class="queueClose" type="button" aria-label="Close queue">×</button>
   </div>
-  <div id="queueList">
-    <div class="queueEmpty">Open Queue to load your upcoming tracks.</div>
-  </div>
-  <div class="queueNotice">
-    Drag to reorder this session's queue. Spotify does not expose an API to reorder/remove existing queue entries, so these changes are kept locally until playback uses them.
-  </div>
+  <div id="queueList" role="list"><div class="queueEmpty">Open Queue to load your upcoming tracks.</div></div>
 </div>
 
 <div id="lyricsView" aria-live="polite">
@@ -7142,8 +7266,8 @@ function moveQueueItem(fromIndex, toIndex) {
 }
 
 function renderQueue(items) {
-  sessionQueueItems = normalizeQueueItems(items);
-
+  // Display-only queue: Spotify is the sole source of truth.
+  sessionQueueItems = Array.isArray(items) ? items.slice() : [];
   queueList.innerHTML = "";
 
   if (!sessionQueueItems.length) {
@@ -7152,21 +7276,20 @@ function renderQueue(items) {
     return;
   }
 
+  const fragment = document.createDocumentFragment();
+
   sessionQueueItems.forEach((item, index) => {
     const row = document.createElement("div");
     row.className = "queueItem";
-    row.draggable = true;
     row.dataset.index = String(index);
-
-    const handle = document.createElement("div");
-    handle.className = "queueDragHandle";
-    handle.textContent = "⋮⋮";
-    handle.title = "Drag to reorder";
-    handle.setAttribute("aria-label", "Drag to reorder");
+    row.setAttribute("role", "listitem");
 
     const image = document.createElement("img");
     image.className = "queueArtwork";
     image.alt = "";
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.draggable = false;
     image.src = queueItemImage(item);
 
     const details = document.createElement("div");
@@ -7175,186 +7298,22 @@ function renderQueue(items) {
     const title = document.createElement("div");
     title.className = "queueTrack";
     title.textContent = queueItemTitle(item);
+    title.title = title.textContent;
 
     const artist = document.createElement("div");
     artist.className = "queueArtist";
     artist.textContent = queueItemArtist(item);
+    artist.title = artist.textContent;
 
     details.appendChild(title);
     details.appendChild(artist);
 
-    const actions = document.createElement("div");
-    actions.className = "queueActions";
-
-    const playNext = document.createElement("button");
-    playNext.className = "queueAction";
-    playNext.type = "button";
-    playNext.textContent = "↑";
-    playNext.title = "Play next";
-    playNext.setAttribute("aria-label", "Play next");
-    playNext.addEventListener("click", async event => {
-      event.stopPropagation();
-
-      const uri = queueItemUri(item);
-      if (!uri) return;
-
-      const key = queueItemKey(item, index);
-      queueRemovedIds.delete(key);
-
-      sessionQueueItems =
-        sessionQueueItems.filter(
-          (candidate, candidateIndex) =>
-            queueItemKey(candidate, candidateIndex) !== key
-        );
-
-      priorityNextQueue =
-        priorityNextQueue.filter(
-          queued => queueItemUri(queued.item) !== uri
-        );
-
-      priorityNextQueue.unshift({
-        key,
-        item
-      });
-
-      renderQueue(sessionQueueItems);
-      wakeDisplay();
-    });
-
-    const remove = document.createElement("button");
-    remove.className = "queueAction remove";
-    remove.type = "button";
-    remove.textContent = "×";
-    remove.title = "Remove from session queue";
-    remove.setAttribute("aria-label", "Remove from session queue");
-    remove.addEventListener("click", event => {
-      event.stopPropagation();
-
-      const key = queueItemKey(item, index);
-      queueRemovedIds.add(key);
-
-      sessionQueueItems =
-        sessionQueueItems.filter(
-          (candidate, candidateIndex) =>
-            queueItemKey(candidate, candidateIndex) !== key
-        );
-
-      priorityNextQueue =
-        priorityNextQueue.filter(
-          queued => queued.key !== key
-        );
-
-      renderQueue(sessionQueueItems);
-      wakeDisplay();
-    });
-
-    actions.appendChild(playNext);
-    actions.appendChild(remove);
-
-    row.addEventListener("dragstart", event => {
-      queueDraggingIndex = index;
-      row.classList.add("dragging");
-      event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData(
-        "text/plain",
-        String(index)
-      );
-    });
-
-    row.addEventListener("dragend", () => {
-      queueDraggingIndex = -1;
-      row.classList.remove("dragging");
-      queueList
-        .querySelectorAll(".dragOver")
-        .forEach(el => el.classList.remove("dragOver"));
-    });
-
-    row.addEventListener("dragover", event => {
-      event.preventDefault();
-
-      if (
-        queueDraggingIndex < 0 ||
-        queueDraggingIndex === index
-      ) {
-        return;
-      }
-
-      event.dataTransfer.dropEffect = "move";
-      row.classList.add("dragOver");
-    });
-
-    row.addEventListener("dragleave", () => {
-      row.classList.remove("dragOver");
-    });
-
-    row.addEventListener("drop", event => {
-      event.preventDefault();
-      row.classList.remove("dragOver");
-
-      const fromIndex = Number(
-        event.dataTransfer.getData("text/plain")
-      );
-
-      if (
-        Number.isInteger(fromIndex) &&
-        fromIndex !== index
-      ) {
-        moveQueueItem(fromIndex, index);
-      }
-    });
-
-    row.addEventListener("click", async event => {
-      if (event.target.closest(".queueActions")) return;
-
-      const uri = queueItemUri(item);
-      if (!uri) return;
-
-      // Manual selection must never alter the Spotify queue or mark the
-      // selected row as removed. It is simply a request to start that
-      // track now. Clear only our local priority-next state so an older
-      // Play Next action cannot fire after the manual selection.
-      if (trackEndTimer) {
-        clearTimeout(trackEndTimer);
-        trackEndTimer = null;
-      }
-      priorityNextQueue = [];
-
-      const result = await spotifyFetch(
-        "/me/player/play",
-        {
-          method: "PUT",
-          allowDuringQuotaCooldown: true,
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            uris: [uri]
-          })
-        }
-      );
-
-      if (
-        result &&
-        result.__spotifyError
-      ) {
-        return;
-      }
-
-      // Refresh from Spotify after the manual selection. Do not mutate
-      // sessionQueueItems locally because the Spotify queue endpoint is
-      // the source of truth for the rows shown here.
-      closeQueue();
-      setTimeout(updatePlayer, 250);
-      wakeDisplay();
-    });
-
-    row.appendChild(handle);
     row.appendChild(image);
     row.appendChild(details);
-    row.appendChild(actions);
-
-    queueList.appendChild(row);
+    fragment.appendChild(row);
   });
+
+  queueList.appendChild(fragment);
 }
 
 async function loadQueue() {
@@ -8920,6 +8879,10 @@ previousButton.addEventListener(
   "click",
   async () => {
 
+    if (window.spotifyDisAllowSkip && !window.spotifyDisAllowSkip()) {
+      return;
+    }
+
     const result =
       await spotifyFetch(
         withDeviceId("/me/player/previous"),
@@ -9000,6 +8963,10 @@ playButton.addEventListener(
 nextButton.addEventListener(
   "click",
   async () => {
+
+    if (window.spotifyDisAllowSkip && !window.spotifyDisAllowSkip()) {
+      return;
+    }
 
     if (
       await playPriorityNextIfAvailable()
@@ -9917,6 +9884,69 @@ updateSessionTime();
     img.draggable=false;
     img.addEventListener('dragstart',e=>e.preventDefault());
   });
+})();
+</script>
+
+
+<script id="single-skip-command">
+(() => {
+  let skipLockedUntil = 0;
+
+  window.spotifyDisAllowSkip = () => {
+    const now = performance.now();
+    if (now < skipLockedUntil) return false;
+    skipLockedUntil = now + 900;
+    return true;
+  };
+
+  window.addEventListener("pagehide", () => {
+    skipLockedUntil = 0;
+  }, {passive:true});
+})();
+</script>
+
+
+<script id="smart-title-fitter">
+(() => {
+  const title = document.getElementById("trackName");
+  if (!title) return;
+
+  let fitFrame = 0;
+
+  function fitTitleToTwoRows() {
+    cancelAnimationFrame(fitFrame);
+    fitFrame = requestAnimationFrame(() => {
+      const isMobile = window.matchMedia("(max-width: 600px)").matches;
+      const maxSize = isMobile ? 42 : 72;
+      const minSize = isMobile ? 20 : 30;
+
+      title.style.fontSize = maxSize + "px";
+      title.style.lineHeight = isMobile ? "1.04" : "1.02";
+
+      let size = maxSize;
+      let guard = 0;
+
+      while (size > minSize && title.scrollHeight > title.clientHeight + 2 && guard < 30) {
+        size -= 1;
+        title.style.fontSize = size + "px";
+        guard++;
+      }
+
+      // If the title is still too tall at the minimum, use the smallest
+      // readable size rather than clipping any text.
+      if (title.scrollHeight > title.clientHeight + 2) {
+        title.style.fontSize = minSize + "px";
+      }
+    });
+  }
+
+  window.spotifyDisFitTitle = fitTitleToTwoRows;
+  window.addEventListener("resize", fitTitleToTwoRows, {passive:true});
+
+  const observer = new MutationObserver(fitTitleToTwoRows);
+  observer.observe(title, {childList:true, characterData:true, subtree:true});
+
+  fitTitleToTwoRows();
 })();
 </script>
 
