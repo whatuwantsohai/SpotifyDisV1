@@ -3403,6 +3403,213 @@ body.connectionRecovering #status {
 
 /* Keep the primary player artwork visible once an image has loaded. */
 #albumArtDisplay[src]:not([src=""]) { opacity: 1; }
+
+/* =========================
+   FINAL TOUCH-UP POLISH
+   Lightweight: no continuous RAF / particle systems
+========================= */
+
+/* Album-art loading: keep old art visible until replacement is ready */
+#albumArtDisplay,
+#albumArt,
+#lyricsTrackArt,
+#vinylArtwork {
+  backface-visibility: hidden;
+}
+
+#albumArtDisplay.artwork-loading {
+  filter: blur(2px);
+  transform: scale(.992);
+  transition: filter .22s ease, transform .22s ease;
+}
+
+#albumArtDisplay.artwork-ready {
+  filter: none;
+  transform: scale(1);
+  transition: filter .28s ease, transform .28s ease;
+}
+
+/* Now-playing hierarchy */
+#trackName {
+  letter-spacing: -.012em;
+  text-wrap: balance;
+}
+
+#artistName {
+  opacity: .76;
+  transition: opacity .2s ease;
+}
+
+body.user-active #artistName {
+  opacity: .92;
+}
+
+/* Progress thumb only appears when useful */
+#progressBar {
+  touch-action: none;
+}
+
+#progressBar::-webkit-slider-thumb {
+  opacity: 0;
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+#progressBar::-moz-range-thumb {
+  opacity: 0;
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+#progressBar.progress-active::-webkit-slider-thumb,
+#progressBar:hover::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+#progressBar.progress-active::-moz-range-thumb,
+#progressBar:hover::-moz-range-thumb {
+  opacity: 1;
+}
+
+#progressTooltip {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition: opacity .12s ease, transform .12s ease;
+  z-index: 20;
+}
+
+#progressTooltip.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Queue hierarchy */
+.queue-item.queue-current {
+  position: relative;
+}
+
+.queue-item.queue-current::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 99px;
+  background: currentColor;
+  opacity: .8;
+}
+
+.queue-item.queue-next {
+  transform: translateX(2px);
+}
+
+.queue-item.queue-next::after {
+  content: "NEXT";
+  margin-left: auto;
+  padding: 3px 6px;
+  border-radius: 999px;
+  font-size: 9px;
+  letter-spacing: .08em;
+  opacity: .55;
+}
+
+.queue-empty-state {
+  padding: 28px 18px;
+  text-align: center;
+  opacity: .58;
+}
+
+.queue-empty-state strong {
+  display: block;
+  margin-bottom: 5px;
+  opacity: .9;
+}
+
+/* Consistent control feedback */
+button,
+[role="button"],
+.queue-action,
+.header-button {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .14s ease, opacity .14s ease, filter .14s ease;
+}
+
+button:active,
+[role="button"]:active,
+.queue-action:active,
+.header-button:active {
+  transform: scale(.94);
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  opacity: .38;
+  cursor: default;
+}
+
+/* Connection/device status */
+#deviceName,
+#status,
+.connection-state {
+  transition: opacity .2s ease;
+}
+
+.connection-reconnecting {
+  animation: connectionPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes connectionPulse {
+  0%, 100% { opacity: .45; }
+  50% { opacity: 1; }
+}
+
+/* Mobile safe area + touch behavior */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 600px) {
+  #progressBar {
+    min-height: 18px;
+  }
+
+  #progressBar::before {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
+  }
+}
+
+/* Screensaver should stay cheap */
+body.screensaverWaking {
+  animation: screensaverWake .32s ease both;
+}
+
+@keyframes screensaverWake {
+  from { opacity: .82; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #albumArtDisplay.artwork-loading,
+  #albumArtDisplay.artwork-ready,
+  button,
+  [role="button"],
+  .queue-action,
+  .header-button,
+  #progressTooltip {
+    transition: none !important;
+  }
+
+  .connection-reconnecting,
+  body.screensaverWaking {
+    animation: none !important;
+  }
+}
+
 </style>
 </head>
 
@@ -8853,6 +9060,168 @@ updateSessionTime();
 
   // Prevent accidental page scrolling while dragging the progress bar on touch.
   if (progressBar) progressBar.style.touchAction = 'none';
+})();
+</script>
+
+
+<script>
+/* =========================
+   FINAL TOUCH-UP BEHAVIOUR
+========================= */
+(function () {
+  "use strict";
+
+  const art = document.getElementById("albumArtDisplay");
+  const progress = document.getElementById("progressBar");
+  const queue = document.getElementById("queueList") ||
+                document.getElementById("queueContainer");
+  const device = document.getElementById("deviceName");
+
+  /* Album art: never leave the loading state stuck. */
+  if (art) {
+    const clearArtState = () => {
+      art.classList.remove("artwork-loading");
+      art.classList.add("artwork-ready");
+    };
+
+    art.addEventListener("load", clearArtState);
+    art.addEventListener("error", clearArtState);
+
+    const artObserver = new MutationObserver(() => {
+      if (art.getAttribute("src")) {
+        art.classList.add("artwork-loading");
+        if (art.complete) clearArtState();
+      }
+    });
+    artObserver.observe(art, { attributes: true, attributeFilter: ["src"] });
+  }
+
+  /* Progress: explicit active state + lightweight hover tooltip. */
+  if (progress) {
+    let tooltip = document.getElementById("progressTooltip");
+
+    if (!tooltip) {
+      tooltip = document.createElement("div");
+      tooltip.id = "progressTooltip";
+      tooltip.setAttribute("aria-hidden", "true");
+      progress.parentElement && progress.parentElement.appendChild(tooltip);
+    }
+
+    const showProgressHint = (event) => {
+      progress.classList.add("progress-active");
+      const duration = Number(window.currentDuration || progress.max || 0);
+      if (!duration) return;
+
+      const rect = progress.getBoundingClientRect();
+      const x = Math.max(rect.left, Math.min(rect.right, event.clientX));
+      const ratio = rect.width ? (x - rect.left) / rect.width : 0;
+      const ms = ratio * duration;
+
+      const totalSeconds = Math.floor(ms / 1000);
+      const min = Math.floor(totalSeconds / 60);
+      const sec = String(totalSeconds % 60).padStart(2, "0");
+
+      tooltip.textContent = min + ":" + sec;
+      tooltip.style.left = (x - rect.left) + "px";
+      tooltip.classList.add("visible");
+    };
+
+    const hideProgressHint = () => {
+      progress.classList.remove("progress-active");
+      tooltip.classList.remove("visible");
+    };
+
+    progress.addEventListener("pointerenter", showProgressHint);
+    progress.addEventListener("pointermove", showProgressHint);
+    progress.addEventListener("pointerleave", hideProgressHint);
+    progress.addEventListener("pointercancel", hideProgressHint);
+    window.addEventListener("blur", hideProgressHint);
+  }
+
+  /* Queue: lightweight empty-state fallback and semantic classes. */
+  const decorateQueue = () => {
+    if (!queue) return;
+
+    const rows = queue.querySelectorAll(
+      ".queue-item, [data-queue-item], li"
+    );
+
+    if (!rows.length && !queue.querySelector(".queue-empty-state")) {
+      const text = (queue.textContent || "").trim().toLowerCase();
+      if (
+        text === "" ||
+        text.includes("no tracks") ||
+        text.includes("queue is empty")
+      ) {
+        const empty = document.createElement("div");
+        empty.className = "queue-empty-state";
+        empty.innerHTML =
+          "<strong>Your queue is empty</strong><span>Add a track or use Play Next.</span>";
+        queue.appendChild(empty);
+      }
+    }
+
+    rows.forEach((row, index) => {
+      row.classList.toggle(
+        "queue-current",
+        row.dataset.current === "true" ||
+        row.getAttribute("aria-current") === "true"
+      );
+      row.classList.toggle(
+        "queue-next",
+        row.dataset.priority === "true" ||
+        row.dataset.queueNext === "true" ||
+        index === 0 && row.classList.contains("queueNext")
+      );
+    });
+  };
+
+  if (queue) {
+    const queueObserver = new MutationObserver(decorateQueue);
+    queueObserver.observe(queue, { childList: true, subtree: true });
+    decorateQueue();
+  }
+
+  /* Device/connection polish without polling. */
+  const updateConnectionVisual = () => {
+    const hasDevice = !!(device && device.textContent.trim() &&
+                         !/no device/i.test(device.textContent));
+    document.body.classList.toggle("connection-reconnecting", !hasDevice);
+  };
+
+  if (device) {
+    const deviceObserver = new MutationObserver(updateConnectionVisual);
+    deviceObserver.observe(device, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+    updateConnectionVisual();
+  }
+
+  /* Wake secondary text on genuine user interaction only. */
+  let wakeTimer = null;
+  const markActive = () => {
+    document.body.classList.add("user-active");
+    clearTimeout(wakeTimer);
+    wakeTimer = setTimeout(
+      () => document.body.classList.remove("user-active"),
+      1800
+    );
+  };
+
+  ["pointerdown", "touchstart", "keydown"].forEach(type => {
+    document.addEventListener(type, markActive, { passive: true });
+  });
+
+  /* Prevent stuck press states after focus changes. */
+  window.addEventListener("blur", () => {
+    document.querySelectorAll(
+      ".pressed, .is-pressed, .progress-active"
+    ).forEach(el => {
+      el.classList.remove("pressed", "is-pressed", "progress-active");
+    });
+  });
 })();
 </script>
 
