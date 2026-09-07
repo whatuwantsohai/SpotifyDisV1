@@ -3288,86 +3288,82 @@ body.ambientScreensaver #background { animation:screensaverBreathe 12s ease-in-o
 .historyInsights span{display:block;margin-top:3px;font-size:8px;opacity:.4;text-transform:uppercase;letter-spacing:.5px;}
 @media(max-width:600px){.historyInsights{grid-template-columns:1.25fr .7fr 1.35fr;}}
 
-/* ===== POLISH PASS 2 CSS ===== */
+/* =========================
+   POLISH PASS 2 — FINISHING
+========================= */
+#progressBar{position:relative;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer;}
+#progressBar::before{content:"";position:absolute;inset:-10px 0;}
+#progressPreview{opacity:0;transform:translate(-50%,4px) scale(.96);transition:opacity .16s ease,transform .16s ease;pointer-events:none;}
+#progressBar.isSeeking #progressPreview{opacity:1;transform:translate(-50%,0) scale(1);}
+#progressBar.isSeeking #progress{transition:none!important;}
+#progressBar .progress{will-change:width;}
+body.seekActive #albumArtDisplay,body.seekActive #ambientGlow{transition:none!important;}
 
-/* Progress: one stable visual surface while dragging. */
-#progressBar { position:relative; overflow:visible; }
-#progress { will-change:width; transition:width .08s linear, filter .18s ease; }
-#progressBar.isSeeking #progress { transition:none !important; }
-#progressPreview { pointer-events:none; font-variant-numeric:tabular-nums; }
+#albumArtDisplay,#albumArt{background:rgba(255,255,255,.045);}
+#albumArtDisplay.artworkEntering{animation:polishArtworkIn .62s cubic-bezier(.22,.75,.22,1) both;}
+#albumArt.artworkEntering{animation:polishArtworkIn .52s cubic-bezier(.22,.75,.22,1) both;}
+@keyframes polishArtworkIn{0%{opacity:.35;transform:scale(.975)}55%{opacity:1;transform:scale(1.012)}100%{opacity:1;transform:scale(1)}}
+#albumArtDisplay.artworkLoading{opacity:.72;filter:saturate(.82);}
 
-/* Artwork: preloaded crossfade with no blank/white frame. */
-#albumArt, #albumArtDisplay, #vinylArtwork, #lyricsTrackArt {
-  will-change:opacity,transform;
-  backface-visibility:hidden;
+#controls .control,#headerActions button,#volumeIcon,.queueAction{position:relative;overflow:hidden;transform:translateZ(0);}
+#controls .control::after,#headerActions button::after,#volumeIcon::after,.queueAction::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:50%;background:currentColor;opacity:0;transform:translate(-50%,-50%) scale(1);pointer-events:none;}
+#controls .control.polishPulse::after,#headerActions button.polishPulse::after,#volumeIcon.polishPulse::after,.queueAction.polishPulse::after{animation:polishRipple .42s ease-out both;}
+#controls .control:active,#headerActions button:active,#volumeIcon:active,.queueAction:active{transform:scale(.965);}
+@keyframes polishRipple{0%{opacity:.2;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(14)}}
+
+body.isPlaying #albumArtDisplay{animation:polishAlive 8s ease-in-out infinite;}
+body.isPlaying #ambientGlow{animation:polishGlowBreath 6.5s ease-in-out infinite;}
+body:not(.isPlaying) #albumArtDisplay,body:not(.isPlaying) #ambientGlow{animation-play-state:paused;}
+@keyframes polishAlive{0%,100%{transform:scale(1)}50%{transform:scale(1.006)}}
+@keyframes polishGlowBreath{0%,100%{opacity:.72}50%{opacity:.9}}
+
+#volumeContainer{position:relative;}
+#volumeSlider{accent-color:currentColor;}
+#volumePercentage{min-width:42px;text-align:right;transition:opacity .18s ease,transform .18s ease;}
+#volumeContainer.volumeAdjusting #volumePercentage{transform:translateY(-1px);font-weight:700;}
+#volumeIcon{transition:transform .18s ease,opacity .18s ease;}
+#volumeIcon.volumeMuted{opacity:.72;}
+
+.queueItem{transition:transform .22s cubic-bezier(.22,.75,.22,1),opacity .22s ease,box-shadow .22s ease;}
+.queueItem.dragging{transform:scale(1.018) translateY(-2px);opacity:.92;box-shadow:0 14px 34px rgba(0,0,0,.22);z-index:3;}
+.queueItem.dragOver{transform:translateY(2px);box-shadow:inset 0 3px 0 currentColor;}
+.queueItem.dragOver::before{content:"";position:absolute;left:10px;right:10px;top:-2px;height:2px;border-radius:2px;background:currentColor;opacity:.65;}
+.queueItem.queueNow{box-shadow:inset 3px 0 0 currentColor;background:rgba(255,255,255,.045);}
+.queueItem.queueNext{box-shadow:inset 2px 0 0 rgba(255,255,255,.28);}
+.queueItem.queueArrive{animation:queueArrive .38s ease both;}
+@keyframes queueArrive{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+
+#lyricsInner{scroll-behavior:smooth;}
+.lyricsLine{transition:opacity .28s ease,transform .32s cubic-bezier(.22,.75,.22,1),filter .28s ease;}
+.lyricsLine:not(.active){filter:blur(.15px);}
+.lyricsLine[data-distance="1"]{opacity:.68;}
+.lyricsLine[data-distance="2"]{opacity:.42;}
+.lyricsLine[data-distance="3"],.lyricsLine[data-distance="4"],.lyricsLine[data-distance="5"]{opacity:.22;}
+.lyricsLine.active{opacity:1;filter:none;transform:scale(1.018);}
+#lyricsFallback{transition:opacity .3s ease,transform .3s ease;}
+#lyricsView.lyricsLoading #lyricsInner{opacity:.45;}
+#lyricsView.lyricsLoading::after{content:"Loading lyrics…";display:block;text-align:center;opacity:.45;font-size:.85em;animation:polishLoadingPulse 1.3s ease-in-out infinite;}
+@keyframes polishLoadingPulse{0%,100%{opacity:.3}50%{opacity:.7}}
+
+body.ambientScreensaver #backgroundImage{transition:opacity .7s ease,filter .9s ease,transform 1.2s ease;}
+body.ambientScreensaver #clock,body.ambientScreensaver #deviceName{animation:polishSaverIn .7s ease both;}
+body.screensaverWaking #content,body.screensaverWaking #header{animation:polishWakeIn .55s cubic-bezier(.22,.75,.22,1) both;}
+@keyframes polishSaverIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes polishWakeIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
+
+#albumArt.artworkPlaceholder,#albumArtDisplay.artworkPlaceholder{background:linear-gradient(120deg,rgba(255,255,255,.055),rgba(255,255,255,.11),rgba(255,255,255,.055));background-size:200% 100%;animation:polishShimmer 1.5s ease-in-out infinite;}
+@keyframes polishShimmer{0%{background-position:0 0}100%{background-position:200% 0}}
+.queueLoading{animation:polishLoadingPulse 1.3s ease-in-out infinite;}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;}
 }
-#albumArt.artworkIncoming, #albumArtDisplay.artworkIncoming { transform:scale(1.018); opacity:.72; transition:opacity .48s ease,transform .7s cubic-bezier(.2,.8,.25,1); }
-#albumArt.artworkSettled, #albumArtDisplay.artworkSettled { transform:scale(1); opacity:1; }
-#backgroundImageNext { background:#111; }
-
-/* Micro-interactions. */
-.control, .queueAction, #volumeIcon, .lyricsToolButton { position:relative; overflow:hidden; }
-.control::after, .queueAction::after, #volumeIcon::after, .lyricsToolButton::after { content:""; position:absolute; inset:18%; border-radius:50%; background:currentColor; opacity:0; transform:scale(.2); pointer-events:none; }
-.control:active { transform:scale(.94); }
-.control.isCommanding { animation:commandPulse .34s ease; }
-.queueItem.dragging { transform:translateY(-3px) scale(.985); box-shadow:0 12px 28px rgba(0,0,0,.24); z-index:2; }
-.queueItem.dragOver { border-top:0 !important; }
-.queueItem.dragOver::before { content:""; position:absolute; left:0; right:0; top:-1px; height:2px; border-radius:999px; background:var(--dominant-primary); box-shadow:0 0 10px var(--dominant-glow); }
-@keyframes commandPulse { 0%{transform:scale(1)} 35%{transform:scale(.93)} 100%{transform:scale(1)} }
-
-/* Player motion follows playback state. */
-body.isPlaying #albumArtDisplay { animation:artworkBreath 8s ease-in-out infinite; }
-body:not(.isPlaying) #albumArtDisplay { animation:none; }
-body.isPlaying #ambientGlow { animation:ambientBreath 7s ease-in-out infinite alternate; }
-body:not(.isPlaying) #ambientGlow { animation:none; }
-@keyframes artworkBreath { 0%,100%{transform:scale(1)} 50%{transform:scale(1.012)} }
-@keyframes ambientBreath { from{opacity:.78;filter:saturate(1)} to{opacity:1;filter:saturate(1.08)} }
-
-/* Volume states + smooth fill. */
-#volumeSlider { --volume-fill:100%; background:linear-gradient(90deg,var(--dominant-primary) 0 var(--volume-fill),rgba(255,255,255,.18) var(--volume-fill) 100%); }
-#volumeSlider.isAdjusting { transform:scaleY(1.08); }
-#volumePercentage { min-width:34px; font-variant-numeric:tabular-nums; }
-#volumeIcon[data-volume="muted"] { opacity:.48; }
-#volumeIcon[data-volume="low"] { opacity:.68; }
-#volumeIcon[data-volume="medium"] { opacity:.84; }
-#volumeIcon[data-volume="high"] { opacity:1; }
-#volumeIcon.volumePulse { animation:volumePulse .3s ease; }
-@keyframes volumePulse { 50%{transform:scale(1.1);filter:brightness(1.3)} }
-
-/* Queue hierarchy. */
-.queueNowPlaying { display:flex;align-items:center;gap:9px;padding:9px 10px;margin:0 0 8px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.045); }
-.queueNowPlaying img { width:34px;height:34px;border-radius:7px;object-fit:cover; }
-.queueNowPlaying small { display:block;font-size:8px;opacity:.42;text-transform:uppercase;letter-spacing:.6px; }
-.queueNowPlaying strong { display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-.queueItem[data-queue-role="next"] { background:rgba(255,255,255,.025); }
-.queueItem[data-queue-role="next"]::after { content:"PLAY NEXT"; position:absolute; right:62px; top:7px; font-size:7px;letter-spacing:.7px;opacity:.3; }
-.queueItem[data-queue-role="queued"] .queueTrack { opacity:.82; }
-
-/* Lyrics transitions/loading. */
-.lyricsLine { opacity:.34; transform:scale(.985); filter:blur(.15px); transition:opacity .35s ease,transform .4s ease,filter .35s ease; }
-.lyricsLine[data-distance="1"] { opacity:.62; }
-.lyricsLine[data-distance="2"] { opacity:.42; }
-.lyricsLine[data-distance="3"], .lyricsLine[data-distance="4"], .lyricsLine[data-distance="5"] { opacity:.24; }
-.lyricsLine.active { opacity:1; transform:scale(1.015); filter:none; }
-.lyricsLoadingState { opacity:.42; animation:lyricsLoad 1.2s ease-in-out infinite; }
-@keyframes lyricsLoad { 50%{opacity:.72} }
-
-/* Screensaver wake has a little depth rather than a hard cut. */
-body.ambientScreensaver #screensaverOverlay { transition:opacity .65s ease,transform .9s cubic-bezier(.2,.8,.25,1),visibility .65s ease; }
-body.screensaverWaking #screensaverOverlay { opacity:0 !important; transform:scale(1.035) !important; }
-body.ambientScreensaver #backgroundImage { transition:filter .9s ease,transform 1.2s ease,opacity .8s ease; }
-
-/* Loading states. */
-#albumArt, #albumArtDisplay, .queueArtwork, #lyricsTrackArt { background:linear-gradient(110deg,rgba(255,255,255,.05),rgba(255,255,255,.10),rgba(255,255,255,.05)); background-size:200% 100%; }
-.queueLoading { animation:lyricsLoad 1.2s ease-in-out infinite; }
-body.lyricsLoading #lyricsFallback { opacity:.5; }
-
-/* Performance / reduced motion. */
-body.idleVisuals #visualizerCanvas { opacity:.22 !important; }
-body.idleVisuals.isPlaying #ambientGlow { animation:none !important; }
-@media (prefers-reduced-motion:reduce) {
-  #albumArt, #albumArtDisplay, #ambientGlow, #screensaverOverlay, .control, .queueItem, .lyricsLine, #volumeIcon { animation:none !important; transition-duration:.01ms !important; }
+@media (max-width:600px){
+  #progressBar::before{inset:-14px 0;}
+  #progressPreview{font-variant-numeric:tabular-nums;}
+  #controls .control:active,#headerActions button:active,#volumeIcon:active,.queueAction:active{transform:scale(.98);}
 }
+
 </style>
 </head>
 
@@ -5316,35 +5312,31 @@ function getCurrentElapsed() {
 }
 
 
-let progressSeeking = false;
-let progressSeekValue = 0;
-let progressPointerStartX = 0;
-let progressPointerStartY = 0;
-let progressPointerMoved = false;
-let progressSuppressClick = false;
-let progressLastRendered = -1;
-
 function updateProgress() {
-  if (!currentDuration) return;
 
-  const elapsed = progressSeeking
-    ? progressSeekValue
-    : getCurrentElapsed();
+  if (!currentDuration)
+    return;
 
-  currentTime.textContent = formatTime(elapsed);
+  const elapsed =
+    getCurrentElapsed();
 
-  const percentage = Math.max(0, Math.min(100, (elapsed / currentDuration) * 100));
-  if (Math.abs(percentage - progressLastRendered) > 0.02 || progressSeeking) {
-    progress.style.width = percentage + "%";
-    progressLastRendered = percentage;
-  }
+  currentTime.textContent =
+    formatTime(
+      elapsed
+    );
 
-  if (progressSeeking) {
-    progressPreview.textContent = formatTime(elapsed);
-    progressPreview.style.left = percentage + "%";
-  }
+  const percentage =
+    (
+      elapsed /
+      currentDuration
+    ) *
+    100;
+
+  progress.style.width =
+    percentage + "%";
 
   updateLyricsPosition(elapsed);
+
 }
 
 
@@ -5355,86 +5347,50 @@ setInterval(
 
 
 /* =========================
-   PROGRESS PREVIEW / SEEKING
+   PROGRESS PREVIEW
 ========================= */
 
-function getProgressPositionFromEvent(event) {
-  const rect = progressBar.getBoundingClientRect();
-  const percentage = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-  return percentage * currentDuration;
-}
+progressBar.addEventListener(
+  "mousemove",
+  event => {
 
-function updateProgressPreview(position) {
-  const percentage = currentDuration ? (position / currentDuration) * 100 : 0;
-  progressPreview.textContent = formatTime(position);
-  progressPreview.style.left = Math.max(0, Math.min(100, percentage)) + "%";
-}
+    if (!currentDuration)
+      return;
 
-progressBar.addEventListener("pointerdown", event => {
-  if (!currentDuration) return;
-  progressPointerStartX = event.clientX;
-  progressPointerStartY = event.clientY;
-  progressPointerMoved = false;
-  progressSuppressClick = false;
-  progressSeekValue = getProgressPositionFromEvent(event);
-  progressBar.classList.add("isPointerDown");
-  progressBar.setPointerCapture?.(event.pointerId);
-  updateProgressPreview(progressSeekValue);
-});
+    const rect =
+      progressBar.getBoundingClientRect();
 
-progressBar.addEventListener("pointermove", event => {
-  if (!currentDuration) return;
-  const dx = event.clientX - progressPointerStartX;
-  const dy = event.clientY - progressPointerStartY;
-  if (!progressSeeking && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
-    progressSeeking = true;
-    progressSuppressClick = true;
-    progressBar.classList.add("isSeeking");
+    const percentage =
+      Math.max(
+        0,
+        Math.min(
+          1,
+          (
+            event.clientX -
+            rect.left
+          ) /
+          rect.width
+        )
+      );
+
+    const position =
+      percentage *
+      currentDuration;
+
+    progressPreview.textContent =
+      formatTime(
+        position
+      );
+
+    progressPreview.style.left =
+      (
+        percentage * 100
+      ) +
+      "%";
+
   }
-  if (progressSeeking || progressBar.classList.contains("isPointerDown")) {
-    progressSeekValue = getProgressPositionFromEvent(event);
-    updateProgressPreview(progressSeekValue);
-    if (progressSeeking) updateProgress();
-  }
-});
+);
 
-progressBar.addEventListener("pointerup", async event => {
-  if (!currentDuration) return;
-  const wasDragging = progressSeeking;
-  const position = getProgressPositionFromEvent(event);
-  progressBar.classList.remove("isPointerDown");
-  if (wasDragging) {
-    progressSeekValue = position;
-    updateProgress();
-    progressSeeking = false;
-    progressBar.classList.remove("isSeeking");
-    await seekToPosition(position, { keepPreview: true });
-    setTimeout(() => { progressSuppressClick = false; }, 80);
-  } else {
-    progressSuppressClick = false;
-  }
-  try { progressBar.releasePointerCapture?.(event.pointerId); } catch (_) {}
-});
-
-progressBar.addEventListener("pointercancel", () => {
-  progressSeeking = false;
-  progressBar.classList.remove("isPointerDown", "isSeeking");
-  progressSuppressClick = false;
-  updateProgress();
-});
-
-progressBar.addEventListener("mousemove", event => {
-  if (!currentDuration || progressSeeking) return;
-  updateProgressPreview(getProgressPositionFromEvent(event));
-});
-
-progressBar.addEventListener("mouseleave", () => {
-  if (!progressSeeking) progressPreview.style.opacity = "0";
-});
-
-progressBar.addEventListener("mouseenter", () => {
-  if (!progressSeeking) progressPreview.style.opacity = "1";
-});
 
 /* =========================
    NOW PLAYING HISTORY
@@ -7718,48 +7674,90 @@ let lastArtworkUrl =
   "";
 
 
-function updateArtwork(image) {
-  if (!image || image === lastArtworkUrl) return;
+function updateArtwork(
+  image
+) {
 
-  lastArtworkUrl = image;
+  if (!image)
+    return;
 
-  const targets = [albumArt, albumArtDisplay, lyricsTrackArt, vinylArtwork].filter(Boolean);
-  const preloader = new Image();
-  preloader.decoding = "async";
-  preloader.onload = () => {
-    targets.forEach(img => {
-      img.classList.add("artworkIncoming");
-      img.src = image;
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => img.classList.add("artworkSettled"));
-      });
-      setTimeout(() => img.classList.remove("artworkIncoming", "artworkSettled"), 800);
-    });
+  if (
+    image ===
+    lastArtworkUrl
+  ) {
 
-    if (backgroundImageNext) {
-      backgroundImageNext.onload = () => {
-        backgroundImageNext.style.opacity = "1";
-        backgroundImageNext.style.transform = "scale(1.11)";
-        backgroundImage.style.opacity = "0";
-        setTimeout(() => {
-          backgroundImage.src = image;
-          backgroundImage.style.opacity = "1";
-          backgroundImage.style.transform = "scale(1.08)";
-          backgroundImageNext.style.opacity = "0";
-        }, 720);
-      };
-      backgroundImageNext.src = image;
-    } else {
-      backgroundImage.src = image;
-      backgroundImage.style.opacity = "1";
-    }
+    return;
 
-    if (appSettings.ambient) extractDominantColours(image);
-  };
-  preloader.onerror = () => {
-    targets.forEach(img => { img.classList.remove("artworkIncoming", "artworkSettled"); });
-  };
-  preloader.src = image;
+  }
+
+  lastArtworkUrl =
+    image;
+
+  albumArt.src =
+    image;
+
+  albumArtDisplay.src =
+    image;
+
+  if (lyricsTrackArt) {
+    lyricsTrackArt.src = image;
+  }
+
+  vinylArtwork.src =
+    image;
+
+  if (backgroundImageNext) {
+    backgroundImageNext.onload = () => {
+      backgroundImageNext.style.opacity = "1";
+      backgroundImageNext.style.transform = "scale(1.12)";
+      backgroundImage.style.opacity = "0";
+
+      setTimeout(() => {
+        backgroundImage.src = image;
+        backgroundImage.style.opacity = "1";
+        backgroundImage.style.transform = "scale(1.08)";
+        backgroundImageNext.style.opacity = "0";
+        backgroundImageNext.style.transform = "scale(1.08)";
+      }, 80);
+    };
+    backgroundImageNext.src = image;
+  } else {
+    backgroundImage.src = image;
+    backgroundImage.style.opacity = "1";
+  }
+
+  albumArtDisplay.style.opacity =
+    "1";
+
+  if (
+    appSettings.ambient
+  ) {
+
+    extractDominantColours(
+      image
+    );
+
+  }
+
+  if (
+    appSettings.dynamicBackground
+  ) {
+
+    backgroundImage.style.transform =
+      "scale(1.12)";
+
+    setTimeout(
+      () => {
+
+        backgroundImage.style.transform =
+          "scale(1.08)";
+
+      },
+      100
+    );
+
+  }
+
 }
 
 
@@ -7914,17 +7912,14 @@ async function showPlaying(data) {
   }
 
 
-  if (!progressSeeking) {
-    currentProgress = data.progress_ms || 0;
-    progressUpdatedAt = Date.now();
-  }
+  currentProgress =
+    data.progress_ms || 0;
 
   currentDuration =
     track.duration_ms || 0;
 
-  if (!progressSeeking) {
-    progressUpdatedAt = Date.now();
-  }
+  progressUpdatedAt =
+    Date.now();
 
 
   currentTime.textContent =
@@ -8368,37 +8363,37 @@ nextButton.addEventListener(
    SEEK
 ========================= */
 
-async function seekToPosition(positionMs, options = {}) {
+async function seekToPosition(positionMs) {
   if (!currentDuration) return;
 
   const position = Math.max(0, Math.min(currentDuration, Number(positionMs) || 0));
-  progressSeekValue = position;
-  currentProgress = position;
-  progressUpdatedAt = Date.now();
-  updateProgress();
 
   const result = await spotifyFetch(
     "/me/player/seek?position_ms=" + Math.floor(position),
-    { method: "PUT", allowDuringQuotaCooldown: true }
+    { method: "PUT" }
   );
 
   if (result && result.__spotifyError) return;
 
-  if (options.keepPreview) {
-    updateProgressPreview(position);
-    progressPreview.style.opacity = "1";
-    setTimeout(() => { if (!progressSeeking) progressPreview.style.opacity = "0"; }, 450);
-  }
+  currentProgress = position;
+  progressUpdatedAt = Date.now();
+  updateProgress();
   wakeDisplay();
 }
 
-progressBar.addEventListener("click", async event => {
-  if (!currentDuration || progressSuppressClick) {
-    progressSuppressClick = false;
-    return;
+progressBar.addEventListener(
+  "click",
+  async event => {
+
+    if (!currentDuration) return;
+
+    const rect = progressBar.getBoundingClientRect();
+    const percentage = (event.clientX - rect.left) / rect.width;
+    const position = Math.max(0, Math.min(1, percentage)) * currentDuration;
+
+    await seekToPosition(position);
   }
-  await seekToPosition(getProgressPositionFromEvent(event), { keepPreview: true });
-});
+);
 
 
 /* =========================
@@ -8410,57 +8405,122 @@ let lastVolume =
 
 
 function updateVolumeIcon() {
-  const volume = Number(volumeSlider.value);
-  volumeIcon.dataset.volume = volume === 0 ? "muted" : volume < 35 ? "low" : volume < 70 ? "medium" : "high";
-  volumeIcon.innerHTML = volume === 0
-    ? '<span class="icon-muted"></span><span class="icon-muted-line"></span>'
-    : '<span class="icon-volume"></span><span class="icon-volume-wave"></span>';
+
+  if (
+    Number(
+      volumeSlider.value
+    ) === 0
+  ) {
+
+    volumeIcon.innerHTML =
+      `
+        <span class="icon-muted"></span>
+        <span class="icon-muted-line"></span>
+      `;
+
+  } else {
+
+    volumeIcon.innerHTML =
+      `
+        <span class="icon-volume"></span>
+        <span class="icon-volume-wave"></span>
+      `;
+
+  }
+
 }
 
-let volumeUpdateTimer = null;
-let volumeDragging = false;
 
-function setVolumeUI(volume) {
-  const value = Math.max(0, Math.min(100, Number(volume) || 0));
-  volumeSlider.value = value;
-  volumePercentage.textContent = value + "%";
-  volumeSlider.style.setProperty("--volume-fill", value + "%");
-  updateVolumeIcon();
-}
+volumeSlider.addEventListener(
+  "input",
+  async () => {
 
-volumeSlider.addEventListener("pointerdown", () => {
-  volumeDragging = true;
-  volumeSlider.classList.add("isAdjusting");
-});
+    const volume =
+      Number(
+        volumeSlider.value
+      );
 
-volumeSlider.addEventListener("input", () => {
-  const volume = Number(volumeSlider.value);
-  lastVolume = volume || lastVolume;
-  setVolumeUI(volume);
-  clearTimeout(volumeUpdateTimer);
-  volumeUpdateTimer = setTimeout(async () => {
-    await spotifyFetch(withDeviceId("/me/player/volume?volume_percent=" + volume), { method: "PUT", allowDuringQuotaCooldown: true });
-  }, 90);
-});
+    volumePercentage.textContent =
+      volume + "%";
 
-volumeSlider.addEventListener("pointerup", () => {
-  volumeDragging = false;
-  volumeSlider.classList.remove("isAdjusting");
-});
+    lastVolume =
+      volume;
 
-volumeIcon.addEventListener("click", async () => {
-  const current = Number(volumeSlider.value);
-  const restored = lastVolume || 70;
-  const next = current > 0 ? 0 : restored;
-  if (current > 0) lastVolume = current;
-  setVolumeUI(next);
-  volumeIcon.classList.add("volumePulse");
-  setTimeout(() => volumeIcon.classList.remove("volumePulse"), 300);
-  await spotifyFetch(withDeviceId("/me/player/volume?volume_percent=" + next), { method: "PUT", allowDuringQuotaCooldown: true });
-  wakeDisplay();
-});
+    updateVolumeIcon();
 
-updateVolumeIcon();
+    await spotifyFetch(
+      withDeviceId("/me/player/volume?volume_percent=" +
+      volume),
+      {
+        method:
+          "PUT",
+        allowDuringQuotaCooldown: true
+      }
+    );
+
+  }
+);
+
+
+volumeIcon.addEventListener(
+  "click",
+  async () => {
+
+    const current =
+      Number(
+        volumeSlider.value
+      );
+
+    if (current > 0) {
+
+      lastVolume =
+        current;
+
+      volumeSlider.value =
+        0;
+
+      volumePercentage.textContent =
+        "0%";
+
+      updateVolumeIcon();
+
+      await spotifyFetch(
+        "/me/player/volume?volume_percent=0",
+        {
+          method:
+            "PUT"
+        }
+      );
+
+    } else {
+
+      const restored =
+        lastVolume || 100;
+
+      volumeSlider.value =
+        restored;
+
+      volumePercentage.textContent =
+        restored + "%";
+
+      updateVolumeIcon();
+
+      await spotifyFetch(
+        withDeviceId("/me/player/volume?volume_percent=" +
+        restored),
+        {
+          method:
+            "PUT",
+          allowDuringQuotaCooldown: true
+        }
+      );
+
+    }
+
+    wakeDisplay();
+
+  }
+);
 
 
 /* =========================
@@ -8884,60 +8944,250 @@ updateSessionTime();
 })();
 
 
-/* ===== POLISH PASS 2 ===== */
-(function(){
-  const originalUpdateStatus = updateStatus;
-  window.updateStatus = function(isPlaying){
-    originalUpdateStatus(isPlaying);
-    document.body.classList.toggle("idleVisuals", document.hidden || !isPlaying);
-  };
 
-  function commandPulse(button){
-    if(!button) return;
-    button.classList.remove("isCommanding");
-    void button.offsetWidth;
-    button.classList.add("isCommanding");
-    setTimeout(()=>button.classList.remove("isCommanding"),360);
+/* =========================
+   POLISH PASS 2 — INTERACTION/PERFORMANCE
+========================= */
+(() => {
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  let lastVisualProgressPaint = 0;
+  let visualProgressRaf = 0;
+  let lastShownProgress = -1;
+  let seekClickGuardUntil = 0;
+  let artworkToken = 0;
+  let lastPlaybackVisualState = '';
+
+  // Progress: while the user is dragging, polling is visually ignored. A click
+  // still seeks once, but a real drag commits only on release.
+  if (progressBar) {
+    const paintSeek = x => {
+      if (!currentDuration) return;
+      const rect = progressBar.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (x - rect.left) / Math.max(1, rect.width)));
+      const pos = ratio * currentDuration;
+      progressPreview.textContent = formatTime(pos);
+      progressPreview.style.left = `${ratio * 100}%`;
+      progress.style.width = `${ratio * 100}%`;
+      currentTime.textContent = formatTime(pos);
+      lastSeekPreview = pos;
+    };
+    let downX = 0;
+    let moved = false;
+    let pointerId = null;
+    progressBar.addEventListener('pointerdown', e => {
+      if (!currentDuration) return;
+      downX = e.clientX; moved = false; pointerId = e.pointerId;
+      seekDragging = true;
+      progressBar.classList.add('isSeeking');
+      document.body.classList.add('seekActive');
+      try { progressBar.setPointerCapture(e.pointerId); } catch {}
+      paintSeek(e.clientX);
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }, true);
+    progressBar.addEventListener('pointermove', e => {
+      if (!seekDragging || e.pointerId !== pointerId) return;
+      if (Math.abs(e.clientX - downX) > 5) moved = true;
+      paintSeek(e.clientX);
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }, true);
+    progressBar.addEventListener('pointerup', async e => {
+      if (!seekDragging || e.pointerId !== pointerId) return;
+      paintSeek(e.clientX);
+      const pos = lastSeekPreview;
+      seekDragging = false;
+      pointerId = null;
+      progressBar.classList.remove('isSeeking');
+      document.body.classList.remove('seekActive');
+      seekClickGuardUntil = Date.now() + 80;
+      if (moved) await seekToPosition(pos);
+      else await seekToPosition(pos);
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }, true);
+    progressBar.addEventListener('click', e => {
+      if (Date.now() < seekClickGuardUntil) { e.stopImmediatePropagation(); e.preventDefault(); }
+    }, true);
   }
-  [playButton,previousButton,nextButton].forEach(btn=>btn?.addEventListener("click",()=>commandPulse(btn),{capture:true}));
 
-  document.addEventListener("visibilitychange",()=>{
-    document.body.classList.toggle("idleVisuals",document.hidden || !document.body.classList.contains("isPlaying"));
+  // Smooth progress interpolation during normal playback without fighting API updates.
+  function smoothProgress(now) {
+    if (!progress || seekDragging || !currentDuration) { visualProgressRaf = requestAnimationFrame(smoothProgress); return; }
+    if (now - lastVisualProgressPaint < 50) { visualProgressRaf = requestAnimationFrame(smoothProgress); return; }
+    lastVisualProgressPaint = now;
+    const elapsed = Math.max(0, Math.min(currentDuration, getCurrentElapsed()));
+    const pct = currentDuration ? elapsed / currentDuration * 100 : 0;
+    if (Math.abs(pct - lastShownProgress) > .015) {
+      progress.style.width = `${pct}%`;
+      currentTime.textContent = formatTime(elapsed);
+      lastShownProgress = pct;
+    }
+    visualProgressRaf = requestAnimationFrame(smoothProgress);
+  }
+  cancelAnimationFrame(visualProgressRaf);
+  visualProgressRaf = requestAnimationFrame(smoothProgress);
+
+  // Artwork: preload first, then swap both foreground images together so slow
+  // networks never expose a blank/white frame.
+  const premiumArtwork = image => {
+    if (!image || image === lastArtworkUrl) return;
+    const token = ++artworkToken;
+    [albumArt, albumArtDisplay, lyricsTrackArt, vinylArtwork].forEach(el => el?.classList.add('artworkLoading'));
+    const loader = new Image();
+    loader.decoding = 'async';
+    loader.onload = () => {
+      if (token !== artworkToken) return;
+      lastArtworkUrl = image;
+      [albumArt, albumArtDisplay, lyricsTrackArt, vinylArtwork].forEach(el => {
+        if (!el) return;
+        el.src = image;
+        el.classList.remove('artworkLoading','artworkEntering','artworkPlaceholder');
+        void el.offsetWidth;
+        if (!reduceMotion?.matches) el.classList.add('artworkEntering');
+      });
+      if (backgroundImageNext) {
+        backgroundImageNext.src = image;
+        backgroundImageNext.style.opacity = '1';
+        backgroundImageNext.style.transform = 'scale(1.06)';
+        setTimeout(() => {
+          if (token !== artworkToken) return;
+          backgroundImage.src = image;
+          backgroundImage.style.opacity = '1';
+          backgroundImageNext.style.opacity = '0';
+        }, reduceMotion?.matches ? 0 : 420);
+      } else if (backgroundImage) {
+        backgroundImage.src = image;
+        backgroundImage.style.opacity = '1';
+      }
+      if (appSettings.ambient) extractDominantColours(image);
+    };
+    loader.onerror = () => [albumArt, albumArtDisplay, lyricsTrackArt, vinylArtwork].forEach(el => el?.classList.remove('artworkLoading'));
+    loader.src = image;
+  };
+  window.updateArtwork = premiumArtwork;
+
+  // Immediate visual feedback on actionable controls.
+  ['playButton','previousButton','nextButton','volumeIcon','queueButton','historyButton','settingsButton','fullscreenButton','displayModeButton'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('pointerdown', () => {
+      el.classList.remove('polishPulse'); void el.offsetWidth; el.classList.add('polishPulse');
+    });
   });
 
-  // Queue hierarchy + current track card, refreshed only when the queue DOM changes.
-  const decorateQueue = () => {
-    const rows=[...queueList.querySelectorAll(".queueItem")];
-    rows.forEach((row,i)=>{ row.dataset.queueRole=i===0?"next":"queued"; });
-    let card=queueList.querySelector(".queueNowPlaying");
-    if(!card){
-      card=document.createElement("div"); card.className="queueNowPlaying"; queueList.prepend(card);
-    }
-    const art=albumArt?.src || "";
-    card.innerHTML=`<img src="${art}" alt=""><div style="min-width:0"><small>Currently Playing</small><strong>${escapeHtml(trackName?.textContent||"Nothing Playing")}</strong><div style="font-size:8px;opacity:.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(artistName?.textContent||"—")}</div></div>`;
-  };
-  function escapeHtml(v){return String(v).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
-  new MutationObserver(()=>{ if(queuePanel.classList.contains("open")) decorateQueue(); }).observe(queueList,{childList:true,subtree:false});
-  queueButton.addEventListener("click",()=>setTimeout(decorateQueue,40));
+  // Volume state/icons. Keep Spotify updates debounced so rapid slider movement
+  // doesn't flood the API, while the UI remains instant.
+  if (volumeSlider) {
+    let volumeTimer = null;
+    volumeSlider.addEventListener('pointerdown', () => volumeContainer?.classList.add('volumeAdjusting'));
+    ['pointerup','pointercancel'].forEach(type => volumeSlider.addEventListener(type, () => volumeContainer?.classList.remove('volumeAdjusting')));
+    volumeSlider.addEventListener('input', () => {
+      const v = Number(volumeSlider.value) || 0;
+      volumePercentage.textContent = `${v}%`;
+      lastVolume = v || lastVolume;
+      updateVolumeIcon();
+      clearTimeout(volumeTimer);
+      volumeTimer = setTimeout(() => spotifyFetch(withDeviceId(`/me/player/volume?volume_percent=${v}`), {method:'PUT',allowDuringQuotaCooldown:true}), 100);
+    }, true);
+  }
+  if (volumeIcon) {
+    volumeIcon.addEventListener('click', () => {
+      volumeIcon.classList.toggle('volumeMuted', Number(volumeSlider?.value || 0) === 0);
+    }, true);
+  }
 
-  // Smooth wake from the screensaver.
-  document.addEventListener("pointerdown",()=>{
-    if(document.body.classList.contains("ambientScreensaver")){
-      document.body.classList.add("screensaverWaking");
-      setTimeout(()=>document.body.classList.remove("screensaverWaking"),700);
-    }
-  },{passive:true});
-
-  // Lyrics loading state without replacing the existing lyrics renderer.
+  // Lyrics loading state without replacing the existing lyrics engine.
   const originalLoadLyrics = window.loadLyrics;
-  if(typeof originalLoadLyrics === "function") {
-    window.loadLyrics = async function(track){
-      document.body.classList.add("lyricsLoading");
-      lyricsInner.innerHTML='<div class="lyricsLoadingState" style="padding:32px;text-align:center">Finding synced lyrics…</div>';
-      try { return await originalLoadLyrics(track); } finally { document.body.classList.remove("lyricsLoading"); }
+  if (typeof originalLoadLyrics === 'function') {
+    window.loadLyrics = async function(track) {
+      lyricsView?.classList.add('lyricsLoading');
+      try { return await originalLoadLyrics(track); }
+      finally { setTimeout(() => lyricsView?.classList.remove('lyricsLoading'), 120); }
+    };
+  }
+
+  // Queue hierarchy + arrival animation. Re-rendered rows are annotated based on
+  // current track / priority queue without changing queue semantics.
+  const decorateQueue = () => {
+    if (!queueList) return;
+    const rows = [...queueList.querySelectorAll('.queueItem')];
+    rows.forEach((row, i) => {
+      row.classList.remove('queueNow','queueNext');
+      const item = sessionQueueItems?.[i];
+      const key = item ? queueItemKey(item, i) : '';
+      if (item && (item.id === currentTrackId || item.uri === currentTrackId)) row.classList.add('queueNow');
+      else if (priorityNextQueue?.some(q => q.key === key)) row.classList.add('queueNext');
+    });
+  };
+  const originalRenderQueue = window.renderQueue;
+  if (typeof originalRenderQueue === 'function') {
+    window.renderQueue = function(items) {
+      originalRenderQueue(items);
+      queueList?.querySelectorAll('.queueItem').forEach((row,i) => {
+        row.classList.add('queueArrive');
+        setTimeout(() => row.classList.remove('queueArrive'), 420);
+      });
+      decorateQueue();
+    };
+  }
+
+  // Screensaver wake choreography.
+  const originalWakeDisplay = window.wakeDisplay;
+  if (typeof originalWakeDisplay === 'function') {
+    window.wakeDisplay = function() {
+      const was = document.body.classList.contains('ambientScreensaver');
+      const result = originalWakeDisplay.apply(this, arguments);
+      if (was && !reduceMotion?.matches) {
+        document.body.classList.remove('screensaverWaking');
+        void document.body.offsetWidth;
+        document.body.classList.add('screensaverWaking');
+        setTimeout(() => document.body.classList.remove('screensaverWaking'), 600);
+      }
+      return result;
+    };
+  }
+
+  // Idle performance: stop the canvas animation when the tab is hidden or the
+  // page has been idle for a while; restart only when it becomes useful again.
+  let perfIdle = false;
+  const setPerfIdle = idle => {
+    perfIdle = idle;
+    document.body.classList.toggle('perfIdle', idle);
+    if (idle) {
+      if (visualizerAnimation) cancelAnimationFrame(visualizerAnimation);
+      visualizerAnimation = null;
+    } else if (!visualizerAnimation) {
+      visualizerAnimation = requestAnimationFrame(drawVisualizer);
+    }
+  };
+  const perfCheck = () => {
+    const hidden = document.hidden;
+    const idle = hidden || (Date.now() - lastInteraction > 90000 && !status.classList.contains('playing'));
+    if (idle !== perfIdle) setPerfIdle(idle);
+  };
+  setInterval(perfCheck, 5000);
+  document.addEventListener('visibilitychange', perfCheck);
+
+  // Avoid redundant visual state work during polling.
+  const stateObserver = new MutationObserver(() => {
+    const state = `${status.classList.contains('playing')?'playing':'paused'}|${resolveDisplayMode()}|${document.body.classList.contains('ambientScreensaver')?'screen':'normal'}`;
+    if (state === lastPlaybackVisualState) return;
+    lastPlaybackVisualState = state;
+    document.body.classList.toggle('isPlaying', state.startsWith('playing'));
+  });
+  if (status) stateObserver.observe(status, {attributes:true,attributeFilter:['class']});
+
+  // Fix playlist detection accepting either the Spotify context object or URI string.
+  if (typeof window.extractPlaylistId === 'function') {
+    const originalExtract = window.extractPlaylistId;
+    window.extractPlaylistId = function(context) {
+      if (typeof context === 'string') return originalExtract({uri:context});
+      return originalExtract(context);
     };
   }
 })();
+
 </script>
 
 </body>
