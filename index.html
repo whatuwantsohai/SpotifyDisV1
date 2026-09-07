@@ -8334,8 +8334,7 @@ async function showPlaying(data) {
 
   if (isNewTrack) {
 
-    // Visual transition runs without blocking the new track metadata/UI.
-    playTrackTransition();
+    await playTrackTransition();
 
   }
 
@@ -8711,8 +8710,8 @@ previousButton.addEventListener(
     });
 
     if (result?.__spotifyError) return;
-    // One non-blocking refresh is enough; avoid stacking player GETs.
-    setTimeout(updatePlayer, 200);
+    await updatePlayer();
+    setTimeout(updatePlayer, 500);
     wakeDisplay();
   }
 );
@@ -8762,8 +8761,9 @@ nextButton.addEventListener(
         return;
       }
 
-      // One non-blocking refresh is enough; avoid stacking player GETs.
-      setTimeout(updatePlayer, 200);
+      await updatePlayer();
+      setTimeout(updatePlayer, 600);
+      setTimeout(updatePlayer, 1500);
       wakeDisplay();
     });
   }
