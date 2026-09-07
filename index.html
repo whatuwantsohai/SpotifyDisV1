@@ -3610,6 +3610,188 @@ body.screensaverWaking {
   }
 }
 
+
+/* =========================
+   FINAL COMPLETE POLISH
+========================= */
+
+/* Prevent startup/layout jumps */
+html {
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+}
+
+/* Long metadata: stay elegant instead of forcing layout wider */
+#trackName,
+#artistName,
+#albumName,
+.track-title,
+.artist-name,
+.album-name,
+.queue-item .track-name,
+.queue-item .artist-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Only animate overflow if an existing component explicitly opts in */
+.marquee-ready {
+  text-overflow: clip;
+}
+
+/* Metadata hierarchy */
+#albumName,
+.album-name {
+  opacity: .58;
+  font-size: .92em;
+}
+
+/* Immediate, consistent playback/skip feedback */
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* Icon-only controls should remain easy to hit on mobile */
+button,
+[role="button"] {
+  min-width: 36px;
+  min-height: 36px;
+}
+
+/* Press feedback without introducing animation loops */
+.control-pulse {
+  animation: controlPulse .18s ease-out;
+}
+
+@keyframes controlPulse {
+  0% { transform: scale(.94); }
+  100% { transform: scale(1); }
+}
+
+/* Seeking feedback */
+#progressBar.isSeeking,
+#progressBar.progress-active {
+  filter: brightness(1.08);
+}
+
+#progressTooltip {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Queue drag feedback */
+.queue-item.dragging,
+.queue-item.is-dragging,
+[data-queue-item].dragging {
+  opacity: .72;
+  transform: scale(.985);
+  filter: brightness(1.06);
+  cursor: grabbing !important;
+}
+
+/* Clearer queue action affordance */
+.queue-item button,
+.queue-action {
+  opacity: .7;
+}
+
+.queue-item:hover button,
+.queue-item:hover .queue-action,
+.queue-item:focus-within button,
+.queue-item:focus-within .queue-action {
+  opacity: 1;
+}
+
+/* Empty/broken artwork fallback */
+#albumArtDisplay.artwork-fallback {
+  object-fit: contain;
+  opacity: .62;
+  filter: none;
+}
+
+/* API/error states */
+.spotify-error,
+.queueError,
+.error-state,
+.connection-error {
+  border-radius: 12px;
+  line-height: 1.4;
+}
+
+.spotify-error small,
+.queueError small,
+.error-state small {
+  opacity: .68;
+}
+
+/* Fullscreen + landscape safe areas */
+@media (orientation: landscape) and (max-height: 600px) {
+  #fullscreenButton {
+    right: max(14px, calc(10px + env(safe-area-inset-right))) !important;
+    bottom: max(14px, calc(10px + env(safe-area-inset-bottom))) !important;
+  }
+}
+
+/* Compact phones */
+@media (max-width: 390px) {
+  #trackName,
+  .track-title {
+    font-size: .96em;
+  }
+
+  #artistName,
+  .artist-name {
+    font-size: .9em;
+  }
+
+  button,
+  [role="button"] {
+    min-width: 34px;
+    min-height: 34px;
+  }
+}
+
+/* Day/night transitions should remain gentle */
+html,
+body,
+button,
+.panel,
+.card,
+.queue-item,
+.modal,
+.settings,
+#queuePanel {
+  transition-property: background-color, border-color, color, box-shadow, opacity;
+  transition-duration: .18s;
+  transition-timing-function: ease;
+}
+
+/* Never let reduced-motion users inherit decorative movement */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+  }
+}
+
 </style>
 </head>
 
@@ -9220,6 +9402,216 @@ updateSessionTime();
       ".pressed, .is-pressed, .progress-active"
     ).forEach(el => {
       el.classList.remove("pressed", "is-pressed", "progress-active");
+    });
+  });
+})();
+</script>
+
+
+<script>
+/* =========================
+   FINAL COMPLETE BEHAVIOUR
+   Event-driven only
+========================= */
+(function () {
+  "use strict";
+
+  const art = document.getElementById("albumArtDisplay");
+  const progress = document.getElementById("progressBar");
+  const root = document.documentElement;
+
+  // Startup: hide only accidental broken-image icon; never hide valid artwork.
+  if (art) {
+    const setArtworkState = () => {
+      const src = art.getAttribute("src") || "";
+      if (!src) {
+        art.classList.remove("artwork-ready", "artwork-loading");
+        return;
+      }
+
+      if (art.naturalWidth === 0 && art.complete) {
+        art.classList.add("artwork-fallback");
+        art.classList.remove("artwork-loading");
+      } else if (art.naturalWidth > 0) {
+        art.classList.remove("artwork-fallback", "artwork-loading");
+        art.classList.add("artwork-ready");
+        art.style.opacity = "1";
+      }
+    };
+
+    art.addEventListener("load", setArtworkState);
+    art.addEventListener("error", () => {
+      art.classList.remove("artwork-loading", "artwork-ready");
+      art.classList.add("artwork-fallback");
+    });
+
+    setArtworkState();
+  }
+
+  // Give all clickable controls a tiny, deterministic press acknowledgement.
+  document.addEventListener("pointerdown", (event) => {
+    const button = event.target.closest(
+      "button, [role='button'], .queue-action"
+    );
+    if (!button || button.disabled) return;
+
+    button.classList.remove("control-pulse");
+    void button.offsetWidth;
+    button.classList.add("control-pulse");
+  }, { passive: true });
+
+  // Skip/play controls: visual feedback without touching Spotify logic.
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("button, [role='button']");
+    if (!button) return;
+
+    const label = (
+      button.getAttribute("aria-label") ||
+      button.title ||
+      button.textContent ||
+      ""
+    ).toLowerCase();
+
+    if (
+      /next|previous|skip|play|pause/.test(label)
+    ) {
+      button.classList.remove("control-pulse");
+      void button.offsetWidth;
+      button.classList.add("control-pulse");
+    }
+  });
+
+  // Seek preview: update tooltip using the existing duration/progress model.
+  if (progress) {
+    const tooltip =
+      document.getElementById("progressTooltip") ||
+      (() => {
+        const el = document.createElement("div");
+        el.id = "progressTooltip";
+        progress.parentElement?.appendChild(el);
+        return el;
+      })();
+
+    const formatPreview = (value) => {
+      const duration =
+        Number(window.currentDuration) ||
+        Number(progress.max) ||
+        0;
+
+      if (!duration) return;
+
+      let ratio = 0;
+      const rect = progress.getBoundingClientRect();
+
+      if (progress.type === "range") {
+        const min = Number(progress.min) || 0;
+        const max = Number(progress.max) || duration;
+        const current = Number(progress.value) || 0;
+        ratio = max > min ? (current - min) / (max - min) : 0;
+      } else if (rect.width) {
+        ratio = Math.max(
+          0,
+          Math.min(1, (value.clientX - rect.left) / rect.width)
+        );
+      }
+
+      const seconds = Math.max(0, Math.floor(ratio * duration / 1000));
+      const min = Math.floor(seconds / 60);
+      const sec = String(seconds % 60).padStart(2, "0");
+      tooltip.textContent = min + ":" + sec;
+
+      const x = rect.width * ratio;
+      tooltip.style.left = x + "px";
+      tooltip.classList.add("visible");
+    };
+
+    const hide = () => {
+      tooltip.classList.remove("visible");
+      progress.classList.remove("progress-active", "isSeeking");
+    };
+
+    progress.addEventListener("pointerenter", e => {
+      progress.classList.add("progress-active");
+      formatPreview(e);
+    });
+    progress.addEventListener("pointermove", formatPreview);
+    progress.addEventListener("pointerdown", e => {
+      progress.classList.add("progress-active", "isSeeking");
+      formatPreview(e);
+    });
+    progress.addEventListener("pointerup", () => {
+      progress.classList.remove("isSeeking");
+    });
+    progress.addEventListener("pointerleave", hide);
+    progress.addEventListener("pointercancel", hide);
+    window.addEventListener("blur", hide);
+  }
+
+  // Drag affordance for any existing queue implementation.
+  document.addEventListener("dragstart", event => {
+    const row = event.target.closest(
+      ".queue-item, [data-queue-item], #queueList li"
+    );
+    row?.classList.add("dragging", "is-dragging");
+  });
+
+  document.addEventListener("dragend", event => {
+    const row = event.target.closest(
+      ".queue-item, [data-queue-item], #queueList li"
+    );
+    row?.classList.remove("dragging", "is-dragging");
+  });
+
+  // Keep theme transitions deterministic and avoid polling.
+  const themeObserver = new MutationObserver(() => {
+    root.classList.add("theme-transition");
+    clearTimeout(themeObserver._timer);
+    themeObserver._timer = setTimeout(
+      () => root.classList.remove("theme-transition"),
+      220
+    );
+  });
+
+  themeObserver.observe(root, {
+    attributes: true,
+    attributeFilter: ["class", "data-theme", "data-mode"]
+  });
+
+  // Persist visual settings when native controls use the existing settings UI.
+  // This only mirrors controls that already expose a storage key; it does not
+  // invent new Spotify settings or alter authentication/playback state.
+  document.addEventListener("change", event => {
+    const el = event.target;
+    if (!el || !el.matches("input, select")) return;
+
+    const key =
+      el.dataset.storageKey ||
+      el.dataset.settingKey ||
+      el.getAttribute("name");
+
+    if (!key || !/^theme|mode|dim|ambient|transition|screensaver|battery/i.test(key)) {
+      return;
+    }
+
+    try {
+      const value = el.type === "checkbox" ? el.checked : el.value;
+      localStorage.setItem("spotifyDis:" + key, String(value));
+    } catch (_) {}
+  });
+
+  // Remove stuck interaction states when the page loses focus.
+  window.addEventListener("blur", () => {
+    document.querySelectorAll(
+      ".dragging, .is-dragging, .pressed, .is-pressed, .isSeeking, .progress-active"
+    ).forEach(el => {
+      el.classList.remove(
+        "dragging",
+        "is-dragging",
+        "pressed",
+        "is-pressed",
+        "isSeeking",
+        "progress-active"
+      );
     });
   });
 })();
