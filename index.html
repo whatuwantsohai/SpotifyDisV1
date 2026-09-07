@@ -3880,84 +3880,6 @@ button,
   body.isPlaying #albumArtDisplay, body.isPlaying #ambientGlow { animation:none !important; }
 }
 </style>
-
-<style id="approved-v6-visual-polish">
-/* Approved visual polish only: no playback, queue, auth, or polling changes. */
-#trackInfo { min-width: 0; }
-#trackName, .track-title {
-  font-weight: 650;
-  letter-spacing: -0.018em;
-  text-wrap: pretty;
-}
-#artistName, .artist-name {
-  font-weight: 500;
-  letter-spacing: -0.005em;
-}
-#albumName.now-playing-album {
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: .012em;
-  color: rgba(255,255,255,.50);
-  transition: opacity .22s ease, transform .22s ease;
-}
-#albumArtContainer {
-  box-shadow: 0 18px 45px rgba(0,0,0,.20);
-}
-#albumArtDisplay {
-  transform: translateZ(0);
-  will-change: transform, opacity;
-  transition: opacity .24s ease, transform .32s cubic-bezier(.2,.75,.2,1), filter .24s ease;
-}
-#albumArtDisplay.artworkSettled {
-  transform: translateZ(0) scale(1);
-  filter: saturate(1.01);
-}
-.lyrics-panel, #lyricsPanel, .lyrics {
-  line-height: 1.55;
-}
-.lyrics-panel .active, #lyricsPanel .active, .lyrics .active {
-  letter-spacing: .005em;
-}
-button, [role="button"], input, .control, .queue-row {
-  -webkit-tap-highlight-color: transparent;
-}
-button, [role="button"] {
-  user-select: none;
-}
-.queue-row {
-  transition: background-color .16s ease, transform .16s ease, opacity .16s ease;
-}
-.queue-row:hover {
-  transform: translateX(1px);
-}
-@media (max-width: 700px) {
-  #trackName, .track-title { letter-spacing: -0.012em; }
-  #albumName.now-playing-album { font-size: 12.5px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  #albumArtDisplay,
-  #albumName.now-playing-album,
-  .queue-row {
-    transition: none !important;
-    transform: none !important;
-  }
-}
-</style>
-
-
-<style id="approved-v6-progress-polish">
-#progressBar, #progressContainer, .progress-container {
-  touch-action: none;
-}
-#progressBar, #progressContainer, .progress-container,
-#progressBar *, #progressContainer *, .progress-container * {
-  cursor: pointer;
-}
-.progressHover {
-  transition: opacity .12s ease, transform .12s ease;
-}
-</style>
-
 </head>
 
 <body>
@@ -8412,7 +8334,8 @@ async function showPlaying(data) {
 
   if (isNewTrack) {
 
-    await playTrackTransition();
+    // Visual transition runs without blocking the new track metadata/UI.
+    playTrackTransition();
 
   }
 
@@ -8788,8 +8711,8 @@ previousButton.addEventListener(
     });
 
     if (result?.__spotifyError) return;
-    await updatePlayer();
-    setTimeout(updatePlayer, 500);
+    // One non-blocking refresh is enough; avoid stacking player GETs.
+    setTimeout(updatePlayer, 200);
     wakeDisplay();
   }
 );
@@ -8839,9 +8762,8 @@ nextButton.addEventListener(
         return;
       }
 
-      await updatePlayer();
-      setTimeout(updatePlayer, 600);
-      setTimeout(updatePlayer, 1500);
+      // One non-blocking refresh is enough; avoid stacking player GETs.
+      setTimeout(updatePlayer, 200);
       wakeDisplay();
     });
   }
@@ -9718,18 +9640,6 @@ updateSessionTime();
     img.draggable=false;
     img.addEventListener('dragstart',e=>e.preventDefault());
   });
-})();
-</script>
-
-
-<script id="approved-v6-progress-polish-js">
-(() => {
-  const clearProgressHover = () => {
-    document.querySelectorAll('.progressHover').forEach(el => el.classList.remove('progressHover'));
-  };
-  window.addEventListener('pointerup', clearProgressHover, {passive:true});
-  window.addEventListener('pointercancel', clearProgressHover, {passive:true});
-  window.addEventListener('blur', clearProgressHover);
 })();
 </script>
 
