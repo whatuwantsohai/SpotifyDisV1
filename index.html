@@ -8602,7 +8602,7 @@ function startSpotify() {
         updatePlayer,
         appSettings.batterySaver
           ? 15000
-          : (status.classList.contains("playing") ? 3000 : 10000)
+          : (status.classList.contains("playing") ? 5000 : 12000)
       );
 
   }
@@ -8624,7 +8624,7 @@ function restartPlaybackPolling() {
       updatePlayer,
       appSettings.batterySaver
         ? 15000
-        : (status.classList.contains("playing") ? 3000 : 10000)
+        : (status.classList.contains("playing") ? 5000 : 12000)
     );
 
 }
@@ -8676,9 +8676,15 @@ function withDeviceId(endpoint) {
 }
 
 let playerCommandInFlight = false;
+let playerSkipCooldownUntil = 0;
 
-async function runPlayerCommand(command) {
+async function runPlayerCommand(command, options = {}) {
   if (playerCommandInFlight) return null;
+  if (options.skip) {
+    const now = Date.now();
+    if (now < playerSkipCooldownUntil) return null;
+    playerSkipCooldownUntil = now + 900;
+  }
   playerCommandInFlight = true;
   const buttons = [previousButton, playButton, nextButton].filter(Boolean);
   buttons.forEach(button => {
@@ -8703,15 +8709,17 @@ previousButton.addEventListener(
   async () => {
     const result = await runPlayerCommand(async () => {
       if (trackEndTimer) { clearTimeout(trackEndTimer); trackEndTimer = null; }
-      return await spotifyFetch(
+      const result = await spotifyFetch(
         withDeviceId("/me/player/previous"),
         { method: "POST", allowDuringQuotaCooldown: true }
       );
-    });
+      if (result?.__spotifyError) return result;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      await updatePlayer();
+      return result;
+    }, { skip: true });
 
     if (result?.__spotifyError) return;
-    await updatePlayer();
-    setTimeout(updatePlayer, 500);
     wakeDisplay();
   }
 );
@@ -8748,7 +8756,7 @@ playButton.addEventListener(
 nextButton.addEventListener(
   "click",
   async () => {
-    await runPlayerCommand(async () => {
+    const result = await runPlayerCommand(async () => {
       if (trackEndTimer) { clearTimeout(trackEndTimer); trackEndTimer = null; }
 
       const result = await spotifyFetch(
@@ -8758,14 +8766,16 @@ nextButton.addEventListener(
 
       if (result?.__spotifyError) {
         console.error("Spotify Next failed:", result);
-        return;
+        return result;
       }
 
+      await new Promise(resolve => setTimeout(resolve, 300));
       await updatePlayer();
-      setTimeout(updatePlayer, 600);
-      setTimeout(updatePlayer, 1500);
-      wakeDisplay();
-    });
+      return result;
+    }, { skip: true });
+
+    if (result?.__spotifyError) return;
+    wakeDisplay();
   }
 );
 
