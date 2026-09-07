@@ -4717,6 +4717,48 @@ body.device-tablet #trackName{
 }
 </style>
 
+<style id="phone-smoothness-fix">
+/* Phone/tablet motion: keep lyrics and vinyl fluid without changing large-screen UI. */
+@media (max-width: 700px) {
+  #lyricsView {
+    padding-left: max(30px, calc(26px + env(safe-area-inset-left))) !important;
+    padding-right: max(22px, calc(18px + env(safe-area-inset-right))) !important;
+  }
+
+  #lyricsInner {
+    transform: translate3d(0, var(--lyrics-shift, 0px), 0);
+    transition: transform 300ms cubic-bezier(.22,.61,.36,1) !important;
+    will-change: transform;
+  }
+
+  .lyricsLine {
+    transition:
+      color 280ms ease,
+      opacity 280ms ease,
+      transform 300ms cubic-bezier(.22,.61,.36,1),
+      filter 280ms ease !important;
+    will-change: transform, opacity, filter;
+  }
+
+  .vinylRecord {
+    animation-duration: 7s !important;
+    animation-timing-function: linear !important;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* Put the fullscreen control a little lower on phones, while respecting the home indicator. */
+  #fullscreenButton {
+    bottom: max(8px, calc(6px + env(safe-area-inset-bottom))) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Accessibility preference still wins; don't override OS-level reduced motion. */
+}
+</style>
+
 <script id="device-ui-detector">
 (() => {
   const root = document.documentElement;
@@ -9640,6 +9682,13 @@ playButton.addEventListener(
         "playing"
       );
 
+    const targetPlaying = !isPlaying;
+
+    // Make the local control state respond immediately; Spotify remains the source of truth.
+    updateStatus(targetPlaying);
+    updatePlayButton(targetPlaying);
+    wakeDisplay();
+
     const result =
       await spotifyFetch(
         isPlaying
@@ -9656,20 +9705,11 @@ playButton.addEventListener(
       result &&
       result.__spotifyError
     ) {
-
+      // Restore the known state if Spotify rejected the command.
+      updateStatus(isPlaying);
+      updatePlayButton(isPlaying);
       return;
-
     }
-
-    updateStatus(
-      !isPlaying
-    );
-
-    updatePlayButton(
-      !isPlaying
-    );
-
-    wakeDisplay();
 
   }
 );
