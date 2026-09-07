@@ -4041,6 +4041,490 @@ button,#queueList,.control,#progressBar{
 }
 </style>
 
+
+<style id="mobile-real-layout-fix">
+/* Real mobile layout: never let the desktop header compete with the player. */
+@media (max-width: 600px) {
+  html, body {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  #header {
+    top: max(8px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    min-height: 42px;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #logo {
+    flex: 0 0 auto;
+    font-size: 18px !important;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  #statusArea {
+    min-width: 0;
+    margin-left: auto;
+  }
+
+  /* Status text is useful on desktop, but it steals the entire iPhone header. */
+  #clock,
+  #deviceName,
+  #status {
+    display: none !important;
+  }
+
+  #headerActions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .headerButton {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    padding: 0 !important;
+  }
+
+  #logoutButton {
+    min-height: 32px !important;
+    padding: 6px 9px !important;
+    font-size: 9px !important;
+    white-space: nowrap;
+  }
+
+  #content {
+    width: 100%;
+    height: auto;
+    min-height: 100svh;
+    box-sizing: border-box;
+    padding: max(72px, calc(58px + env(safe-area-inset-top))) 16px max(76px, calc(58px + env(safe-area-inset-bottom))) !important;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  #nowPlayingLayout {
+    width: min(100%, 560px) !important;
+    max-width: 560px !important;
+    min-width: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 18px !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  #albumArtContainer {
+    order: -1 !important;
+    align-self: center !important;
+    flex: 0 0 auto !important;
+    width: min(76vw, 300px) !important;
+    max-width: calc(100vw - 40px) !important;
+    height: auto;
+    margin: 0 auto !important;
+    border-radius: 18px;
+  }
+
+  #playing {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+  }
+
+  #trackInfo {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  /* The old final polish forced metadata to one line. Undo that on mobile. */
+  #trackName {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    text-overflow: clip !important;
+    -webkit-line-clamp: unset !important;
+    -webkit-box-orient: initial !important;
+    font-size: clamp(28px, 9vw, 44px) !important;
+    line-height: 1.04 !important;
+    letter-spacing: -1.1px !important;
+  }
+
+  #artistName {
+    margin-top: 8px !important;
+    font-size: clamp(16px, 4.8vw, 20px) !important;
+    line-height: 1.2;
+    white-space: normal !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #playlistSelector {
+    margin-top: 7px;
+  }
+
+  #progressContainer {
+    width: 100% !important;
+    margin-top: 22px !important;
+  }
+
+  #controls {
+    width: 100%;
+    justify-content: center;
+    gap: 20px !important;
+    margin-top: 18px !important;
+  }
+
+  #volumeContainer {
+    width: 100%;
+    margin-top: 14px !important;
+  }
+
+  #sessionControls {
+    left: max(10px, env(safe-area-inset-left));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    z-index: 210;
+    max-width: calc(100vw - 64px);
+  }
+
+  #sessionBadge,
+  #universalUiDock {
+    transform: scale(.94);
+    transform-origin: left bottom;
+  }
+}
+
+@media (max-width: 390px) {
+  #header {
+    left: 10px;
+    right: 10px;
+  }
+
+  #headerActions {
+    gap: 3px;
+  }
+
+  .headerButton {
+    width: 29px !important;
+    height: 29px !important;
+    min-width: 29px !important;
+    min-height: 29px !important;
+  }
+
+  #logoutButton {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  #content {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  #albumArtContainer {
+    width: min(72vw, 270px) !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+
+  #trackName {
+    font-size: clamp(25px, 8.5vw, 38px) !important;
+    letter-spacing: -.9px !important;
+  }
+}
+
+@media (max-width: 600px) and (max-height: 740px) and (orientation: portrait) {
+  #content {
+    padding-top: max(66px, calc(54px + env(safe-area-inset-top))) !important;
+    padding-bottom: max(70px, calc(50px + env(safe-area-inset-bottom))) !important;
+  }
+
+  #nowPlayingLayout {
+    gap: 14px !important;
+  }
+
+  #albumArtContainer {
+    width: min(58vw, 235px) !important;
+  }
+
+  #trackName {
+    font-size: clamp(24px, 8vw, 36px) !important;
+  }
+
+  #progressContainer {
+    margin-top: 17px !important;
+  }
+
+  #controls {
+    margin-top: 13px !important;
+  }
+}
+
+@media (max-width: 700px) and (orientation: landscape) {
+  #header {
+    top: max(6px, env(safe-area-inset-top));
+  }
+
+  #content {
+    min-height: 100svh;
+    padding: max(52px, calc(42px + env(safe-area-inset-top))) 14px max(40px, calc(28px + env(safe-area-inset-bottom))) !important;
+    align-items: center;
+  }
+
+  #nowPlayingLayout {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 22px !important;
+    max-height: calc(100svh - 86px) !important;
+  }
+
+  #albumArtContainer {
+    width: min(42vh, 230px) !important;
+    max-width: 42vh !important;
+  }
+
+  #playing {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  #trackName {
+    font-size: clamp(23px, 6vh, 38px) !important;
+  }
+
+  #artistName {
+    font-size: clamp(14px, 3vh, 18px) !important;
+  }
+
+  #progressContainer {
+    margin-top: 12px !important;
+  }
+
+  #controls {
+    margin-top: 10px !important;
+  }
+}
+</style>
+
+
+<style id="adaptive-display-engine">
+/* Intelligent display engine: layout is driven by the actual viewport, not device names. */
+:root{
+  --adaptive-top:100px;
+  --adaptive-bottom:50px;
+  --adaptive-gap:70px;
+  --adaptive-art:clamp(260px,32vw,440px);
+  --adaptive-title:clamp(42px,5vw,72px);
+  --adaptive-pad-x:6vw;
+}
+
+#content{
+  box-sizing:border-box !important;
+  min-height:100svh !important;
+  height:100svh !important;
+  padding:var(--adaptive-top) var(--adaptive-pad-x) var(--adaptive-bottom) !important;
+}
+
+#nowPlayingLayout{
+  box-sizing:border-box !important;
+  width:100% !important;
+  max-width:1500px !important;
+  gap:var(--adaptive-gap) !important;
+  min-width:0 !important;
+}
+
+#playing{
+  box-sizing:border-box !important;
+  min-width:0 !important;
+  width:min(650px,50vw) !important;
+}
+
+#albumArtContainer{
+  width:var(--adaptive-art) !important;
+  max-width:100% !important;
+  flex:0 1 auto !important;
+}
+
+#trackInfo,#trackName{
+  min-width:0 !important;
+  max-width:100% !important;
+}
+
+#trackName{
+  font-size:var(--adaptive-title) !important;
+}
+
+/* The JS engine adds these classes only when the measured viewport needs them. */
+body.adaptive-stack #nowPlayingLayout{
+  flex-direction:column !important;
+  align-items:stretch !important;
+  justify-content:flex-start !important;
+}
+body.adaptive-stack #albumArtContainer{
+  align-self:center !important;
+  width:var(--adaptive-art) !important;
+}
+body.adaptive-stack #playing{
+  width:100% !important;
+}
+
+body.adaptive-landscape #nowPlayingLayout{
+  flex-direction:row !important;
+  align-items:center !important;
+}
+
+body.adaptive-tight #trackName{
+  letter-spacing:-1.5px !important;
+}
+
+body.adaptive-tight #artistName{
+  margin-top:7px !important;
+}
+
+@media (max-width:700px){
+  #content{
+    padding-left:max(14px,env(safe-area-inset-left)) !important;
+    padding-right:max(14px,env(safe-area-inset-right)) !important;
+  }
+  body.adaptive-stack #nowPlayingLayout{
+    gap:var(--adaptive-gap) !important;
+  }
+  body.adaptive-stack #albumArtContainer{
+    max-width:calc(100vw - 28px) !important;
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  #content,#nowPlayingLayout,#albumArtContainer,#trackName{transition:none !important;}
+}
+</style>
+
+<script id="adaptive-display-engine-script">
+document.addEventListener('DOMContentLoaded', () => {
+  const root = document.documentElement;
+  const body = document.body;
+  const content = document.getElementById('content');
+  const header = document.getElementById('header');
+  const layout = document.getElementById('nowPlayingLayout');
+  const art = document.getElementById('albumArtContainer');
+  const playing = document.getElementById('playing');
+  if (!content || !layout || !art || !playing) return;
+
+  let raf = 0;
+
+  function cssPx(value) {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function updateAdaptiveDisplay() {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const vv = window.visualViewport;
+      const width = Math.max(1, Math.round(vv ? vv.width : window.innerWidth));
+      const height = Math.max(1, Math.round(vv ? vv.height : window.innerHeight));
+      const landscape = width > height;
+      const shortSide = Math.min(width, height);
+      const narrow = width <= 700;
+      const veryNarrow = width <= 390;
+
+      const headerRect = header ? header.getBoundingClientRect() : null;
+      const headerBottom = headerRect ? Math.max(0, headerRect.bottom) : 0;
+      const safeTop = cssPx(getComputedStyle(root).getPropertyValue('env(safe-area-inset-top)'));
+      const top = Math.max(
+        narrow ? 66 : 72,
+        Math.ceil(headerBottom + 16 + safeTop)
+      );
+      const bottom = Math.max(
+        narrow ? 34 : 28,
+        cssPx(getComputedStyle(root).getPropertyValue('env(safe-area-inset-bottom)')) + 24
+      );
+
+      // Stack when the viewport is phone/tablet-like or simply too narrow for a
+      // side-by-side player. Landscape stays horizontal when there is enough width.
+      const stack = width <= 760 || (!landscape && shortSide <= 900);
+      const tight = height < 700 || width < 900;
+
+      body.classList.toggle('adaptive-stack', stack);
+      body.classList.toggle('adaptive-landscape', landscape && !stack);
+      body.classList.toggle('adaptive-tight', tight);
+
+      if (stack) {
+        const horizontalPad = veryNarrow ? 14 : 18;
+        const availableWidth = Math.max(180, width - horizontalPad * 2);
+        const verticalBudget = Math.max(160, height - top - bottom);
+        const gap = Math.max(12, Math.min(26, Math.round(verticalBudget * 0.035)));
+        const artSize = Math.min(
+          availableWidth,
+          width * (veryNarrow ? 0.70 : 0.76),
+          Math.max(170, verticalBudget * (height < 700 ? 0.38 : 0.48))
+        );
+        const titleMax = Math.min(
+          veryNarrow ? 38 : 44,
+          Math.max(24, width * 0.095),
+          Math.max(24, height * 0.065)
+        );
+
+        root.style.setProperty('--adaptive-top', `${top}px`);
+        root.style.setProperty('--adaptive-bottom', `${bottom}px`);
+        root.style.setProperty('--adaptive-pad-x', `${horizontalPad}px`);
+        root.style.setProperty('--adaptive-gap', `${gap}px`);
+        root.style.setProperty('--adaptive-art', `${Math.round(artSize)}px`);
+        root.style.setProperty('--adaptive-title', `${Math.round(titleMax)}px`);
+      } else {
+        const horizontalPad = Math.max(28, Math.min(width * 0.06, 90));
+        const verticalBudget = Math.max(180, height - top - bottom);
+        const gap = Math.max(28, Math.min(70, width * 0.055));
+        const artSize = Math.min(440, width * 0.32, verticalBudget * 0.82);
+        const titleMax = Math.min(72, Math.max(36, width * 0.05, height * 0.105));
+
+        root.style.setProperty('--adaptive-top', `${top}px`);
+        root.style.setProperty('--adaptive-bottom', `${bottom}px`);
+        root.style.setProperty('--adaptive-pad-x', `${horizontalPad}px`);
+        root.style.setProperty('--adaptive-gap', `${gap}px`);
+        root.style.setProperty('--adaptive-art', `${Math.round(artSize)}px`);
+        root.style.setProperty('--adaptive-title', `${Math.round(titleMax)}px`);
+      }
+
+      // Let the existing two-row fitter use the new calculated width/font.
+      if (typeof window.spotifyDisFitTitle === 'function') {
+        window.spotifyDisFitTitle();
+      }
+    });
+  }
+
+  window.spotifyDisUpdateLayout = updateAdaptiveDisplay;
+  window.addEventListener('resize', updateAdaptiveDisplay, {passive:true});
+  window.addEventListener('orientationchange', updateAdaptiveDisplay, {passive:true});
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', updateAdaptiveDisplay, {passive:true});
+  }
+
+  const ro = new ResizeObserver(updateAdaptiveDisplay);
+  ro.observe(document.documentElement);
+  ro.observe(content);
+
+  updateAdaptiveDisplay();
+});
+</script>
+
 </head>
 
 <body>
