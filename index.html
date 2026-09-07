@@ -7817,8 +7817,34 @@ async function showPlaying(data) {
   }
 
 
+  /* =========================
+     SYNC SPOTIFY VOLUME
+  ========================= */
+
+  const spotifyVolume =
+    data.device?.volume_percent;
+
+  if (
+    Number.isFinite(spotifyVolume) &&
+    !volumeUserChanging
+  ) {
+
+    volumeSlider.value =
+      spotifyVolume;
+
+    volumePercentage.textContent =
+      spotifyVolume + "%";
+
+    lastVolume =
+      spotifyVolume;
+
+    updateVolumeIcon();
+
+  }
+
+
   const contextUri = data.context?.uri || "";
-  await detectCurrentPlaylist(contextUri);
+  await detectCurrentPlaylist(data.context);
 
 
   currentDeviceId = data.device?.id || currentDeviceId || "";
@@ -7831,6 +7857,22 @@ async function showPlaying(data) {
   updateStatus(
     data.is_playing
   );
+
+  /* Keep the polling cadence aligned with the current playback state.
+     This also makes external volume changes appear quickly while music
+     is playing without creating a new interval on every poll. */
+  const playbackStateChanged =
+    lastPollingPlayingState !== data.is_playing;
+
+  lastPollingPlayingState =
+    data.is_playing;
+
+  if (
+    playbackStateChanged &&
+    pollingInterval
+  ) {
+    restartPlaybackPolling();
+  }
 
   updatePlaybackScreensaverState(!!data.is_playing);
 
@@ -7925,6 +7967,9 @@ async function updatePlayer() {
 
 
 let pollingInterval =
+  null;
+
+let lastPollingPlayingState =
   null;
 
 let trackEndTimer =
@@ -8278,6 +8323,12 @@ progressBar.addEventListener(
 let lastVolume =
   100;
 
+let volumeUserChanging =
+  false;
+
+let volumeChangeTimeout =
+  null;
+
 
 function updateVolumeIcon() {
 
@@ -8310,6 +8361,13 @@ volumeSlider.addEventListener(
   "input",
   async () => {
 
+    volumeUserChanging =
+      true;
+
+    clearTimeout(
+      volumeChangeTimeout
+    );
+
     const volume =
       Number(
         volumeSlider.value
@@ -8324,14 +8382,27 @@ volumeSlider.addEventListener(
     updateVolumeIcon();
 
     await spotifyFetch(
-      withDeviceId("/me/player/volume?volume_percent=" +
-      volume),
+      withDeviceId(
+        "/me/player/volume?volume_percent=" +
+        volume
+      ),
       {
         method:
           "PUT",
         allowDuringQuotaCooldown: true
       }
     );
+
+    /* Give Spotify a moment to apply the new value before allowing the
+       background player poll to overwrite the slider. */
+    volumeChangeTimeout =
+      setTimeout(
+        () => {
+          volumeUserChanging =
+            false;
+        },
+        1500
+      );
 
   }
 );
@@ -8360,7 +8431,7 @@ volumeIcon.addEventListener(
       updateVolumeIcon();
 
       await spotifyFetch(
-        "/me/player/volume?volume_percent=0",
+        withDeviceId("/me/player/volume?volume_percent=0"),
         {
           method:
             "PUT"
