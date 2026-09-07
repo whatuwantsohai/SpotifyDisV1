@@ -10530,82 +10530,60 @@ updateSessionTime();
 
 \n
 <style id="phone-native-motion-fix">
-/* Native-feeling phone motion: keep the large-screen experience untouched. */
+/* Phone motion should feel identical to the large-screen player, not like a slideshow. */
 @media (max-width:700px){
-  /* Give lyrics a real left gutter so the artwork/header overlays can never cover the first glyph. */
+  /* Keep a generous left gutter so no lyric glyph is hidden by the UI edge/overlay. */
   #lyricsView{
-    padding-left:max(64px, calc(58px + env(safe-area-inset-left))) !important;
-    padding-right:max(22px, calc(18px + env(safe-area-inset-right))) !important;
+    padding-left:max(70px, calc(64px + env(safe-area-inset-left))) !important;
+    padding-right:max(20px, calc(16px + env(safe-area-inset-right))) !important;
   }
+
   #lyricsInner{
     width:100% !important;
     max-width:none !important;
     padding-left:0 !important;
     padding-right:8px !important;
-    transform:translate3d(0,var(--lyrics-shift,0px),0);
-    transition:transform 680ms cubic-bezier(.2,.72,.2,1) !important;
+    transform:translate3d(0,var(--lyrics-shift,0px),0) !important;
+    transition:transform 520ms cubic-bezier(.22,.61,.36,1) !important;
     will-change:transform;
   }
+
+  /* Match the large-display lyric animation: opacity + scale + soft focus. */
   .lyricsLine{
     max-width:none !important;
     width:100% !important;
-    padding:13px 0 !important;
-    transform:none !important;
-    filter:none !important;
-    transition:color 420ms ease, opacity 420ms ease !important;
-    will-change:opacity,color;
-  }
-  .lyricsLine.active{
-    transform:none !important;
-    filter:none !important;
-  }
-  .lyricsLine[data-distance="1"],
-  .lyricsLine[data-distance="2"],
-  .lyricsLine[data-distance="3"],
-  .lyricsLine[data-distance="4"],
-  .lyricsLine[data-distance="5"]{
-    transform:none !important;
-    filter:none !important;
+    transition:
+      color 520ms ease,
+      opacity 520ms ease,
+      transform 520ms cubic-bezier(.22,.61,.36,1),
+      filter 520ms ease !important;
+    will-change:transform,opacity,filter,color;
   }
 
-  /* Keep the vinyl on the GPU and continuously rotating; don't let the global
-     reduced-motion finish pass turn the phone player into a slideshow. */
+  /* Use the same distance-based transforms as the large display. */
+  .lyricsLine.active{
+    transform:scale(1) !important;
+    filter:blur(0) !important;
+  }
+  .lyricsLine[data-distance="1"]{transform:scale(.96) !important;filter:blur(1px) !important;}
+  .lyricsLine[data-distance="2"]{transform:scale(.93) !important;filter:blur(2px) !important;}
+  .lyricsLine[data-distance="3"]{transform:scale(.90) !important;filter:blur(3px) !important;}
+  .lyricsLine[data-distance="4"]{transform:scale(.87) !important;filter:blur(4px) !important;}
+  .lyricsLine[data-distance="5"]{transform:scale(.84) !important;filter:blur(5px) !important;}
+
+  /* The phone vinyl is driven by a dedicated compositor-friendly RAF below.
+     Disable the CSS animation here so the two motion systems cannot fight. */
   .vinylRecord{
-    animation-name:vinylSpin !important;
-    animation-duration:6s !important;
-    animation-timing-function:linear !important;
-    animation-iteration-count:infinite !important;
-    animation-fill-mode:both !important;
+    animation:none !important;
     transform-origin:50% 50% !important;
     will-change:transform !important;
     backface-visibility:hidden !important;
     -webkit-backface-visibility:hidden !important;
   }
-  body.isPlaying .vinylRecord{
-    animation-play-state:running !important;
-  }
-}
 
-@media (max-width:430px){
-  #lyricsView{
-    padding-left:max(70px, calc(64px + env(safe-area-inset-left))) !important;
-    padding-right:max(20px, calc(16px + env(safe-area-inset-right))) !important;
+  #fullscreenButton{
+    bottom:max(8px, calc(6px + env(safe-area-inset-bottom))) !important;
   }
-  .lyricsLine{
-    font-size:clamp(29px,8.1vw,40px) !important;
-    letter-spacing:-.018em !important;
-  }
-}
-
-/* The app's phone UI explicitly opts into its own smooth motion. */
-@media (max-width:700px) and (prefers-reduced-motion:reduce){
-  .vinylRecord{
-    animation-duration:6s !important;
-    animation-iteration-count:infinite !important;
-    animation-play-state:running !important;
-  }
-  #lyricsInner{transition:transform 680ms cubic-bezier(.2,.72,.2,1) !important;}
-  .lyricsLine{transition:color 420ms ease,opacity 420ms ease !important;animation:none !important;}
 }
 </style>
 
@@ -10862,6 +10840,52 @@ updateSessionTime();
   }
 }
 </style>
+
+<script id="phone-vinyl-motion-controller">
+(() => {
+  const vinyl = document.querySelector('.vinylRecord');
+  if (!vinyl) return;
+
+  let raf = 0;
+  let startedAt = performance.now();
+  let angleAtStart = 0;
+  const period = 6000;
+
+  function phoneMode() {
+    return window.matchMedia('(max-width:700px)').matches;
+  }
+
+  function playing() {
+    return document.body.classList.contains('isPlaying') &&
+           document.body.classList.contains('modeVinyl');
+  }
+
+  function frame(now) {
+    raf = 0;
+    if (!phoneMode() || !playing()) return;
+    const angle = (angleAtStart + ((now - startedAt) / period) * 360) % 360;
+    vinyl.style.transform = `translateZ(0) rotate(${angle}deg)`;
+    raf = requestAnimationFrame(frame);
+  }
+
+  function sync() {
+    if (!phoneMode() || !playing()) {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      return;
+    }
+    angleAtStart = 0;
+    startedAt = performance.now();
+    if (!raf) raf = requestAnimationFrame(frame);
+  }
+
+  const observer = new MutationObserver(sync);
+  observer.observe(document.body, {attributes:true, attributeFilter:['class']});
+  window.addEventListener('resize', sync, {passive:true});
+  window.addEventListener('orientationchange', sync, {passive:true});
+  sync();
+})();
+</script>
 
 <script id="smart-title-fitter">
 (() => {
