@@ -7060,7 +7060,13 @@ function closeQueue() {
 }
 
 function queueItemKey(item, fallbackIndex) {
-  return item?.uri || item?.id || ("queue-" + fallbackIndex);
+  const identity =
+    item?.uri ||
+    item?.id ||
+    item?.href ||
+    ("queue-" + fallbackIndex);
+
+  return identity + "::" + String(fallbackIndex);
 }
 
 function queueItemTitle(item) {
@@ -7085,6 +7091,37 @@ function queueItemUri(item) {
   return item?.uri || "";
 }
 
+function normalizeQueueItems(items) {
+  if (!Array.isArray(items)) return [];
+
+  const seen = new Set();
+  const normalized = [];
+
+  for (const item of items) {
+    const uri = queueItemUri(item);
+    const identity =
+      uri ||
+      item?.id ||
+      item?.href ||
+      JSON.stringify({
+        type: item?.type || "",
+        name: item?.name || "",
+        artist: item?.artists?.map(a => a.name).join(",") || "",
+        show: item?.show?.name || ""
+      });
+
+    // Spotify can expose stale/repeated queue entries after rapid playback
+    // commands. Keep the first occurrence so the display cannot turn one
+    // track into a self-repeating queue.
+    if (seen.has(identity)) continue;
+
+    seen.add(identity);
+    normalized.push(item);
+  }
+
+  return normalized;
+}
+
 function moveQueueItem(fromIndex, toIndex) {
   if (
     fromIndex < 0 ||
@@ -7105,9 +7142,7 @@ function moveQueueItem(fromIndex, toIndex) {
 }
 
 function renderQueue(items) {
-  sessionQueueItems = Array.isArray(items)
-    ? items.slice()
-    : [];
+  sessionQueueItems = normalizeQueueItems(items);
 
   queueList.innerHTML = "";
 
@@ -7174,7 +7209,7 @@ function renderQueue(items) {
 
       priorityNextQueue =
         priorityNextQueue.filter(
-          queued => queued.key !== key
+          queued => queueItemUri(queued.item) !== uri
         );
 
       priorityNextQueue.unshift({
@@ -7310,7 +7345,6 @@ function renderQueue(items) {
       // the source of truth for the rows shown here.
       closeQueue();
       setTimeout(updatePlayer, 250);
-      setTimeout(loadQueue, 600);
       wakeDisplay();
     });
 
@@ -7346,12 +7380,10 @@ async function loadQueue() {
       : [];
 
   const filteredItems =
-    serverItems.filter(
-      (item, index) =>
-        !queueRemovedIds.has(
-          queueItemKey(item, index)
-        )
-    );
+    serverItems.filter((item, index) => {
+      const key = queueItemKey(item, index);
+      return !queueRemovedIds.has(key);
+    });
 
   renderQueue(filteredItems);
   queueLoaded = true;
@@ -9852,11 +9884,14 @@ updateSessionTime();
   const refreshQueueCurrent=()=>{
     if(!queue) return;
     const id=typeof currentTrackId!=='undefined'?currentTrackId:null;
+    let marked=false;
     queue.querySelectorAll('.queueItem').forEach(row=>{
       const idx=Number(row.dataset.index);
       const item=Array.isArray(sessionQueueItems)?sessionQueueItems[idx]:null;
       const itemId=item?.id||item?.uri||null;
-      row.classList.toggle('isCurrent',!!id&&!!itemId&&itemId===id);
+      const isCurrent=!!id&&!!itemId&&itemId===id&&!marked;
+      if(isCurrent) marked=true;
+      row.classList.toggle('isCurrent',isCurrent);
     });
   };
   if(queue){
