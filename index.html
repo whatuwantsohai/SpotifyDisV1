@@ -4525,6 +4525,239 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+
+
+<style id="device-specific-clean-ui">
+/*
+   Device-aware compact UI.
+   Desktop / large touchscreens keep the existing V4.3 presentation.
+   Phones and tablets get a simpler, touch-first player.
+*/
+body.device-mobile #header,
+body.device-tablet #header{
+  top:max(10px, env(safe-area-inset-top));
+  left:max(12px, env(safe-area-inset-left));
+  right:max(12px, env(safe-area-inset-right));
+  padding:7px 9px;
+  box-sizing:border-box;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:18px;
+  background:rgba(18,18,18,.42);
+  backdrop-filter:blur(18px) saturate(1.15);
+  -webkit-backdrop-filter:blur(18px) saturate(1.15);
+}
+
+body.device-mobile #clock,
+body.device-mobile #deviceName,
+body.device-mobile #status,
+body.device-tablet #clock,
+body.device-tablet #deviceName,
+body.device-tablet #status{
+  display:none !important;
+}
+
+body.device-mobile #logo,
+body.device-tablet #logo{
+  font-size:18px !important;
+  line-height:1;
+  white-space:nowrap;
+}
+
+body.device-mobile #headerActions,
+body.device-tablet #headerActions{
+  gap:5px;
+}
+
+body.device-mobile .headerButton,
+body.device-tablet .headerButton{
+  width:34px !important;
+  height:34px !important;
+  min-width:34px !important;
+  min-height:34px !important;
+}
+
+body.device-mobile #logoutButton,
+body.device-tablet #logoutButton{
+  min-height:34px !important;
+  padding:7px 10px !important;
+  font-size:9px !important;
+}
+
+body.device-mobile #content,
+body.device-tablet #content{
+  width:100%;
+  height:auto;
+  min-height:100svh;
+  box-sizing:border-box;
+  align-items:flex-start;
+  justify-content:flex-start;
+  padding-top:max(82px, calc(64px + env(safe-area-inset-top))) !important;
+  padding-bottom:max(74px, calc(54px + env(safe-area-inset-bottom))) !important;
+}
+
+body.device-mobile #nowPlayingLayout,
+body.device-tablet #nowPlayingLayout{
+  width:min(100%, 760px) !important;
+  max-width:760px !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:clamp(18px, 3.5vh, 30px) !important;
+  margin:0 auto;
+}
+
+body.device-mobile #albumArtContainer,
+body.device-tablet #albumArtContainer{
+  order:-1;
+  align-self:center !important;
+  flex:0 0 auto !important;
+  margin:0 auto;
+}
+
+body.device-mobile #playing,
+body.device-tablet #playing{
+  width:min(100%, 680px) !important;
+  flex:0 0 auto !important;
+  text-align:center;
+}
+
+body.device-mobile #trackInfo,
+body.device-tablet #trackInfo{
+  width:100%;
+  max-width:100%;
+  text-align:center;
+}
+
+body.device-mobile #trackName,
+body.device-tablet #trackName{
+  width:100% !important;
+  max-width:100% !important;
+  line-height:1.05 !important;
+  letter-spacing:-1px !important;
+  overflow-wrap:anywhere !important;
+}
+
+body.device-mobile #artistName,
+body.device-tablet #artistName{
+  margin-top:8px;
+}
+
+body.device-mobile #playlistSelector,
+body.device-tablet #playlistSelector{
+  justify-content:center;
+}
+
+body.device-mobile #controls,
+body.device-tablet #controls{
+  justify-content:center;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+body.device-mobile #volumeContainer,
+body.device-tablet #volumeContainer{
+  width:min(100%, 520px);
+  margin-left:auto;
+  margin-right:auto;
+}
+
+/* Phone: prioritize one-handed, uncluttered presentation. */
+body.device-mobile #albumArtContainer{
+  width:min(72vw, 300px) !important;
+  max-width:calc(100vw - 32px) !important;
+}
+
+body.device-mobile #trackName{
+  font-size:clamp(22px, 8vw, 40px) !important;
+}
+
+/* Tablet: use the extra room without bringing the desktop density back. */
+body.device-tablet #albumArtContainer{
+  width:min(46vw, 420px) !important;
+  max-width:calc(100vw - 64px) !important;
+}
+
+body.device-tablet #trackName{
+  font-size:clamp(30px, 5vw, 52px) !important;
+}
+
+@media (max-height:700px){
+  body.device-mobile #albumArtContainer{
+    width:min(54vw, 230px) !important;
+  }
+
+  body.device-tablet #albumArtContainer{
+    width:min(38vw, 320px) !important;
+  }
+
+  body.device-mobile #nowPlayingLayout,
+  body.device-tablet #nowPlayingLayout{
+    gap:16px !important;
+  }
+}
+
+@media (orientation:landscape){
+  body.device-mobile #content,
+  body.device-tablet #content{
+    padding-top:max(62px, calc(46px + env(safe-area-inset-top))) !important;
+  }
+
+  body.device-mobile #nowPlayingLayout,
+  body.device-tablet #nowPlayingLayout{
+    gap:16px !important;
+  }
+
+  body.device-mobile #albumArtContainer{
+    width:min(42vh, 240px) !important;
+  }
+
+  body.device-tablet #albumArtContainer{
+    width:min(42vh, 330px) !important;
+  }
+}
+</style>
+
+<script id="device-ui-detector">
+(() => {
+  const root = document.documentElement;
+  const body = document.body;
+  if (!body) return;
+
+  let raf = 0;
+
+  function detectDeviceUI() {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const vv = window.visualViewport;
+      const width = Math.max(1, Math.round(vv ? vv.width : window.innerWidth));
+      const height = Math.max(1, Math.round(vv ? vv.height : window.innerHeight));
+      const touch = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches;
+
+      /*
+         Width is the fallback for phones, while tablets also require a
+         touch/coarse-pointer signal. This prevents a desktop window merely
+         being resized to tablet width from permanently becoming the tablet UI.
+      */
+      const mobile = width <= 700;
+      const tablet = !mobile && width <= 1100 && touch;
+
+      body.classList.toggle('device-mobile', mobile);
+      body.classList.toggle('device-tablet', tablet);
+      body.classList.toggle('device-large', !mobile && !tablet);
+      root.dataset.deviceClass = mobile ? 'mobile' : tablet ? 'tablet' : 'large';
+    });
+  }
+
+  window.spotifyDisDetectDeviceUI = detectDeviceUI;
+  window.addEventListener('resize', detectDeviceUI, {passive:true});
+  window.addEventListener('orientationchange', detectDeviceUI, {passive:true});
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', detectDeviceUI, {passive:true});
+  }
+  detectDeviceUI();
+})();
+</script>
+
 </head>
 
 <body>
