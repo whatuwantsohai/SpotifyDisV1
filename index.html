@@ -3399,6 +3399,10 @@ body.connectionRecovering #status {
 @media (max-width: 600px) {
   #deviceName { max-width: 42vw; }
 }
+
+
+/* Keep the primary player artwork visible once an image has loaded. */
+#albumArtDisplay[src]:not([src=""]) { opacity: 1; }
 </style>
 </head>
 
@@ -7808,10 +7812,19 @@ function updateArtwork(image) {
     targets.forEach(img => {
       img.classList.add("artworkIncoming");
       img.src = image;
+      // Keep the main player artwork visible after the entrance animation.
+      // The old code removed `artworkSettled` after 800ms, which also removed
+      // the opacity:1 state from #albumArtDisplay and made the artwork vanish.
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => img.classList.add("artworkSettled"));
+        requestAnimationFrame(() => {
+          img.classList.add("artworkSettled");
+          if (img === albumArtDisplay) img.style.opacity = "1";
+        });
       });
-      setTimeout(() => img.classList.remove("artworkIncoming", "artworkSettled"), 800);
+      setTimeout(() => {
+        img.classList.remove("artworkIncoming");
+        if (img !== albumArtDisplay) img.classList.remove("artworkSettled");
+      }, 800);
     });
 
     if (backgroundImageNext) {
