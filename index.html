@@ -3880,6 +3880,27 @@ button,
   body.isPlaying #albumArtDisplay, body.isPlaying #ambientGlow { animation:none !important; }
 }
 </style>
+
+<style id="v5-actual-title-fix">
+#playing #trackInfo #trackName {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  max-width: 100% !important;
+  max-height: 2.16em !important;
+  overflow: hidden !important;
+  white-space: normal !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+#playing #trackInfo {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+</style>
+
 </head>
 
 <body>
@@ -8332,11 +8353,7 @@ async function showPlaying(data) {
     currentTrackId !== incomingTrackKey;
 
 
-  if (isNewTrack) {
-
-    await playTrackTransition();
-
-  }
+  if (isNewTrack) { playTrackTransition(); }
 
 
   trackName.textContent =
@@ -8711,7 +8728,7 @@ previousButton.addEventListener(
 
     if (result?.__spotifyError) return;
     await updatePlayer();
-    setTimeout(updatePlayer, 500);
+    setTimeout(updatePlayer, 220);
     wakeDisplay();
   }
 );
@@ -8762,8 +8779,7 @@ nextButton.addEventListener(
       }
 
       await updatePlayer();
-      setTimeout(updatePlayer, 600);
-      setTimeout(updatePlayer, 1500);
+      setTimeout(updatePlayer, 220);
       wakeDisplay();
     });
   }
@@ -9640,6 +9656,25 @@ updateSessionTime();
     img.draggable=false;
     img.addEventListener('dragstart',e=>e.preventDefault());
   });
+})();
+</script>
+
+
+<script id="v5-actual-skip-guard">
+(() => {
+  let skipGuardUntil = 0;
+  const SKIP_GUARD_MS = 650;
+  document.addEventListener("click", event => {
+    const button = event.target.closest?.("#nextButton, #previousButton");
+    if (!button) return;
+    const now = performance.now();
+    if (now < skipGuardUntil) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+    skipGuardUntil = now + SKIP_GUARD_MS;
+  }, true);
 })();
 </script>
 
