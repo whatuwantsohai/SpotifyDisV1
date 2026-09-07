@@ -4800,6 +4800,130 @@ body.device-tablet #trackName{
 })();
 </script>
 
+
+<style id="ios-standalone-performance-patch">
+/* iOS Home Screen / standalone Safari only.
+   Keep the visual design intact, but remove the GPU-heavy effects that
+   Safari's standalone WebKit compositing can struggle with. */
+html.ios-standalone body.device-mobile,
+html.ios-standalone body.device-tablet {
+  --ios-motion-ease: cubic-bezier(.22,.61,.36,1);
+}
+
+@media (max-width: 700px) {
+  html.ios-standalone #lyricsInner {
+    transform: translate3d(0, var(--lyrics-shift, 0px), 0);
+    transition: transform 520ms var(--ios-motion-ease) !important;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    contain: layout paint style;
+  }
+
+  html.ios-standalone .lyricsLine {
+    transition: opacity 520ms ease, color 420ms ease !important;
+    transform: none !important;
+    filter: none !important;
+    will-change: opacity, color;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  html.ios-standalone .lyricsLine.active,
+  html.ios-standalone .lyricsLine[data-distance="1"],
+  html.ios-standalone .lyricsLine[data-distance="2"],
+  html.ios-standalone .lyricsLine[data-distance="3"],
+  html.ios-standalone .lyricsLine[data-distance="4"],
+  html.ios-standalone .lyricsLine[data-distance="5"] {
+    transform: none !important;
+    filter: none !important;
+  }
+
+  html.ios-standalone .vinylRecord {
+    animation: vinylSpin 7s linear infinite !important;
+    animation-play-state: running !important;
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    contain: layout paint;
+  }
+
+  html.ios-standalone body.isPlaying .vinylRecord {
+    animation-play-state: running !important;
+  }
+
+  /* The canvas visualizer and animated backdrop are the expensive layers
+     on iOS standalone. Keep the artwork/player animation, remove only
+     those background effects while preserving the look. */
+  html.ios-standalone #visualizerCanvas {
+    display: none !important;
+  }
+
+  html.ios-standalone #backgroundImageNext {
+    transition: none !important;
+    transform: none !important;
+  }
+
+  html.ios-standalone #backgroundImage {
+    transition: opacity .35s ease !important;
+    transform: none !important;
+  }
+
+  html.ios-standalone #ambientGlow {
+    animation: none !important;
+    filter: none !important;
+  }
+
+  html.ios-standalone #backgroundOverlay {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  html.ios-standalone .glass,
+  html.ios-standalone .glassPanel,
+  html.ios-standalone .modal,
+  html.ios-standalone .settingsPanel {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Avoid accidental WebKit text rasterization work during lyric changes. */
+  html.ios-standalone #lyricsView,
+  html.ios-standalone #lyricsInner {
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@media (max-width: 700px) and (prefers-reduced-motion: reduce) {
+  /* Safari can expose a reduced-motion preference unexpectedly in standalone
+     mode. Keep the player responsive while retaining the lightweight motion. */
+  html.ios-standalone .vinylRecord {
+    animation: vinylSpin 7s linear infinite !important;
+    animation-iteration-count: infinite !important;
+    animation-play-state: running !important;
+  }
+  html.ios-standalone #lyricsInner {
+    transition: transform 520ms var(--ios-motion-ease) !important;
+  }
+}
+</style>
+
+<script id="ios-standalone-detector">
+(() => {
+  const root = document.documentElement;
+  if (!root) return;
+
+  const standalone =
+    window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+    (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches);
+
+  root.classList.toggle('ios-standalone', !!standalone);
+  root.dataset.standalone = standalone ? '1' : '0';
+})();
+</script>
+
 </head>
 
 <body>
