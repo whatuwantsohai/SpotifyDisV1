@@ -9908,6 +9908,123 @@ updateSessionTime();
 </script>
 
 
+<style id="universal-mobile-layout-fix">
+/* Keep the player below the fixed top chrome on every viewport. */
+#content {
+  box-sizing: border-box;
+  padding-top: max(100px, calc(76px + env(safe-area-inset-top)));
+  padding-bottom: max(50px, calc(34px + env(safe-area-inset-bottom)));
+}
+
+#nowPlayingLayout, #playing, #trackInfo {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#trackName {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 700px) {
+  #content {
+    min-height: 100svh;
+    height: auto;
+    padding: max(104px, calc(82px + env(safe-area-inset-top))) 18px max(44px, calc(30px + env(safe-area-inset-bottom)));
+  }
+
+  #nowPlayingLayout {
+    width: 100%;
+    max-width: 560px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: clamp(20px, 4vh, 32px);
+  }
+
+  #albumArtContainer {
+    order: -1;
+    align-self: center;
+    width: min(72vw, 320px);
+    max-width: calc(100vw - 36px);
+    margin: 0 auto;
+    flex: 0 0 auto;
+  }
+
+  #playing {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
+  #trackInfo {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #trackName {
+    font-size: clamp(24px, 8vw, 42px) !important;
+    line-height: 1.04 !important;
+    letter-spacing: -1.1px !important;
+  }
+
+  #artistName {
+    margin-top: 9px;
+    font-size: clamp(15px, 4.5vw, 18px);
+  }
+}
+
+@media (max-width: 700px) and (max-height: 760px) {
+  #content {
+    padding-top: max(92px, calc(70px + env(safe-area-inset-top)));
+  }
+
+  #nowPlayingLayout {
+    gap: 18px;
+  }
+
+  #albumArtContainer {
+    width: min(58vw, 250px);
+  }
+
+  #trackName {
+    font-size: clamp(22px, 7.2vw, 36px) !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  #content {
+    padding-top: max(58px, calc(42px + env(safe-area-inset-top)));
+    padding-bottom: max(24px, calc(18px + env(safe-area-inset-bottom)));
+  }
+
+  #nowPlayingLayout {
+    max-height: calc(100svh - 76px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+}
+
+/* Immersive artwork mode: keep the overlay comfortably inside the screen. */
+@media (max-width: 700px) {
+  body.modeArtwork #playing {
+    width: min(92vw, 560px);
+    bottom: max(5%, calc(5% + env(safe-area-inset-bottom)));
+  }
+
+  body.modeArtwork #albumArtContainer {
+    width: min(88vw, 520px);
+    max-width: calc(100vw - 28px);
+  }
+
+  body.modeArtwork #trackName {
+    font-size: clamp(22px, 6.5vw, 36px) !important;
+  }
+
+  body.modeVinyl #trackName {
+    font-size: clamp(22px, 6.5vw, 38px) !important;
+  }
+}
+</style>
+
 <script id="smart-title-fitter">
 (() => {
   const title = document.getElementById("trackName");
@@ -9918,36 +10035,31 @@ updateSessionTime();
   function fitTitleToTwoRows() {
     cancelAnimationFrame(fitFrame);
     fitFrame = requestAnimationFrame(() => {
-      const isMobile = window.matchMedia("(max-width: 600px)").matches;
-      const maxSize = isMobile ? 42 : 72;
-      const minSize = isMobile ? 20 : 30;
-
-      title.style.fontSize = maxSize + "px";
-      title.style.lineHeight = isMobile ? "1.04" : "1.02";
-
+      const mobile = window.matchMedia("(max-width: 700px)").matches;
+      const maxSize = mobile ? (window.innerWidth <= 380 ? 38 : 42) : 72;
+      const minSize = mobile ? 19 : 30;
       let size = maxSize;
-      let guard = 0;
 
-      while (size > minSize && title.scrollHeight > title.clientHeight + 2 && guard < 30) {
+      title.style.fontSize = size + "px";
+      title.style.lineHeight = mobile ? "1.04" : "1.02";
+
+      for (let guard = 0; guard < 32 && size > minSize; guard++) {
+        const cs = getComputedStyle(title);
+        const lineHeight = parseFloat(cs.lineHeight) || (size * (mobile ? 1.04 : 1.02));
+        const twoRowHeight = lineHeight * 2 + 2;
+        if (title.scrollHeight <= twoRowHeight) break;
         size -= 1;
         title.style.fontSize = size + "px";
-        guard++;
       }
 
-      // If the title is still too tall at the minimum, use the smallest
-      // readable size rather than clipping any text.
-      if (title.scrollHeight > title.clientHeight + 2) {
-        title.style.fontSize = minSize + "px";
-      }
+      title.style.fontSize = size + "px";
     });
   }
 
   window.spotifyDisFitTitle = fitTitleToTwoRows;
   window.addEventListener("resize", fitTitleToTwoRows, {passive:true});
-
   const observer = new MutationObserver(fitTitleToTwoRows);
   observer.observe(title, {childList:true, characterData:true, subtree:true});
-
   fitTitleToTwoRows();
 })();
 </script>
