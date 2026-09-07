@@ -3797,14 +3797,23 @@ button,
    NOW PLAYING TEXT FIX
 ========================= */
 #trackName,
-.track-title,
-.queue-item .track-name {
+.track-title {
   white-space: normal !important;
   overflow: visible !important;
   text-overflow: clip !important;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-  line-height: 1.12;
+  max-width: none !important;
+  line-height: 1.08;
+}
+
+#trackInfo {
+  min-width: 0;
+  overflow: visible !important;
+}
+
+#playing {
+  min-width: 0;
 }
 
 #artistName,
@@ -3825,6 +3834,81 @@ button,
   opacity: .58;
   font-size: .88em;
   line-height: 1.15;
+}
+
+
+/* Album metadata: always directly below artist */
+#albumName.now-playing-album {
+  display: block;
+  margin-top: 5px;
+  min-height: 1.1em;
+  color: rgba(255,255,255,.56);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 1;
+}
+#albumName.now-playing-album:empty {
+  display: none;
+}
+
+
+/* FINAL MICRO-POLISH */
+#trackName {
+  text-wrap: pretty;
+  hyphens: none;
+}
+
+#artistName {
+  line-height: 1.2;
+}
+
+#playlistSelector {
+  opacity: .82;
+}
+
+#time {
+  user-select: none;
+}
+
+.control,
+.headerButton,
+.queueAction,
+.lyricsToolButton,
+#volumeIcon,
+#fullscreenButton {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+#albumArtContainer {
+  isolation: isolate;
+}
+
+@media (max-width: 700px) {
+  #trackName {
+    font-size: clamp(34px, 9vw, 54px);
+    letter-spacing: -1.7px;
+  }
+
+  #artistName {
+    margin-top: 10px;
+    font-size: 18px;
+  }
+
+  #albumName.now-playing-album {
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #albumArtDisplay {
+    animation: none !important;
+  }
 }
 
 </style>
@@ -8312,6 +8396,8 @@ async function showPlaying(data) {
 
     artistName.textContent =
       "—";
+    const idleAlbum = document.getElementById("albumName");
+    if (idleAlbum) idleAlbum.textContent = "";
     if (lyricsTrackName) lyricsTrackName.textContent = "Nothing Playing";
     if (lyricsArtistName) lyricsArtistName.textContent = "—";
 
@@ -8420,6 +8506,19 @@ async function showPlaying(data) {
   artistName.textContent =
     artists ||
     "Unknown Artist";
+
+  /* Album metadata: use Spotify's actual track.album.name value. */
+  let albumName = document.getElementById("albumName");
+  if (!albumName) {
+    albumName = document.createElement("div");
+    albumName.id = "albumName";
+    albumName.className = "now-playing-album";
+    artistName.insertAdjacentElement("afterend", albumName);
+  }
+  albumName.textContent =
+    track.album?.name ||
+    "";
+  albumName.title = albumName.textContent;
 
   if (lyricsTrackName) {
     lyricsTrackName.textContent = track.name || "Unknown Track";
@@ -9058,6 +9157,8 @@ function logout() {
 
   artistName.textContent =
     "—";
+  const idleAlbum = document.getElementById("albumName");
+  if (idleAlbum) idleAlbum.textContent = "";
 
   deviceName.textContent =
     "No device";
@@ -9653,50 +9754,7 @@ updateSessionTime();
 </script>
 
 
-<script>
-/* Album name below artist + keep song title readable */
-(function () {
-  "use strict";
 
-  const artist = document.getElementById("artistName");
-  const title = document.getElementById("trackName");
-
-  if (!artist || !title) return;
-
-  let album = document.getElementById("albumName");
-  if (!album) {
-    album = document.createElement("div");
-    album.id = "albumName";
-    album.className = "now-playing-album";
-    artist.insertAdjacentElement("afterend", album);
-  }
-
-  const syncAlbum = () => {
-    const source =
-      document.querySelector("[data-album-name]") ||
-      document.querySelector(".album-name-source");
-
-    const value = source
-      ? (source.dataset.albumName || source.textContent || "").trim()
-      : "";
-
-    if (value) {
-      album.textContent = value;
-      album.title = value;
-    }
-  };
-
-  syncAlbum();
-
-  // Observe existing Now Playing changes without polling.
-  const observer = new MutationObserver(syncAlbum);
-  observer.observe(document.body, {
-    childList: true,
-    characterData: true,
-    subtree: true
-  });
-})();
-</script>
 
 </body>
 </html>
