@@ -3881,29 +3881,30 @@ button,
 }
 </style>
 
-<style id="v5-final-title-guard">
+<style id="v5-normal-title">
 #playing #trackInfo #trackName {
-  display: -webkit-box !important;
-  -webkit-box-orient: vertical !important;
-  -webkit-line-clamp: 2 !important;
+  font-size: clamp(36px, 4.2vw, 64px) !important;
+  line-height: 1.06 !important;
+  font-weight: 800 !important;
+  letter-spacing: -2px !important;
   width: 100% !important;
   max-width: 100% !important;
-  height: 2.08em !important;
-  max-height: 2.08em !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
   white-space: normal !important;
-  text-overflow: ellipsis !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
   overflow-wrap: break-word !important;
   word-break: normal !important;
+  display: block !important;
+  max-height: none !important;
+  -webkit-line-clamp: unset !important;
 }
 #playing #trackInfo {
-  min-width: 0 !important;
   width: 100% !important;
+  min-width: 0 !important;
   max-width: 100% !important;
-  overflow: hidden !important;
 }
 </style>
+
 </head>
 
 <body>
@@ -5239,12 +5240,6 @@ async function spotifyFetch(
   retry = true
 ) {
 
-  // Never automatically retry non-idempotent requests. A lost response to
-  // POST /me/player/next or /previous can otherwise execute the command twice.
-  const requestMethod = String(options.method || "GET").toUpperCase();
-  const retrySafe = !["POST", "DELETE"].includes(requestMethod);
-  const canRetry = retry && retrySafe;
-
   // Playback controls must not be blocked by a local playlist/quota
   // cooldown. Spotify uses separate quota buckets for endpoint groups,
   // so a playlist metadata 429 should not make Play/Next/Previous/Volume
@@ -5366,7 +5361,7 @@ async function spotifyFetch(
       return null;
 
 
-    if (canRetry && [502, 503, 504].includes(response.status)) {
+    if (retry && [502, 503, 504].includes(response.status)) {
       await new Promise(resolve => setTimeout(resolve, 500));
       return spotifyFetch(endpoint, options, false);
     }
@@ -5535,7 +5530,7 @@ async function spotifyFetch(
 
   } catch (error) {
 
-    if (canRetry) {
+    if (retry) {
       await new Promise(resolve => setTimeout(resolve, 500));
       return spotifyFetch(endpoint, options, false);
     }
@@ -8363,7 +8358,9 @@ async function showPlaying(data) {
 
 
   if (isNewTrack) {
-    playTrackTransition();
+
+    await playTrackTransition();
+
   }
 
 
@@ -8704,15 +8701,6 @@ function withDeviceId(endpoint) {
 }
 
 let playerCommandInFlight = false;
-let skipCommandCooldownUntil = 0;
-
-function skipCommandBlocked() {
-  const now = Date.now();
-  if (now < skipCommandCooldownUntil) return true;
-  // Covers accidental double-clicks and touch/click duplicate delivery.
-  skipCommandCooldownUntil = now + 750;
-  return false;
-}
 
 async function runPlayerCommand(command) {
   if (playerCommandInFlight) return null;
@@ -8738,7 +8726,6 @@ async function runPlayerCommand(command) {
 previousButton.addEventListener(
   "click",
   async () => {
-    if (skipCommandBlocked()) return;
     const result = await runPlayerCommand(async () => {
       if (trackEndTimer) { clearTimeout(trackEndTimer); trackEndTimer = null; }
       return await spotifyFetch(
@@ -8748,7 +8735,8 @@ previousButton.addEventListener(
     });
 
     if (result?.__spotifyError) return;
-    setTimeout(updatePlayer, 150);
+    await updatePlayer();
+    setTimeout(updatePlayer, 500);
     wakeDisplay();
   }
 );
@@ -8785,7 +8773,6 @@ playButton.addEventListener(
 nextButton.addEventListener(
   "click",
   async () => {
-    if (skipCommandBlocked()) return;
     await runPlayerCommand(async () => {
       if (trackEndTimer) { clearTimeout(trackEndTimer); trackEndTimer = null; }
 
@@ -8799,7 +8786,9 @@ nextButton.addEventListener(
         return;
       }
 
-      setTimeout(updatePlayer, 150);
+      await updatePlayer();
+      setTimeout(updatePlayer, 600);
+      setTimeout(updatePlayer, 1500);
       wakeDisplay();
     });
   }
