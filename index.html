@@ -9564,6 +9564,88 @@ updateSessionTime();
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}
 }
 </style>
+
+<style id="v6-visual-polish">
+/* V6 PURE VISUAL POLISH — presentation only, no playback/API changes */
+:root{
+  --v6-surface:rgba(255,255,255,.065);
+  --v6-surface-hover:rgba(255,255,255,.105);
+  --v6-border:rgba(255,255,255,.105);
+  --v6-soft:rgba(255,255,255,.58);
+}
+
+/* Now Playing hierarchy */
+#trackInfo{position:relative}
+#trackName{letter-spacing:-.035em;text-shadow:0 8px 34px rgba(0,0,0,.18)}
+#artistName{letter-spacing:-.012em;color:rgba(255,255,255,.86)}
+#albumName.now-playing-album{color:rgba(255,255,255,.52);font-size:13px;letter-spacing:.005em}
+#trackName,#artistName,#albumName.now-playing-album{transition:opacity .32s ease,transform .32s ease}
+
+/* Progress bar: cleaner, more tactile, still lightweight */
+#progressContainer{margin-top:30px}
+#progressBar{height:5px;background:rgba(255,255,255,.17);box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+#progress{box-shadow:0 0 14px rgba(255,255,255,.20)}
+#progressBar:hover,#progressBar.isPointerDown,#progressBar.isSeeking{height:6px}
+#progressBar #progress::after{box-shadow:0 0 0 5px rgba(255,255,255,.10),0 3px 12px rgba(0,0,0,.4)}
+#progressPreview{top:-38px;padding:5px 8px;border:1px solid rgba(255,255,255,.10);border-radius:8px;background:rgba(12,12,12,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 8px 28px rgba(0,0,0,.28);font-weight:650}
+#time{margin-top:10px;font-size:12px;opacity:.58}
+
+/* Main controls */
+#controls{gap:14px;margin-top:25px}
+.control{background:var(--v6-surface);border:1px solid rgba(255,255,255,.045);box-shadow:0 5px 20px rgba(0,0,0,.08)}
+.control:hover{background:var(--v6-surface-hover);transform:translateY(-1px)}
+.control:active{transform:scale(.94) translateY(0)}
+#playButton{box-shadow:0 8px 28px rgba(0,0,0,.22),0 0 0 1px rgba(255,255,255,.06)}
+#playButton:hover{box-shadow:0 10px 32px rgba(0,0,0,.28),0 0 0 1px rgba(255,255,255,.10)}
+
+/* Volume */
+#volumeContainer{transition:opacity .2s ease,transform .2s ease}
+#volumeSlider{accent-color:white}
+#volumePercentage{font-variant-numeric:tabular-nums;opacity:.52}
+
+/* Queue: read-only, calm, premium */
+#queuePanel{border-color:var(--v6-border);background:rgba(16,16,16,.88);box-shadow:0 30px 90px rgba(0,0,0,.52)}
+.queueHeader{padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.07)}
+.queueTitle{letter-spacing:-.01em}
+.queueClose{transition:background .18s ease,transform .18s ease}
+.queueClose:hover{background:rgba(255,255,255,.13);transform:rotate(4deg)}
+#queueCount{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.42);font-variant-numeric:tabular-nums}
+.queueItem{min-height:46px;border-bottom-color:rgba(255,255,255,.045);transition:background .16s ease,padding .16s ease}
+.queueItem:last-child{border-bottom-color:transparent}
+.queueItem:hover{background:rgba(255,255,255,.035)}
+.queueArtwork{border-radius:9px;box-shadow:0 3px 12px rgba(0,0,0,.18)}
+.queueTrack{font-size:12px;letter-spacing:-.005em}
+.queueArtist{color:rgba(255,255,255,.52)}
+.queueItem.isCurrent{background:linear-gradient(90deg,rgba(255,255,255,.085),rgba(255,255,255,.035));box-shadow:inset 2px 0 0 rgba(255,255,255,.72)}
+.queueItem.isCurrent .queueArtist::before{color:rgba(255,255,255,.68)}
+
+/* Lyrics: improve hierarchy without changing the lyric engine */
+#lyricsView{padding-left:max(24px,8vw);padding-right:max(24px,8vw)}
+#lyricsInner{width:min(980px,100%)}
+.lyricsLine{letter-spacing:-.03em;text-wrap:pretty}
+.lyricsLine.active{filter:blur(0);text-shadow:0 7px 38px rgba(0,0,0,.58)}
+.lyricsLine.past{opacity:.34}
+#lyricsFallback{padding:24px;border:1px solid rgba(255,255,255,.07);border-radius:16px;background:rgba(255,255,255,.035)}
+
+/* Artwork: cleaner depth while preserving existing image lifecycle */
+#albumArtContainer{box-shadow:0 28px 90px rgba(0,0,0,.28)}
+#albumArtDisplay{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+
+/* Global micro-polish */
+button,.control,input{ -webkit-tap-highlight-color:transparent }
+::selection{background:rgba(255,255,255,.22);color:white}
+@media (max-width:700px){
+  #progressContainer{margin-top:25px}
+  #controls{gap:10px}
+  .control{width:46px;height:46px}
+  #playButton{width:52px;height:52px}
+  #queuePanel{right:max(12px,env(safe-area-inset-right));width:min(390px,calc(100vw - 24px));border-radius:16px}
+  .lyricsLine{padding:14px 0}
+}
+@media (prefers-reduced-motion:reduce){
+  .control:hover,.queueClose:hover{transform:none}
+}
+</style>
 <script id="final-stability-behaviour">
 (function(){
   'use strict';
