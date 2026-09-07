@@ -3912,6 +3912,28 @@ button,
 }
 
 </style>
+
+<style id="stable-title-layout-fix">
+#trackInfo {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+#trackName {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  -webkit-line-clamp: unset !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  text-overflow: clip !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+  text-wrap: pretty !important;
+}
+</style>
+
 </head>
 
 <body>
@@ -8539,11 +8561,7 @@ async function showPlaying(data) {
     currentTrackId !== incomingTrackKey;
 
 
-  if (isNewTrack) {
-
-    await playTrackTransition();
-
-  }
+  if (isNewTrack) { playTrackTransition(); }
 
 
   trackName.textContent =
@@ -8920,6 +8938,10 @@ previousButton.addEventListener(
   "click",
   async () => {
 
+    if (window.__spotifyDisTrySkip && !window.__spotifyDisTrySkip(previousButton)) {
+      return;
+    }
+
     const result =
       await spotifyFetch(
         withDeviceId("/me/player/previous"),
@@ -8929,6 +8951,20 @@ previousButton.addEventListener(
           allowDuringQuotaCooldown: true
         }
       );
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+      return;
+    }
+
+    // Refresh once, without holding the click handler open.
+    setTimeout(updatePlayer, 250);
+    wakeDisplay();
+
+  }
+);
 
     if (
       result &&
@@ -9001,6 +9037,10 @@ nextButton.addEventListener(
   "click",
   async () => {
 
+    if (window.__spotifyDisTrySkip && !window.__spotifyDisTrySkip(nextButton)) {
+      return;
+    }
+
     if (
       await playPriorityNextIfAvailable()
     ) {
@@ -9017,6 +9057,21 @@ nextButton.addEventListener(
           allowDuringQuotaCooldown: true
         }
       );
+
+    if (
+      result &&
+      result.__spotifyError
+    ) {
+      console.error("Spotify Next failed:", result);
+      return;
+    }
+
+    // One non-blocking refresh. The visual track transition is preserved.
+    setTimeout(updatePlayer, 250);
+    wakeDisplay();
+
+  }
+);
 
     if (
       result &&
@@ -9917,6 +9972,38 @@ updateSessionTime();
     img.draggable=false;
     img.addEventListener('dragstart',e=>e.preventDefault());
   });
+})();
+</script>
+
+
+<script id="stable-skip-command-guard">
+(() => {
+  let skipLocked = false;
+  let unlockTimer = null;
+
+  function unlockSkip() {
+    skipLocked = false;
+    clearTimeout(unlockTimer);
+    unlockTimer = null;
+    [document.getElementById("previousButton"), document.getElementById("nextButton")]
+      .filter(Boolean)
+      .forEach(btn => btn.removeAttribute("aria-busy"));
+  }
+
+  window.__spotifyDisTrySkip = function(button) {
+    if (skipLocked) return false;
+    skipLocked = true;
+    [document.getElementById("previousButton"), document.getElementById("nextButton")]
+      .filter(Boolean)
+      .forEach(btn => btn.setAttribute("aria-busy", "true"));
+
+    // Long enough to absorb duplicate click/touch events, short enough that
+    // a real later skip remains responsive.
+    unlockTimer = setTimeout(unlockSkip, 1800);
+    return true;
+  };
+
+  window.addEventListener("pagehide", unlockSkip, { passive: true });
 })();
 </script>
 
