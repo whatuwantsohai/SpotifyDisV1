@@ -7274,10 +7274,21 @@ function renderQueue(items) {
       const uri = queueItemUri(item);
       if (!uri) return;
 
+      // A manual queue selection is a direct playback choice, not a
+      // priority-next request. Clear any stale priority item and cancel
+      // the old end-of-track check so the previous queue state cannot
+      // immediately start playing tracks behind the selected one.
+      if (trackEndTimer) {
+        clearTimeout(trackEndTimer);
+        trackEndTimer = null;
+      }
+      priorityNextQueue = [];
+
       const result = await spotifyFetch(
         "/me/player/play",
         {
           method: "PUT",
+          allowDuringQuotaCooldown: true,
           headers: {
             "Content-Type": "application/json"
           },
@@ -7293,6 +7304,17 @@ function renderQueue(items) {
       ) {
         return;
       }
+
+      // The selected track becomes the new playback anchor. Remove it
+      // from the local session queue so it cannot be replayed by our
+      // priority/end-of-track logic.
+      const selectedKey = queueItemKey(item, index);
+      queueRemovedIds.add(selectedKey);
+      sessionQueueItems = sessionQueueItems.filter(
+        (candidate, candidateIndex) =>
+          queueItemKey(candidate, candidateIndex) !== selectedKey
+      );
+      renderQueue(sessionQueueItems);
 
       closeQueue();
       setTimeout(updatePlayer, 250);
