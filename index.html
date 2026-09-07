@@ -7274,10 +7274,10 @@ function renderQueue(items) {
       const uri = queueItemUri(item);
       if (!uri) return;
 
-      // A manual queue selection is a direct playback choice, not a
-      // priority-next request. Clear any stale priority item and cancel
-      // the old end-of-track check so the previous queue state cannot
-      // immediately start playing tracks behind the selected one.
+      // Manual selection must never alter the Spotify queue or mark the
+      // selected row as removed. It is simply a request to start that
+      // track now. Clear only our local priority-next state so an older
+      // Play Next action cannot fire after the manual selection.
       if (trackEndTimer) {
         clearTimeout(trackEndTimer);
         trackEndTimer = null;
@@ -7305,19 +7305,12 @@ function renderQueue(items) {
         return;
       }
 
-      // The selected track becomes the new playback anchor. Remove it
-      // from the local session queue so it cannot be replayed by our
-      // priority/end-of-track logic.
-      const selectedKey = queueItemKey(item, index);
-      queueRemovedIds.add(selectedKey);
-      sessionQueueItems = sessionQueueItems.filter(
-        (candidate, candidateIndex) =>
-          queueItemKey(candidate, candidateIndex) !== selectedKey
-      );
-      renderQueue(sessionQueueItems);
-
+      // Refresh from Spotify after the manual selection. Do not mutate
+      // sessionQueueItems locally because the Spotify queue endpoint is
+      // the source of truth for the rows shown here.
       closeQueue();
       setTimeout(updatePlayer, 250);
+      setTimeout(loadQueue, 600);
       wakeDisplay();
     });
 
