@@ -3287,6 +3287,87 @@ body.ambientScreensaver #background { animation:screensaverBreathe 12s ease-in-o
 .historyInsights strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .historyInsights span{display:block;margin-top:3px;font-size:8px;opacity:.4;text-transform:uppercase;letter-spacing:.5px;}
 @media(max-width:600px){.historyInsights{grid-template-columns:1.25fr .7fr 1.35fr;}}
+
+/* ===== POLISH PASS 2 CSS ===== */
+
+/* Progress: one stable visual surface while dragging. */
+#progressBar { position:relative; overflow:visible; }
+#progress { will-change:width; transition:width .08s linear, filter .18s ease; }
+#progressBar.isSeeking #progress { transition:none !important; }
+#progressPreview { pointer-events:none; font-variant-numeric:tabular-nums; }
+
+/* Artwork: preloaded crossfade with no blank/white frame. */
+#albumArt, #albumArtDisplay, #vinylArtwork, #lyricsTrackArt {
+  will-change:opacity,transform;
+  backface-visibility:hidden;
+}
+#albumArt.artworkIncoming, #albumArtDisplay.artworkIncoming { transform:scale(1.018); opacity:.72; transition:opacity .48s ease,transform .7s cubic-bezier(.2,.8,.25,1); }
+#albumArt.artworkSettled, #albumArtDisplay.artworkSettled { transform:scale(1); opacity:1; }
+#backgroundImageNext { background:#111; }
+
+/* Micro-interactions. */
+.control, .queueAction, #volumeIcon, .lyricsToolButton { position:relative; overflow:hidden; }
+.control::after, .queueAction::after, #volumeIcon::after, .lyricsToolButton::after { content:""; position:absolute; inset:18%; border-radius:50%; background:currentColor; opacity:0; transform:scale(.2); pointer-events:none; }
+.control:active { transform:scale(.94); }
+.control.isCommanding { animation:commandPulse .34s ease; }
+.queueItem.dragging { transform:translateY(-3px) scale(.985); box-shadow:0 12px 28px rgba(0,0,0,.24); z-index:2; }
+.queueItem.dragOver { border-top:0 !important; }
+.queueItem.dragOver::before { content:""; position:absolute; left:0; right:0; top:-1px; height:2px; border-radius:999px; background:var(--dominant-primary); box-shadow:0 0 10px var(--dominant-glow); }
+@keyframes commandPulse { 0%{transform:scale(1)} 35%{transform:scale(.93)} 100%{transform:scale(1)} }
+
+/* Player motion follows playback state. */
+body.isPlaying #albumArtDisplay { animation:artworkBreath 8s ease-in-out infinite; }
+body:not(.isPlaying) #albumArtDisplay { animation:none; }
+body.isPlaying #ambientGlow { animation:ambientBreath 7s ease-in-out infinite alternate; }
+body:not(.isPlaying) #ambientGlow { animation:none; }
+@keyframes artworkBreath { 0%,100%{transform:scale(1)} 50%{transform:scale(1.012)} }
+@keyframes ambientBreath { from{opacity:.78;filter:saturate(1)} to{opacity:1;filter:saturate(1.08)} }
+
+/* Volume states + smooth fill. */
+#volumeSlider { --volume-fill:100%; background:linear-gradient(90deg,var(--dominant-primary) 0 var(--volume-fill),rgba(255,255,255,.18) var(--volume-fill) 100%); }
+#volumeSlider.isAdjusting { transform:scaleY(1.08); }
+#volumePercentage { min-width:34px; font-variant-numeric:tabular-nums; }
+#volumeIcon[data-volume="muted"] { opacity:.48; }
+#volumeIcon[data-volume="low"] { opacity:.68; }
+#volumeIcon[data-volume="medium"] { opacity:.84; }
+#volumeIcon[data-volume="high"] { opacity:1; }
+#volumeIcon.volumePulse { animation:volumePulse .3s ease; }
+@keyframes volumePulse { 50%{transform:scale(1.1);filter:brightness(1.3)} }
+
+/* Queue hierarchy. */
+.queueNowPlaying { display:flex;align-items:center;gap:9px;padding:9px 10px;margin:0 0 8px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.045); }
+.queueNowPlaying img { width:34px;height:34px;border-radius:7px;object-fit:cover; }
+.queueNowPlaying small { display:block;font-size:8px;opacity:.42;text-transform:uppercase;letter-spacing:.6px; }
+.queueNowPlaying strong { display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.queueItem[data-queue-role="next"] { background:rgba(255,255,255,.025); }
+.queueItem[data-queue-role="next"]::after { content:"PLAY NEXT"; position:absolute; right:62px; top:7px; font-size:7px;letter-spacing:.7px;opacity:.3; }
+.queueItem[data-queue-role="queued"] .queueTrack { opacity:.82; }
+
+/* Lyrics transitions/loading. */
+.lyricsLine { opacity:.34; transform:scale(.985); filter:blur(.15px); transition:opacity .35s ease,transform .4s ease,filter .35s ease; }
+.lyricsLine[data-distance="1"] { opacity:.62; }
+.lyricsLine[data-distance="2"] { opacity:.42; }
+.lyricsLine[data-distance="3"], .lyricsLine[data-distance="4"], .lyricsLine[data-distance="5"] { opacity:.24; }
+.lyricsLine.active { opacity:1; transform:scale(1.015); filter:none; }
+.lyricsLoadingState { opacity:.42; animation:lyricsLoad 1.2s ease-in-out infinite; }
+@keyframes lyricsLoad { 50%{opacity:.72} }
+
+/* Screensaver wake has a little depth rather than a hard cut. */
+body.ambientScreensaver #screensaverOverlay { transition:opacity .65s ease,transform .9s cubic-bezier(.2,.8,.25,1),visibility .65s ease; }
+body.screensaverWaking #screensaverOverlay { opacity:0 !important; transform:scale(1.035) !important; }
+body.ambientScreensaver #backgroundImage { transition:filter .9s ease,transform 1.2s ease,opacity .8s ease; }
+
+/* Loading states. */
+#albumArt, #albumArtDisplay, .queueArtwork, #lyricsTrackArt { background:linear-gradient(110deg,rgba(255,255,255,.05),rgba(255,255,255,.10),rgba(255,255,255,.05)); background-size:200% 100%; }
+.queueLoading { animation:lyricsLoad 1.2s ease-in-out infinite; }
+body.lyricsLoading #lyricsFallback { opacity:.5; }
+
+/* Performance / reduced motion. */
+body.idleVisuals #visualizerCanvas { opacity:.22 !important; }
+body.idleVisuals.isPlaying #ambientGlow { animation:none !important; }
+@media (prefers-reduced-motion:reduce) {
+  #albumArt, #albumArtDisplay, #ambientGlow, #screensaverOverlay, .control, .queueItem, .lyricsLine, #volumeIcon { animation:none !important; transition-duration:.01ms !important; }
+}
 </style>
 </head>
 
@@ -5235,31 +5316,35 @@ function getCurrentElapsed() {
 }
 
 
+let progressSeeking = false;
+let progressSeekValue = 0;
+let progressPointerStartX = 0;
+let progressPointerStartY = 0;
+let progressPointerMoved = false;
+let progressSuppressClick = false;
+let progressLastRendered = -1;
+
 function updateProgress() {
+  if (!currentDuration) return;
 
-  if (!currentDuration)
-    return;
+  const elapsed = progressSeeking
+    ? progressSeekValue
+    : getCurrentElapsed();
 
-  const elapsed =
-    getCurrentElapsed();
+  currentTime.textContent = formatTime(elapsed);
 
-  currentTime.textContent =
-    formatTime(
-      elapsed
-    );
+  const percentage = Math.max(0, Math.min(100, (elapsed / currentDuration) * 100));
+  if (Math.abs(percentage - progressLastRendered) > 0.02 || progressSeeking) {
+    progress.style.width = percentage + "%";
+    progressLastRendered = percentage;
+  }
 
-  const percentage =
-    (
-      elapsed /
-      currentDuration
-    ) *
-    100;
-
-  progress.style.width =
-    percentage + "%";
+  if (progressSeeking) {
+    progressPreview.textContent = formatTime(elapsed);
+    progressPreview.style.left = percentage + "%";
+  }
 
   updateLyricsPosition(elapsed);
-
 }
 
 
@@ -5270,50 +5355,86 @@ setInterval(
 
 
 /* =========================
-   PROGRESS PREVIEW
+   PROGRESS PREVIEW / SEEKING
 ========================= */
 
-progressBar.addEventListener(
-  "mousemove",
-  event => {
+function getProgressPositionFromEvent(event) {
+  const rect = progressBar.getBoundingClientRect();
+  const percentage = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+  return percentage * currentDuration;
+}
 
-    if (!currentDuration)
-      return;
+function updateProgressPreview(position) {
+  const percentage = currentDuration ? (position / currentDuration) * 100 : 0;
+  progressPreview.textContent = formatTime(position);
+  progressPreview.style.left = Math.max(0, Math.min(100, percentage)) + "%";
+}
 
-    const rect =
-      progressBar.getBoundingClientRect();
+progressBar.addEventListener("pointerdown", event => {
+  if (!currentDuration) return;
+  progressPointerStartX = event.clientX;
+  progressPointerStartY = event.clientY;
+  progressPointerMoved = false;
+  progressSuppressClick = false;
+  progressSeekValue = getProgressPositionFromEvent(event);
+  progressBar.classList.add("isPointerDown");
+  progressBar.setPointerCapture?.(event.pointerId);
+  updateProgressPreview(progressSeekValue);
+});
 
-    const percentage =
-      Math.max(
-        0,
-        Math.min(
-          1,
-          (
-            event.clientX -
-            rect.left
-          ) /
-          rect.width
-        )
-      );
-
-    const position =
-      percentage *
-      currentDuration;
-
-    progressPreview.textContent =
-      formatTime(
-        position
-      );
-
-    progressPreview.style.left =
-      (
-        percentage * 100
-      ) +
-      "%";
-
+progressBar.addEventListener("pointermove", event => {
+  if (!currentDuration) return;
+  const dx = event.clientX - progressPointerStartX;
+  const dy = event.clientY - progressPointerStartY;
+  if (!progressSeeking && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+    progressSeeking = true;
+    progressSuppressClick = true;
+    progressBar.classList.add("isSeeking");
   }
-);
+  if (progressSeeking || progressBar.classList.contains("isPointerDown")) {
+    progressSeekValue = getProgressPositionFromEvent(event);
+    updateProgressPreview(progressSeekValue);
+    if (progressSeeking) updateProgress();
+  }
+});
 
+progressBar.addEventListener("pointerup", async event => {
+  if (!currentDuration) return;
+  const wasDragging = progressSeeking;
+  const position = getProgressPositionFromEvent(event);
+  progressBar.classList.remove("isPointerDown");
+  if (wasDragging) {
+    progressSeekValue = position;
+    updateProgress();
+    progressSeeking = false;
+    progressBar.classList.remove("isSeeking");
+    await seekToPosition(position, { keepPreview: true });
+    setTimeout(() => { progressSuppressClick = false; }, 80);
+  } else {
+    progressSuppressClick = false;
+  }
+  try { progressBar.releasePointerCapture?.(event.pointerId); } catch (_) {}
+});
+
+progressBar.addEventListener("pointercancel", () => {
+  progressSeeking = false;
+  progressBar.classList.remove("isPointerDown", "isSeeking");
+  progressSuppressClick = false;
+  updateProgress();
+});
+
+progressBar.addEventListener("mousemove", event => {
+  if (!currentDuration || progressSeeking) return;
+  updateProgressPreview(getProgressPositionFromEvent(event));
+});
+
+progressBar.addEventListener("mouseleave", () => {
+  if (!progressSeeking) progressPreview.style.opacity = "0";
+});
+
+progressBar.addEventListener("mouseenter", () => {
+  if (!progressSeeking) progressPreview.style.opacity = "1";
+});
 
 /* =========================
    NOW PLAYING HISTORY
@@ -7597,90 +7718,48 @@ let lastArtworkUrl =
   "";
 
 
-function updateArtwork(
-  image
-) {
+function updateArtwork(image) {
+  if (!image || image === lastArtworkUrl) return;
 
-  if (!image)
-    return;
+  lastArtworkUrl = image;
 
-  if (
-    image ===
-    lastArtworkUrl
-  ) {
+  const targets = [albumArt, albumArtDisplay, lyricsTrackArt, vinylArtwork].filter(Boolean);
+  const preloader = new Image();
+  preloader.decoding = "async";
+  preloader.onload = () => {
+    targets.forEach(img => {
+      img.classList.add("artworkIncoming");
+      img.src = image;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => img.classList.add("artworkSettled"));
+      });
+      setTimeout(() => img.classList.remove("artworkIncoming", "artworkSettled"), 800);
+    });
 
-    return;
+    if (backgroundImageNext) {
+      backgroundImageNext.onload = () => {
+        backgroundImageNext.style.opacity = "1";
+        backgroundImageNext.style.transform = "scale(1.11)";
+        backgroundImage.style.opacity = "0";
+        setTimeout(() => {
+          backgroundImage.src = image;
+          backgroundImage.style.opacity = "1";
+          backgroundImage.style.transform = "scale(1.08)";
+          backgroundImageNext.style.opacity = "0";
+        }, 720);
+      };
+      backgroundImageNext.src = image;
+    } else {
+      backgroundImage.src = image;
+      backgroundImage.style.opacity = "1";
+    }
 
-  }
-
-  lastArtworkUrl =
-    image;
-
-  albumArt.src =
-    image;
-
-  albumArtDisplay.src =
-    image;
-
-  if (lyricsTrackArt) {
-    lyricsTrackArt.src = image;
-  }
-
-  vinylArtwork.src =
-    image;
-
-  if (backgroundImageNext) {
-    backgroundImageNext.onload = () => {
-      backgroundImageNext.style.opacity = "1";
-      backgroundImageNext.style.transform = "scale(1.12)";
-      backgroundImage.style.opacity = "0";
-
-      setTimeout(() => {
-        backgroundImage.src = image;
-        backgroundImage.style.opacity = "1";
-        backgroundImage.style.transform = "scale(1.08)";
-        backgroundImageNext.style.opacity = "0";
-        backgroundImageNext.style.transform = "scale(1.08)";
-      }, 80);
-    };
-    backgroundImageNext.src = image;
-  } else {
-    backgroundImage.src = image;
-    backgroundImage.style.opacity = "1";
-  }
-
-  albumArtDisplay.style.opacity =
-    "1";
-
-  if (
-    appSettings.ambient
-  ) {
-
-    extractDominantColours(
-      image
-    );
-
-  }
-
-  if (
-    appSettings.dynamicBackground
-  ) {
-
-    backgroundImage.style.transform =
-      "scale(1.12)";
-
-    setTimeout(
-      () => {
-
-        backgroundImage.style.transform =
-          "scale(1.08)";
-
-      },
-      100
-    );
-
-  }
-
+    if (appSettings.ambient) extractDominantColours(image);
+  };
+  preloader.onerror = () => {
+    targets.forEach(img => { img.classList.remove("artworkIncoming", "artworkSettled"); });
+  };
+  preloader.src = image;
 }
 
 
@@ -7835,14 +7914,17 @@ async function showPlaying(data) {
   }
 
 
-  currentProgress =
-    data.progress_ms || 0;
+  if (!progressSeeking) {
+    currentProgress = data.progress_ms || 0;
+    progressUpdatedAt = Date.now();
+  }
 
   currentDuration =
     track.duration_ms || 0;
 
-  progressUpdatedAt =
-    Date.now();
+  if (!progressSeeking) {
+    progressUpdatedAt = Date.now();
+  }
 
 
   currentTime.textContent =
@@ -8286,37 +8368,37 @@ nextButton.addEventListener(
    SEEK
 ========================= */
 
-async function seekToPosition(positionMs) {
+async function seekToPosition(positionMs, options = {}) {
   if (!currentDuration) return;
 
   const position = Math.max(0, Math.min(currentDuration, Number(positionMs) || 0));
+  progressSeekValue = position;
+  currentProgress = position;
+  progressUpdatedAt = Date.now();
+  updateProgress();
 
   const result = await spotifyFetch(
     "/me/player/seek?position_ms=" + Math.floor(position),
-    { method: "PUT" }
+    { method: "PUT", allowDuringQuotaCooldown: true }
   );
 
   if (result && result.__spotifyError) return;
 
-  currentProgress = position;
-  progressUpdatedAt = Date.now();
-  updateProgress();
+  if (options.keepPreview) {
+    updateProgressPreview(position);
+    progressPreview.style.opacity = "1";
+    setTimeout(() => { if (!progressSeeking) progressPreview.style.opacity = "0"; }, 450);
+  }
   wakeDisplay();
 }
 
-progressBar.addEventListener(
-  "click",
-  async event => {
-
-    if (!currentDuration) return;
-
-    const rect = progressBar.getBoundingClientRect();
-    const percentage = (event.clientX - rect.left) / rect.width;
-    const position = Math.max(0, Math.min(1, percentage)) * currentDuration;
-
-    await seekToPosition(position);
+progressBar.addEventListener("click", async event => {
+  if (!currentDuration || progressSuppressClick) {
+    progressSuppressClick = false;
+    return;
   }
-);
+  await seekToPosition(getProgressPositionFromEvent(event), { keepPreview: true });
+});
 
 
 /* =========================
@@ -8328,122 +8410,57 @@ let lastVolume =
 
 
 function updateVolumeIcon() {
-
-  if (
-    Number(
-      volumeSlider.value
-    ) === 0
-  ) {
-
-    volumeIcon.innerHTML =
-      `
-        <span class="icon-muted"></span>
-        <span class="icon-muted-line"></span>
-      `;
-
-  } else {
-
-    volumeIcon.innerHTML =
-      `
-        <span class="icon-volume"></span>
-        <span class="icon-volume-wave"></span>
-      `;
-
-  }
-
+  const volume = Number(volumeSlider.value);
+  volumeIcon.dataset.volume = volume === 0 ? "muted" : volume < 35 ? "low" : volume < 70 ? "medium" : "high";
+  volumeIcon.innerHTML = volume === 0
+    ? '<span class="icon-muted"></span><span class="icon-muted-line"></span>'
+    : '<span class="icon-volume"></span><span class="icon-volume-wave"></span>';
 }
 
+let volumeUpdateTimer = null;
+let volumeDragging = false;
 
-volumeSlider.addEventListener(
-  "input",
-  async () => {
+function setVolumeUI(volume) {
+  const value = Math.max(0, Math.min(100, Number(volume) || 0));
+  volumeSlider.value = value;
+  volumePercentage.textContent = value + "%";
+  volumeSlider.style.setProperty("--volume-fill", value + "%");
+  updateVolumeIcon();
+}
 
-    const volume =
-      Number(
-        volumeSlider.value
-      );
+volumeSlider.addEventListener("pointerdown", () => {
+  volumeDragging = true;
+  volumeSlider.classList.add("isAdjusting");
+});
 
-    volumePercentage.textContent =
-      volume + "%";
+volumeSlider.addEventListener("input", () => {
+  const volume = Number(volumeSlider.value);
+  lastVolume = volume || lastVolume;
+  setVolumeUI(volume);
+  clearTimeout(volumeUpdateTimer);
+  volumeUpdateTimer = setTimeout(async () => {
+    await spotifyFetch(withDeviceId("/me/player/volume?volume_percent=" + volume), { method: "PUT", allowDuringQuotaCooldown: true });
+  }, 90);
+});
 
-    lastVolume =
-      volume;
+volumeSlider.addEventListener("pointerup", () => {
+  volumeDragging = false;
+  volumeSlider.classList.remove("isAdjusting");
+});
 
-    updateVolumeIcon();
+volumeIcon.addEventListener("click", async () => {
+  const current = Number(volumeSlider.value);
+  const restored = lastVolume || 70;
+  const next = current > 0 ? 0 : restored;
+  if (current > 0) lastVolume = current;
+  setVolumeUI(next);
+  volumeIcon.classList.add("volumePulse");
+  setTimeout(() => volumeIcon.classList.remove("volumePulse"), 300);
+  await spotifyFetch(withDeviceId("/me/player/volume?volume_percent=" + next), { method: "PUT", allowDuringQuotaCooldown: true });
+  wakeDisplay();
+});
 
-    await spotifyFetch(
-      withDeviceId("/me/player/volume?volume_percent=" +
-      volume),
-      {
-        method:
-          "PUT",
-        allowDuringQuotaCooldown: true
-      }
-    );
-
-  }
-);
-
-
-volumeIcon.addEventListener(
-  "click",
-  async () => {
-
-    const current =
-      Number(
-        volumeSlider.value
-      );
-
-    if (current > 0) {
-
-      lastVolume =
-        current;
-
-      volumeSlider.value =
-        0;
-
-      volumePercentage.textContent =
-        "0%";
-
-      updateVolumeIcon();
-
-      await spotifyFetch(
-        "/me/player/volume?volume_percent=0",
-        {
-          method:
-            "PUT"
-        }
-      );
-
-    } else {
-
-      const restored =
-        lastVolume || 100;
-
-      volumeSlider.value =
-        restored;
-
-      volumePercentage.textContent =
-        restored + "%";
-
-      updateVolumeIcon();
-
-      await spotifyFetch(
-        withDeviceId("/me/player/volume?volume_percent=" +
-        restored),
-        {
-          method:
-            "PUT",
-          allowDuringQuotaCooldown: true
-        }
-      );
-
-    }
-
-    wakeDisplay();
-
-  }
-);
+updateVolumeIcon();
 
 
 /* =========================
@@ -8866,6 +8883,61 @@ updateSessionTime();
   document.addEventListener('animationend',e=>{if(e.animationName==='polishTitleIn') document.body.classList.remove('polishTrackArrival');});
 })();
 
+
+/* ===== POLISH PASS 2 ===== */
+(function(){
+  const originalUpdateStatus = updateStatus;
+  window.updateStatus = function(isPlaying){
+    originalUpdateStatus(isPlaying);
+    document.body.classList.toggle("idleVisuals", document.hidden || !isPlaying);
+  };
+
+  function commandPulse(button){
+    if(!button) return;
+    button.classList.remove("isCommanding");
+    void button.offsetWidth;
+    button.classList.add("isCommanding");
+    setTimeout(()=>button.classList.remove("isCommanding"),360);
+  }
+  [playButton,previousButton,nextButton].forEach(btn=>btn?.addEventListener("click",()=>commandPulse(btn),{capture:true}));
+
+  document.addEventListener("visibilitychange",()=>{
+    document.body.classList.toggle("idleVisuals",document.hidden || !document.body.classList.contains("isPlaying"));
+  });
+
+  // Queue hierarchy + current track card, refreshed only when the queue DOM changes.
+  const decorateQueue = () => {
+    const rows=[...queueList.querySelectorAll(".queueItem")];
+    rows.forEach((row,i)=>{ row.dataset.queueRole=i===0?"next":"queued"; });
+    let card=queueList.querySelector(".queueNowPlaying");
+    if(!card){
+      card=document.createElement("div"); card.className="queueNowPlaying"; queueList.prepend(card);
+    }
+    const art=albumArt?.src || "";
+    card.innerHTML=`<img src="${art}" alt=""><div style="min-width:0"><small>Currently Playing</small><strong>${escapeHtml(trackName?.textContent||"Nothing Playing")}</strong><div style="font-size:8px;opacity:.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(artistName?.textContent||"—")}</div></div>`;
+  };
+  function escapeHtml(v){return String(v).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
+  new MutationObserver(()=>{ if(queuePanel.classList.contains("open")) decorateQueue(); }).observe(queueList,{childList:true,subtree:false});
+  queueButton.addEventListener("click",()=>setTimeout(decorateQueue,40));
+
+  // Smooth wake from the screensaver.
+  document.addEventListener("pointerdown",()=>{
+    if(document.body.classList.contains("ambientScreensaver")){
+      document.body.classList.add("screensaverWaking");
+      setTimeout(()=>document.body.classList.remove("screensaverWaking"),700);
+    }
+  },{passive:true});
+
+  // Lyrics loading state without replacing the existing lyrics renderer.
+  const originalLoadLyrics = window.loadLyrics;
+  if(typeof originalLoadLyrics === "function") {
+    window.loadLyrics = async function(track){
+      document.body.classList.add("lyricsLoading");
+      lyricsInner.innerHTML='<div class="lyricsLoadingState" style="padding:32px;text-align:center">Finding synced lyrics…</div>';
+      try { return await originalLoadLyrics(track); } finally { document.body.classList.remove("lyricsLoading"); }
+    };
+  }
+})();
 </script>
 
 </body>
