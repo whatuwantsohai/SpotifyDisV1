@@ -623,10 +623,15 @@ body.dayMode #backgroundImage {
     transform 0.15s ease;
 }
 
-#progressBar:hover #progress::after {
+#progressBar.progressHover #progress::after {
   transform:
     translateY(-50%)
     scale(1);
+}
+
+/* Progress thumb is controlled explicitly so it cannot remain visible after the pointer leaves. */
+#progressBar #progress::after {
+  pointer-events: none;
 }
 
 #progressPreview {
@@ -5481,11 +5486,32 @@ progressBar.addEventListener("mousemove", event => {
 });
 
 progressBar.addEventListener("mouseleave", () => {
-  if (!progressSeeking) progressPreview.style.opacity = "0";
+  if (!progressSeeking) {
+    progressBar.classList.remove("progressHover");
+    progressPreview.style.opacity = "0";
+  }
 });
 
 progressBar.addEventListener("mouseenter", () => {
+  progressBar.classList.add("progressHover");
   if (!progressSeeking) progressPreview.style.opacity = "1";
+});
+
+progressBar.addEventListener("pointerenter", () => {
+  progressBar.classList.add("progressHover");
+});
+
+progressBar.addEventListener("pointerleave", () => {
+  if (!progressSeeking && !progressBar.hasPointerCapture?.()) {
+    progressBar.classList.remove("progressHover");
+    progressPreview.style.opacity = "0";
+  }
+});
+
+window.addEventListener("blur", () => {
+  progressSeeking = false;
+  progressBar.classList.remove("isPointerDown", "isSeeking", "progressHover");
+  progressPreview.style.opacity = "0";
 });
 
 /* =========================
