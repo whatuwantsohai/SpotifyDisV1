@@ -3370,6 +3370,30 @@ body.idleVisuals.isPlaying #ambientGlow { animation:none !important; }
 @media (prefers-reduced-motion:reduce) {
   #albumArt, #albumArtDisplay, #ambientGlow, #screensaverOverlay, .control, .queueItem, .lyricsLine, #volumeIcon { animation:none !important; transition-duration:.01ms !important; }
 }
+
+
+/* FINAL LIGHTWEIGHT POLISH — intentionally CSS-only for idle states. */
+body.uiIdle .secondaryControl,
+body.uiIdle #volumeContainer,
+body.uiIdle .headerButton:not(#fullscreenButton) {
+  opacity: .58;
+  transition: opacity .35s ease;
+}
+body.uiIdle #albumArtDisplay {
+  transform: scale(.995);
+}
+body.connectionRecovering #status {
+  opacity: .72;
+}
+#deviceName {
+  max-width: min(34vw, 260px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  #deviceName { max-width: 42vw; }
+}
 </style>
 </head>
 
@@ -5327,8 +5351,17 @@ let progressPointerMoved = false;
 let progressSuppressClick = false;
 let progressLastRendered = -1;
 
+let progressAnimationFrame = null;
+let lastLyricsProgressUpdate = 0;
+
 function updateProgress() {
-  if (!currentDuration) return;
+  if (!currentDuration) {
+    if (progressAnimationFrame !== null) {
+      cancelAnimationFrame(progressAnimationFrame);
+      progressAnimationFrame = null;
+    }
+    return;
+  }
 
   const elapsed = progressSeeking
     ? progressSeekValue
@@ -5337,7 +5370,7 @@ function updateProgress() {
   currentTime.textContent = formatTime(elapsed);
 
   const percentage = Math.max(0, Math.min(100, (elapsed / currentDuration) * 100));
-  if (Math.abs(percentage - progressLastRendered) > 0.02 || progressSeeking) {
+  if (Math.abs(percentage - progressLastRendered) > 0.01 || progressSeeking) {
     progress.style.width = percentage + "%";
     progressLastRendered = percentage;
   }
@@ -5347,14 +5380,30 @@ function updateProgress() {
     progressPreview.style.left = percentage + "%";
   }
 
-  updateLyricsPosition(elapsed);
+  // Lyrics only need coarse updates; don't make their DOM work run at 60fps.
+  const now = performance.now();
+  if (now - lastLyricsProgressUpdate >= 200 || progressSeeking) {
+    lastLyricsProgressUpdate = now;
+    updateLyricsPosition(elapsed);
+  }
 }
 
+function progressTicker() {
+  updateProgress();
+  if (currentDuration) {
+    progressAnimationFrame = requestAnimationFrame(progressTicker);
+  } else {
+    progressAnimationFrame = null;
+  }
+}
 
-setInterval(
-  updateProgress,
-  100
-);
+function startProgressTicker() {
+  if (progressAnimationFrame === null) {
+    progressAnimationFrame = requestAnimationFrame(progressTicker);
+  }
+}
+
+startProgressTicker();
 
 
 /* =========================
@@ -7918,16 +7967,27 @@ async function showPlaying(data) {
 
 
   if (!progressSeeking) {
-    currentProgress = data.progress_ms || 0;
-    progressUpdatedAt = Date.now();
+    const serverProgress = Math.max(0, Number(data.progress_ms) || 0);
+    const now = Date.now();
+    const predictedProgress = currentTrackId === incomingTrackKey
+      ? Math.min(currentDuration || track.duration_ms || Infinity, currentProgress + (data.is_playing ? Math.max(0, now - progressUpdatedAt) : 0))
+      : serverProgress;
+    const drift = serverProgress - predictedProgress;
+
+    // Keep the bar moving continuously between Spotify's API samples.
+    // Only snap when Spotify reports a meaningful correction/seek.
+    if (currentTrackId !== incomingTrackKey || Math.abs(drift) > 1800 || !data.is_playing) {
+      currentProgress = serverProgress;
+    } else {
+      currentProgress = Math.max(0, predictedProgress + drift * 0.35);
+    }
+    progressUpdatedAt = now;
   }
 
   currentDuration =
     track.duration_ms || 0;
 
-  if (!progressSeeking) {
-    progressUpdatedAt = Date.now();
-  }
+  startProgressTicker();
 
 
   currentTime.textContent =
@@ -8719,174 +8779,42 @@ updateSessionTime();
 
 
 
-/* ===== FINAL POLISH JS ===== */
-(function finalPolish(){
-  const root=document.documentElement;
-  let polishArtworkToken=0;
-  let seekDragging=false;
-  let seekPointerId=null;
-  let lastSeekPreview=0;
 
-  function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
-  function rgb(r,g,b,a=1){return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${a})`;}
 
-  /* 3-colour album palette + derived ambient lighting. */
-  window.extractDominantColours=function(imageUrl){
-    if(!imageUrl) return;
-    const token=++polishArtworkToken;
-    const image=new Image();
-    image.crossOrigin='anonymous';
-    image.onload=()=>{
-      if(token!==polishArtworkToken) return;
-      try{
-        const canvas=document.createElement('canvas'); canvas.width=48; canvas.height=48;
-        const ctx=canvas.getContext('2d',{willReadFrequently:true});
-        ctx.drawImage(image,0,0,48,48);
-        const d=ctx.getImageData(0,0,48,48).data;
-        const buckets=[];
-        for(let i=0;i<d.length;i+=16){
-          const r=d[i],g=d[i+1],b=d[i+2],br=(r+g+b)/3;
-          if(br<10 || br>248) continue;
-          const sat=Math.max(r,g,b)-Math.min(r,g,b);
-          const weight=.4+Math.min(1,sat/100);
-          buckets.push({r,g,b,weight});
-        }
-        if(!buckets.length) return;
-        const clusters=[];
-        for(const px of buckets){
-          let best=null,bestDist=1e9;
-          for(const c of clusters){const dist=(px.r-c.r)**2+(px.g-c.g)**2+(px.b-c.b)**2;if(dist<bestDist){best=c;bestDist=dist;}}
-          if(best && bestDist<55**2){best.r=(best.r*best.w+px.r*px.weight)/(best.w+px.weight);best.g=(best.g*best.w+px.g*px.weight)/(best.w+px.weight);best.b=(best.b*best.w+px.b*px.weight)/(best.w+px.weight);best.w+=px.weight;}
-          else if(clusters.length<3) clusters.push({r:px.r,g:px.g,b:px.b,w:px.weight});
-        }
-        clusters.sort((a,b)=>b.w-a.w);
-        while(clusters.length<3) clusters.push(clusters[clusters.length-1]);
-        const p=clusters[0],s=clusters[1],t=clusters[2];
-        root.style.setProperty('--dominant-primary',rgb(p.r,p.g,p.b,.95));
-        root.style.setProperty('--dominant-secondary',rgb(s.r,s.g,s.b,.82));
-        root.style.setProperty('--dominant-glow',rgb(p.r,p.g,p.b,.28));
-        transitionAmbientColours(p.r,p.g,p.b,1100);
-        root.style.setProperty('--ambient2',rgb(s.r,s.g,s.b,.22));
-        root.style.setProperty('--ambient3',rgb(t.r,t.g,t.b,.12));
-        root.style.setProperty('--ambient4',rgb((p.r+s.r)/2,(p.g+s.g)/2,(p.b+s.b)/2,.09));
-      }catch(e){console.warn('Polished colour extraction failed:',e);}
-    };
-    image.src=imageUrl;
+/* FINAL LIGHTWEIGHT POLISH — no extra animation loops. */
+(function lightweightPolish(){
+  let lastInteractionAt = Date.now();
+  let idleTimer = null;
+
+  const markInteraction = () => {
+    lastInteractionAt = Date.now();
+    document.body.classList.remove('uiIdle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      if (Date.now() - lastInteractionAt >= 30000 && document.body.classList.contains('isPlaying')) {
+        document.body.classList.add('uiIdle');
+      }
+    }, 30000);
   };
 
-  /* Reliable artwork crossfade: foreground never waits for background. */
-  window.updateArtwork=function(image){
-    if(!image || image===lastArtworkUrl) return;
-    lastArtworkUrl=image;
-    const token=++polishArtworkToken;
-    albumArt.src=image; albumArtDisplay.src=image;
-    if(lyricsTrackArt) lyricsTrackArt.src=image;
-    if(vinylArtwork) vinylArtwork.src=image;
-    const preload=new Image(); preload.crossOrigin='anonymous';
-    preload.onload=()=>{
-      if(token!==polishArtworkToken) return;
-      if(backgroundImageNext){
-        backgroundImageNext.onload=null;
-        backgroundImageNext.src=image;
-        backgroundImageNext.style.opacity='0';
-        requestAnimationFrame(()=>{ if(token===polishArtworkToken) backgroundImageNext.style.opacity='1'; });
-        setTimeout(()=>{
-          if(token!==polishArtworkToken) return;
-          backgroundImage.src=image;
-          backgroundImage.style.opacity='1';
-          backgroundImageNext.style.opacity='0';
-        },1100);
-      }else{ backgroundImage.src=image; backgroundImage.style.opacity='1'; }
-    };
-    preload.src=image;
-    albumArtDisplay.style.opacity='1';
-    if(appSettings.ambient) extractDominantColours(image);
-    if(appSettings.dynamicBackground) backgroundImage.style.transform='scale(1.12)';
-    requestAnimationFrame(()=>{
-      document.body.classList.remove('polishTrackArrival');
-      requestAnimationFrame(()=>document.body.classList.add('polishTrackArrival'));
-    });
-  };
+  ['pointerdown','pointermove','keydown','touchstart'].forEach(type =>
+    document.addEventListener(type, markInteraction, {passive:true})
+  );
+  markInteraction();
 
-  /* Premium seek interaction, mouse + touch, one Spotify seek on release. */
-  function seekFromClientX(x,commit=false){
-    if(!currentDuration || !progressBar) return;
-    const rect=progressBar.getBoundingClientRect();
-    const ratio=clamp((x-rect.left)/rect.width,0,1);
-    const pos=ratio*currentDuration;
-    progressPreview.textContent=formatTime(pos);
-    progressPreview.style.left=(ratio*100)+'%';
-    progress.style.width=(ratio*100)+'%';
-    currentTime.textContent=formatTime(pos);
-    lastSeekPreview=pos;
-    if(commit) seekToPosition(pos);
-  }
-  progressBar.addEventListener('pointerdown',e=>{
-    if(!currentDuration) return;
-    seekDragging=true; seekPointerId=e.pointerId; progressBar.classList.add('isSeeking');
-    try{progressBar.setPointerCapture(e.pointerId);}catch{}
-    seekFromClientX(e.clientX,false); e.preventDefault(); wakeDisplay();
-  });
-  progressBar.addEventListener('pointermove',e=>{ if(seekDragging && e.pointerId===seekPointerId) seekFromClientX(e.clientX,false); else if(currentDuration) seekFromClientX(e.clientX,false); });
-  progressBar.addEventListener('pointerup',e=>{ if(!seekDragging || e.pointerId!==seekPointerId) return; seekFromClientX(e.clientX,true); seekDragging=false; progressBar.classList.remove('isSeeking'); seekPointerId=null; });
-  progressBar.addEventListener('pointercancel',()=>{seekDragging=false;progressBar.classList.remove('isSeeking');seekPointerId=null;});
-
-  /* Session insights: artists, albums, longest track from locally stored history. */
-  const stats=document.querySelector('.historyStats');
-  if(stats && !document.getElementById('historyInsights')){
-    const box=document.createElement('div'); box.id='historyInsights'; box.className='historyInsights';
-    box.innerHTML='<div><strong id="insightArtist">—</strong><span>Top artist</span></div><div><strong id="insightAlbum">—</strong><span>Albums</span></div><div><strong id="insightLongest">—</strong><span>Longest track</span></div>';
-    stats.parentNode.insertBefore(box,historyList);
-  }
-  function updateInsights(){
-    if(!document.getElementById('historyInsights')) return;
-    const artistCounts={}, albums=new Set(); let longest=null;
-    for(const x of listeningHistory||[]){
-      const a=x.artist||'Unknown Artist'; artistCounts[a]=(artistCounts[a]||0)+1; if(x.album) albums.add(x.album); if(x.durationMs && (!longest||x.durationMs>longest.durationMs)) longest=x;
+  // Make the connection/device state useful without adding another polling loop.
+  const refreshConnectionLabel = () => {
+    const connected = !!currentDeviceId || !!deviceName?.textContent && !/No device|Offline/i.test(deviceName.textContent);
+    document.body.classList.toggle('connectionRecovering', !connected && document.body.classList.contains('isPlaying'));
+    if (deviceName && connected && deviceName.textContent) {
+      deviceName.title = 'Spotify device: ' + deviceName.textContent;
     }
-    const top=Object.entries(artistCounts).sort((a,b)=>b[1]-a[1])[0];
-    insightArtist.textContent=top?top[0]:'—'; insightAlbum.textContent=String(albums.size); insightLongest.textContent=longest?longest.name:'—';
-  }
-  const oldRenderHistory=window.renderHistory;
-  if(typeof oldRenderHistory==='function') window.renderHistory=function(){oldRenderHistory();updateInsights();};
-  updateInsights();
-
-  /* Tiered idle dimming: 30s 70%, 2m 35%, 5m 15%. */
-  const oldWake=window.wakeDisplay;
-  window.wakeDisplay=function(){document.body.removeAttribute('data-dim-level'); return oldWake();};
-  setInterval(()=>{
-    if(!appSettings.dimming || document.body.classList.contains('ambientScreensaver')) return;
-    const idle=Date.now()-lastInteraction;
-    let level=0; if(idle>=300000) level=3; else if(idle>=120000) level=2; else if(idle>=30000) level=1;
-    if(level){document.body.classList.add('autoDim');document.body.dataset.dimLevel=String(level);} else {document.body.classList.remove('autoDim');document.body.removeAttribute('data-dim-level');}
-  },1000);
-
-  /* Preload the next known session-queue artwork without another API request. */
-  window.preloadNextQueueArtwork=function(items){
-    const first=(items||[]).find(x=>x?.album?.images?.[0]?.url);
-    if(first) new Image().src=first.album.images[0].url;
   };
+  setInterval(refreshConnectionLabel, 2000);
 
-  /* Add duration to history entries going forward for session insights. */
-  const originalAdd=window.addHistoryTrack;
-  if(typeof originalAdd==='function'){
-    window.addHistoryTrack=function(track){
-      originalAdd(track);
-      const entry=listeningHistory?.[0];
-      if(entry && entry.id===track?.id){entry.durationMs=track.duration_ms||0;saveHistory();}
-      updateInsights();
-    };
-  }
-
-  /* Queue polish: preload the first visible next-up image after queue refresh. */
-  const originalLoadQueue=window.loadQueue;
-  if(typeof originalLoadQueue==='function') window.loadQueue=async function(){const result=await originalLoadQueue();preloadNextQueueArtwork(sessionQueueItems||[]);return result;};
-
-  /* Make transitions respect the selected setting while always allowing instant arrival. */
-  document.addEventListener('animationend',e=>{if(e.animationName==='polishTitleIn') document.body.classList.remove('polishTrackArrival');});
+  // Prevent accidental page scrolling while dragging the progress bar on touch.
+  if (progressBar) progressBar.style.touchAction = 'none';
 })();
-
-
 </script>
 
 </body>
