@@ -3792,6 +3792,41 @@ button,
   }
 }
 
+
+/* =========================
+   NOW PLAYING TEXT FIX
+========================= */
+#trackName,
+.track-title,
+.queue-item .track-name {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.12;
+}
+
+#artistName,
+.artist-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#albumName,
+.album-name,
+.now-playing-album {
+  display: block;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: .58;
+  font-size: .88em;
+  line-height: 1.15;
+}
+
 </style>
 </head>
 
@@ -9613,6 +9648,52 @@ updateSessionTime();
         "progress-active"
       );
     });
+  });
+})();
+</script>
+
+
+<script>
+/* Album name below artist + keep song title readable */
+(function () {
+  "use strict";
+
+  const artist = document.getElementById("artistName");
+  const title = document.getElementById("trackName");
+
+  if (!artist || !title) return;
+
+  let album = document.getElementById("albumName");
+  if (!album) {
+    album = document.createElement("div");
+    album.id = "albumName";
+    album.className = "now-playing-album";
+    artist.insertAdjacentElement("afterend", album);
+  }
+
+  const syncAlbum = () => {
+    const source =
+      document.querySelector("[data-album-name]") ||
+      document.querySelector(".album-name-source");
+
+    const value = source
+      ? (source.dataset.albumName || source.textContent || "").trim()
+      : "";
+
+    if (value) {
+      album.textContent = value;
+      album.title = value;
+    }
+  };
+
+  syncAlbum();
+
+  // Observe existing Now Playing changes without polling.
+  const observer = new MutationObserver(syncAlbum);
+  observer.observe(document.body, {
+    childList: true,
+    characterData: true,
+    subtree: true
   });
 })();
 </script>
