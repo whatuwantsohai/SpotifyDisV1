@@ -8500,7 +8500,9 @@ async function showPlaying(data) {
 
   if (isNewTrack) {
 
-    await playTrackTransition();
+    // Run the visual transition alongside the Spotify/UI update.
+    // Do not await it: the transition must never add playback latency.
+    playTrackTransition();
 
   }
 
