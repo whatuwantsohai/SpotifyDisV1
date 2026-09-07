@@ -8683,7 +8683,6 @@ async function runPlayerCommand(command) {
   const buttons = [previousButton, playButton, nextButton].filter(Boolean);
   buttons.forEach(button => {
     button.setAttribute("aria-busy", "true");
-    button.disabled = true;
   });
   try {
     return await command();
@@ -8691,7 +8690,6 @@ async function runPlayerCommand(command) {
     playerCommandInFlight = false;
     buttons.forEach(button => {
       button.removeAttribute("aria-busy");
-      button.disabled = false;
     });
   }
 }
@@ -8712,7 +8710,8 @@ previousButton.addEventListener(
     });
 
     if (result?.__spotifyError) return;
-    setTimeout(updatePlayer, 220);
+    await updatePlayer();
+    setTimeout(updatePlayer, 500);
     wakeDisplay();
   }
 );
@@ -8762,7 +8761,9 @@ nextButton.addEventListener(
         return;
       }
 
-      setTimeout(updatePlayer, 220);
+      await updatePlayer();
+      setTimeout(updatePlayer, 600);
+      setTimeout(updatePlayer, 1500);
       wakeDisplay();
     });
   }
@@ -9531,7 +9532,7 @@ updateSessionTime();
 /* FINAL STABILITY + FINISHING PASS */
 #trackInfo{min-width:0;overflow:visible}
 #playing{min-width:0}
-#trackName{max-width:100%;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-wrap:pretty}
+#trackName{max-width:100%;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:visible;text-wrap:pretty}
 #artistName{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #albumName.now-playing-album{max-width:100%}
 #playing[data-action-busy="1"] .control{pointer-events:none;opacity:.62}
