@@ -1073,81 +1073,6 @@ body.modeVisualizer #backgroundOverlay {
    FEATURE 19/20 — QUEUE ACTIONS
 ========================= */
 
-.queueItem {
-  position: relative;
-  cursor: grab;
-  user-select: none;
-  transition:
-    background 0.18s ease,
-    transform 0.18s ease,
-    opacity 0.18s ease;
-}
-
-.queueItem:hover {
-  background: rgba(255,255,255,0.045);
-}
-
-.queueItem:active {
-  cursor: grabbing;
-}
-
-.queueItem.dragging {
-  opacity: 0.42;
-  transform: scale(0.98);
-}
-
-.queueItem.dragOver {
-  border-top: 2px solid rgba(255,255,255,0.7);
-}
-
-.queueDragHandle {
-  width: 16px;
-  flex-shrink: 0;
-  opacity: 0.28;
-  font-size: 13px;
-  line-height: 1;
-  cursor: grab;
-}
-
-.queueActions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.queueAction {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 8px;
-  background: rgba(255,255,255,0.06);
-  color: white;
-  font: 700 10px/1 inherit;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.15s ease;
-}
-
-.queueAction:hover {
-  background: rgba(255,255,255,0.14);
-}
-
-.queueAction:active {
-  transform: scale(0.94);
-}
-
-.queueAction.remove {
-  color: rgba(255,180,180,0.9);
-}
-
-.queueNotice {
-  padding: 9px 4px 2px;
-  color: rgba(255,255,255,0.34);
-  font-size: 9px;
-  line-height: 1.35;
-  text-align: center;
-}
 
 /* =========================
    LYRICS / LYRICS FOCUS
@@ -3161,9 +3086,6 @@ body.ambientScreensaver #backgroundImage {
   button, .btn, input, select { min-height:44px; }
   .queuePanel { width:min(100vw, 430px) !important; max-width:100vw !important; right:0 !important; left:auto !important; border-radius:20px 20px 0 0 !important; }
   .queueList { max-height:62vh; padding-bottom:calc(12px + env(safe-area-inset-bottom)); }
-  .queueItem { grid-template-columns:28px 44px minmax(0,1fr) auto !important; gap:8px !important; padding:10px 8px !important; }
-  .queueItem .queueActions { display:flex; gap:4px; }
-  .queueItem .queueActions button { min-width:40px; padding:0 6px; }
   .queueItem .queueMeta, .queueItem small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .lyricsView { padding:0 18px !important; }
   #lyricsView { padding-left:18px !important; padding-right:18px !important; }
@@ -3278,9 +3200,6 @@ body.autoDim[data-dim-level="3"] #backgroundImage { filter:blur(24px) brightness
 .historyItem:hover { transform:translateX(3px); background:rgba(255,255,255,.035); border-radius:9px; }
 .historyItem::before { content:""; width:3px; height:60%; position:absolute; left:-2px; top:20%; border-radius:99px; background:var(--dominant-primary); opacity:0; transition:opacity .2s ease; }
 .historyItem:first-child::before { opacity:.7; }
-.queueRow { transition:transform .22s ease,opacity .22s ease,background .2s ease; }
-.queueRow.dragging { opacity:.45; transform:scale(.98); }
-.queueRow.dragOver { background:rgba(255,255,255,.07); transform:translateX(4px); }
 #queuePanel.open,#historyPanel.open,#settingsPanel.open { animation:panelPolishIn .25s cubic-bezier(.2,.8,.25,1); }
 @keyframes panelPolishIn { from{opacity:0;transform:translate(-50%,8px)} to{opacity:1;transform:translate(-50%,0)} }
 body.ambientScreensaver #background { animation:screensaverBreathe 12s ease-in-out infinite alternate; }
@@ -3317,9 +3236,6 @@ body.ambientScreensaver #background { animation:screensaverBreathe 12s ease-in-o
 .control::after, .queueAction::after, #volumeIcon::after, .lyricsToolButton::after { content:""; position:absolute; inset:18%; border-radius:50%; background:currentColor; opacity:0; transform:scale(.2); pointer-events:none; }
 .control:active { transform:scale(.94); }
 .control.isCommanding { animation:commandPulse .34s ease; }
-.queueItem.dragging { transform:translateY(-3px) scale(.985); box-shadow:0 12px 28px rgba(0,0,0,.24); z-index:2; }
-.queueItem.dragOver { border-top:0 !important; }
-.queueItem.dragOver::before { content:""; position:absolute; left:0; right:0; top:-1px; height:2px; border-radius:999px; background:var(--dominant-primary); box-shadow:0 0 10px var(--dominant-glow); }
 @keyframes commandPulse { 0%{transform:scale(1)} 35%{transform:scale(.93)} 100%{transform:scale(1)} }
 
 /* Player motion follows playback state. */
@@ -3693,16 +3609,6 @@ button,
   font-variant-numeric: tabular-nums;
 }
 
-/* Queue drag feedback */
-.queue-item.dragging,
-.queue-item.is-dragging,
-[data-queue-item].dragging {
-  opacity: .72;
-  transform: scale(.985);
-  filter: brightness(1.06);
-  cursor: grabbing !important;
-}
-
 /* Clearer queue action affordance */
 .queue-item button,
 .queue-action {
@@ -3912,6 +3818,92 @@ button,
 }
 
 </style>
+
+<style id="v5-readonly-queue-css">
+/* V5: queue is display-only. No drag, reorder, Play Next, or Remove controls. */
+.queueItem {
+  cursor: default !important;
+  user-select: text;
+  gap: 11px !important;
+}
+.queueItem:hover { background: rgba(255,255,255,.045); }
+.queueItem:active { cursor: default; }
+.queueDragHandle, .queueActions { display:none !important; }
+.queueItem.dragging, .queueItem.dragOver {
+  opacity:1 !important; transform:none !important; box-shadow:none !important;
+  border-top:0 !important;
+}
+.queueItem.dragOver::before { display:none !important; }
+.queueItem.isCurrent {
+  background: rgba(255,255,255,.07);
+  border-color: rgba(255,255,255,.13);
+}
+.queueItem.isCurrent .queueTrack { font-weight:800; }
+.queueItem.isCurrent .queueArtist::before {
+  content:'NOW PLAYING · ';
+  font-size:8px; letter-spacing:.08em; color:rgba(255,255,255,.58);
+}
+.queueDisplayCount {
+  margin:-3px 0 9px; padding:0 2px; font-size:9px;
+  color:rgba(255,255,255,.38); letter-spacing:.04em;
+}
+@media (max-width:430px) {
+  #queuePanel {
+    right:0 !important;
+    width:min(100vw,430px) !important;
+    max-height:calc(100dvh - 76px);
+    padding:16px 14px calc(16px + env(safe-area-inset-bottom));
+    border-radius:20px 20px 0 0 !important;
+  }
+  .queueItem { gap:9px !important; padding:10px 4px !important; }
+  .queueArtwork { width:44px; height:44px; }
+}
+</style>
+
+<style id="v5-final-polish">
+/* V5 final interaction polish */
+.control[aria-busy="true"] { opacity:.58; }
+.control[aria-busy="true"]:focus-visible { outline-color:rgba(255,255,255,.4); }
+#progressPreview { font-variant-numeric:tabular-nums; white-space:nowrap; }
+#queueList { overscroll-behavior:contain; scrollbar-gutter:stable; }
+.queueItem { min-width:0; }
+.queueTrack, .queueArtist { min-width:0; }
+#status[aria-live="polite"] { min-width:0; }
+#queuePanel { padding-bottom:max(18px, env(safe-area-inset-bottom)); }
+.queueDisplayCount { font-variant-numeric:tabular-nums; }
+.queueItem { min-width:0; border-radius:10px; }
+.queueItem:last-child { border-bottom-color:transparent; }
+@media (max-width:700px) {
+  #queuePanel { max-height:calc(100dvh - 84px); }
+}
+@media (prefers-reduced-motion:reduce) {
+  body.isPlaying #albumArtDisplay, body.isPlaying #ambientGlow { animation:none !important; }
+}
+</style>
+
+<style id="v5-final-title-guard">
+#playing #trackInfo #trackName {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 2.08em !important;
+  max-height: 2.08em !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  white-space: normal !important;
+  text-overflow: ellipsis !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+}
+#playing #trackInfo {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+</style>
 </head>
 
 <body>
@@ -4097,7 +4089,7 @@ button,
   </button>
 
 </div>
-<div id="queuePanel">
+<div id="queuePanel" role="dialog" aria-label="Spotify queue" aria-modal="false">
   <div class="queueHeader">
     <div class="queueTitle">Queue</div>
     <button id="queueClose" class="queueClose" type="button" aria-label="Close queue">×</button>
@@ -4901,20 +4893,20 @@ document.addEventListener("pointerdown", event => {
 }, true);
 
 window.addEventListener("keydown", event => {
-  if ((event.key === "Escape" || event.key === "Esc") && lyricsFocusActive) {
+  if (event.key !== "Escape" && event.key !== "Esc") return;
+  if (lyricsFocusActive) {
     event.preventDefault();
     exitLyricsFocusMode();
+  } else if (queuePanel?.classList.contains("open")) {
+    event.preventDefault();
+    closeQueue();
   }
 });
 
-/* Feature 19/20: local queue controls.
-   Spotify's public queue API is read-only for existing entries, so
-   reorder/remove are maintained locally and priority-next items are
-   played through the normal playback endpoint. */
+/* V5: Spotify queue is display-only in this app.
+   No local reorder/remove state is kept, which avoids queue desync and
+   prevents the UI from fighting Spotify's own playback queue. */
 let sessionQueueItems = [];
-let queueDraggingIndex = -1;
-let priorityNextQueue = [];
-let queueRemovedIds = new Set();
 
 
 /* =========================
@@ -5247,6 +5239,12 @@ async function spotifyFetch(
   retry = true
 ) {
 
+  // Never automatically retry non-idempotent requests. A lost response to
+  // POST /me/player/next or /previous can otherwise execute the command twice.
+  const requestMethod = String(options.method || "GET").toUpperCase();
+  const retrySafe = !["POST", "DELETE"].includes(requestMethod);
+  const canRetry = retry && retrySafe;
+
   // Playback controls must not be blocked by a local playlist/quota
   // cooldown. Spotify uses separate quota buckets for endpoint groups,
   // so a playlist metadata 429 should not make Play/Next/Previous/Volume
@@ -5367,6 +5365,11 @@ async function spotifyFetch(
     if (response.status === 204)
       return null;
 
+
+    if (canRetry && [502, 503, 504].includes(response.status)) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return spotifyFetch(endpoint, options, false);
+    }
 
     if (response.status === 429) {
 
@@ -5532,12 +5535,21 @@ async function spotifyFetch(
 
   } catch (error) {
 
+    if (canRetry) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return spotifyFetch(endpoint, options, false);
+    }
+
     console.error(
       "Spotify request failed:",
       error
     );
 
-    return null;
+    return {
+      __spotifyError: true,
+      networkError: true,
+      error
+    };
 
   }
 
@@ -5738,6 +5750,7 @@ function updateStatus(
     "playing",
     "paused"
   );
+  status.setAttribute("aria-live", "polite");
 
   if (isPlaying) {
 
@@ -6766,10 +6779,29 @@ function drawVisualizer(
     visualizerContext.fill();
   }
 
+  if (document.hidden || resolveDisplayMode() !== "visualizer") {
+    visualizerAnimation = null;
+    return;
+  }
+
   visualizerAnimation =
     requestAnimationFrame(
       drawVisualizer
     );
+}
+
+function ensureVisualizerLoop() {
+  if (document.hidden || resolveDisplayMode() !== "visualizer") {
+    if (visualizerAnimation !== null) {
+      cancelAnimationFrame(visualizerAnimation);
+      visualizerAnimation = null;
+    }
+    visualizerContext?.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    return;
+  }
+  if (visualizerAnimation === null) {
+    visualizerAnimation = requestAnimationFrame(drawVisualizer);
+  }
 }
 
 resizeVisualizer();
@@ -6779,10 +6811,7 @@ window.addEventListener(
   resizeVisualizer
 );
 
-visualizerAnimation =
-  requestAnimationFrame(
-    drawVisualizer
-  );
+visualizerAnimation = null;
 
 
 /* =========================
@@ -6973,6 +7002,8 @@ function applySettings() {
   const activeDisplayMode =
     resolveDisplayMode();
 
+  if (typeof ensureVisualizerLoop === "function") ensureVisualizerLoop();
+
   if (
     activeDisplayMode !==
     "normal"
@@ -7059,16 +7090,6 @@ function closeQueue() {
   queuePanel.classList.remove("open");
 }
 
-function queueItemKey(item, fallbackIndex) {
-  const identity =
-    item?.uri ||
-    item?.id ||
-    item?.href ||
-    ("queue-" + fallbackIndex);
-
-  return identity + "::" + String(fallbackIndex);
-}
-
 function queueItemTitle(item) {
   return item?.type === "episode"
     ? (item.name || "Unknown episode")
@@ -7091,82 +7112,39 @@ function queueItemUri(item) {
   return item?.uri || "";
 }
 
-function normalizeQueueItems(items) {
-  if (!Array.isArray(items)) return [];
-
-  const seen = new Set();
-  const normalized = [];
-
-  for (const item of items) {
-    const uri = queueItemUri(item);
-    const identity =
-      uri ||
-      item?.id ||
-      item?.href ||
-      JSON.stringify({
-        type: item?.type || "",
-        name: item?.name || "",
-        artist: item?.artists?.map(a => a.name).join(",") || "",
-        show: item?.show?.name || ""
-      });
-
-    // Spotify can expose stale/repeated queue entries after rapid playback
-    // commands. Keep the first occurrence so the display cannot turn one
-    // track into a self-repeating queue.
-    if (seen.has(identity)) continue;
-
-    seen.add(identity);
-    normalized.push(item);
-  }
-
-  return normalized;
-}
-
-function moveQueueItem(fromIndex, toIndex) {
-  if (
-    fromIndex < 0 ||
-    toIndex < 0 ||
-    fromIndex >= sessionQueueItems.length ||
-    toIndex >= sessionQueueItems.length ||
-    fromIndex === toIndex
-  ) {
-    return;
-  }
-
-  const [moved] =
-    sessionQueueItems.splice(fromIndex, 1);
-
-  sessionQueueItems.splice(toIndex, 0, moved);
-
-  renderQueue(sessionQueueItems);
-}
-
 function renderQueue(items) {
-  sessionQueueItems = normalizeQueueItems(items);
-
+  sessionQueueItems = Array.isArray(items) ? items.slice() : [];
   queueList.innerHTML = "";
 
+  const count = document.createElement("div");
+  count.className = "queueDisplayCount";
+  count.textContent = sessionQueueItems.length
+    ? `${sessionQueueItems.length} upcoming track${sessionQueueItems.length === 1 ? "" : "s"}`
+    : "No upcoming tracks";
+  queueList.appendChild(count);
+
   if (!sessionQueueItems.length) {
-    queueList.innerHTML =
-      '<div class="queueEmpty">Your queue is empty.</div>';
+    const empty = document.createElement("div");
+    empty.className = "queueEmpty";
+    empty.textContent = "Your queue is empty.";
+    queueList.appendChild(empty);
     return;
   }
+
+  const fragment = document.createDocumentFragment();
 
   sessionQueueItems.forEach((item, index) => {
     const row = document.createElement("div");
     row.className = "queueItem";
-    row.draggable = true;
     row.dataset.index = String(index);
-
-    const handle = document.createElement("div");
-    handle.className = "queueDragHandle";
-    handle.textContent = "⋮⋮";
-    handle.title = "Drag to reorder";
-    handle.setAttribute("aria-label", "Drag to reorder");
+    row.setAttribute("role", "listitem");
 
     const image = document.createElement("img");
     image.className = "queueArtwork";
     image.alt = "";
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.draggable = false;
     image.src = queueItemImage(item);
 
     const details = document.createElement("div");
@@ -7175,194 +7153,41 @@ function renderQueue(items) {
     const title = document.createElement("div");
     title.className = "queueTrack";
     title.textContent = queueItemTitle(item);
+    title.title = title.textContent;
 
     const artist = document.createElement("div");
     artist.className = "queueArtist";
     artist.textContent = queueItemArtist(item);
+    artist.title = artist.textContent;
 
     details.appendChild(title);
     details.appendChild(artist);
-
-    const actions = document.createElement("div");
-    actions.className = "queueActions";
-
-    const playNext = document.createElement("button");
-    playNext.className = "queueAction";
-    playNext.type = "button";
-    playNext.textContent = "↑";
-    playNext.title = "Play next";
-    playNext.setAttribute("aria-label", "Play next");
-    playNext.addEventListener("click", async event => {
-      event.stopPropagation();
-
-      const uri = queueItemUri(item);
-      if (!uri) return;
-
-      const key = queueItemKey(item, index);
-      queueRemovedIds.delete(key);
-
-      sessionQueueItems =
-        sessionQueueItems.filter(
-          (candidate, candidateIndex) =>
-            queueItemKey(candidate, candidateIndex) !== key
-        );
-
-      priorityNextQueue =
-        priorityNextQueue.filter(
-          queued => queueItemUri(queued.item) !== uri
-        );
-
-      priorityNextQueue.unshift({
-        key,
-        item
-      });
-
-      renderQueue(sessionQueueItems);
-      wakeDisplay();
-    });
-
-    const remove = document.createElement("button");
-    remove.className = "queueAction remove";
-    remove.type = "button";
-    remove.textContent = "×";
-    remove.title = "Remove from session queue";
-    remove.setAttribute("aria-label", "Remove from session queue");
-    remove.addEventListener("click", event => {
-      event.stopPropagation();
-
-      const key = queueItemKey(item, index);
-      queueRemovedIds.add(key);
-
-      sessionQueueItems =
-        sessionQueueItems.filter(
-          (candidate, candidateIndex) =>
-            queueItemKey(candidate, candidateIndex) !== key
-        );
-
-      priorityNextQueue =
-        priorityNextQueue.filter(
-          queued => queued.key !== key
-        );
-
-      renderQueue(sessionQueueItems);
-      wakeDisplay();
-    });
-
-    actions.appendChild(playNext);
-    actions.appendChild(remove);
-
-    row.addEventListener("dragstart", event => {
-      queueDraggingIndex = index;
-      row.classList.add("dragging");
-      event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData(
-        "text/plain",
-        String(index)
-      );
-    });
-
-    row.addEventListener("dragend", () => {
-      queueDraggingIndex = -1;
-      row.classList.remove("dragging");
-      queueList
-        .querySelectorAll(".dragOver")
-        .forEach(el => el.classList.remove("dragOver"));
-    });
-
-    row.addEventListener("dragover", event => {
-      event.preventDefault();
-
-      if (
-        queueDraggingIndex < 0 ||
-        queueDraggingIndex === index
-      ) {
-        return;
-      }
-
-      event.dataTransfer.dropEffect = "move";
-      row.classList.add("dragOver");
-    });
-
-    row.addEventListener("dragleave", () => {
-      row.classList.remove("dragOver");
-    });
-
-    row.addEventListener("drop", event => {
-      event.preventDefault();
-      row.classList.remove("dragOver");
-
-      const fromIndex = Number(
-        event.dataTransfer.getData("text/plain")
-      );
-
-      if (
-        Number.isInteger(fromIndex) &&
-        fromIndex !== index
-      ) {
-        moveQueueItem(fromIndex, index);
-      }
-    });
-
-    row.addEventListener("click", async event => {
-      if (event.target.closest(".queueActions")) return;
-
-      const uri = queueItemUri(item);
-      if (!uri) return;
-
-      // Manual selection must never alter the Spotify queue or mark the
-      // selected row as removed. It is simply a request to start that
-      // track now. Clear only our local priority-next state so an older
-      // Play Next action cannot fire after the manual selection.
-      if (trackEndTimer) {
-        clearTimeout(trackEndTimer);
-        trackEndTimer = null;
-      }
-      priorityNextQueue = [];
-
-      const result = await spotifyFetch(
-        "/me/player/play",
-        {
-          method: "PUT",
-          allowDuringQuotaCooldown: true,
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            uris: [uri]
-          })
-        }
-      );
-
-      if (
-        result &&
-        result.__spotifyError
-      ) {
-        return;
-      }
-
-      // Refresh from Spotify after the manual selection. Do not mutate
-      // sessionQueueItems locally because the Spotify queue endpoint is
-      // the source of truth for the rows shown here.
-      closeQueue();
-      setTimeout(updatePlayer, 250);
-      wakeDisplay();
-    });
-
-    row.appendChild(handle);
     row.appendChild(image);
     row.appendChild(details);
-    row.appendChild(actions);
-
-    queueList.appendChild(row);
+    fragment.appendChild(row);
   });
+
+  queueList.appendChild(fragment);
 }
 
+let queueLoadInFlight = false;
+
 async function loadQueue() {
+  if (queueLoadInFlight) return;
+  queueLoadInFlight = true;
   queueList.innerHTML =
     '<div class="queueLoading">Loading queue...</div>';
 
-  const data =
-    await spotifyFetch("/me/player/queue", { allowDuringQuotaCooldown: true });
+  let data;
+  try {
+    data = await spotifyFetch("/me/player/queue", { allowDuringQuotaCooldown: true });
+  } catch (error) {
+    console.error("Queue load failed:", error);
+    queueList.innerHTML = '<div class="queueEmpty queueError">Unable to load queue.</div>';
+    queueLoaded = false;
+    queueLoadInFlight = false;
+    return;
+  }
 
   if (
     !data ||
@@ -7371,6 +7196,7 @@ async function loadQueue() {
     queueList.innerHTML =
       '<div class="queueEmpty queueError">Unable to load queue.</div>';
     queueLoaded = false;
+    queueLoadInFlight = false;
     return;
   }
 
@@ -7379,14 +7205,11 @@ async function loadQueue() {
       ? data.queue
       : [];
 
-  const filteredItems =
-    serverItems.filter((item, index) => {
-      const key = queueItemKey(item, index);
-      return !queueRemovedIds.has(key);
-    });
-
-  renderQueue(filteredItems);
+  // Render exactly what Spotify reports. Duplicate tracks, if present in
+  // Spotify itself, are real queue entries rather than DOM-generated copies.
+  renderQueue(serverItems);
   queueLoaded = true;
+  queueLoadInFlight = false;
 }
 
 queueButton.addEventListener(
@@ -8540,9 +8363,7 @@ async function showPlaying(data) {
 
 
   if (isNewTrack) {
-
-    await playTrackTransition();
-
+    playTrackTransition();
   }
 
 
@@ -8628,6 +8449,8 @@ async function showPlaying(data) {
   deviceName.textContent =
     data.device?.name ||
     "No device";
+  deviceName.title = deviceName.textContent;
+  deviceName.setAttribute("aria-label", "Spotify device: " + deviceName.textContent);
 
 
   updateStatus(
@@ -8665,6 +8488,10 @@ async function showPlaying(data) {
 
   currentTrackId =
     incomingTrackKey;
+
+  if (isNewTrack && queuePanel.classList.contains("open")) {
+    loadQueue();
+  }
 
   if (
     isNewTrack ||
@@ -8710,10 +8537,15 @@ async function updatePlayer() {
       !data.__spotifyError
     ) {
 
+      document.body.classList.remove("connectionRecovering");
       await showPlaying(
         data
       );
 
+    } else if (data?.networkError) {
+      document.body.classList.add("connectionRecovering");
+      status.textContent = "Reconnecting…";
+      status.classList.remove("playing", "paused");
     }
 
   } finally {
@@ -8732,53 +8564,6 @@ let pollingInterval =
 let trackEndTimer =
   null;
 
-
-async function playPriorityNextIfAvailable() {
-
-  while (priorityNextQueue.length) {
-
-    const next =
-      priorityNextQueue.shift();
-
-    const uri =
-      queueItemUri(next.item);
-
-    if (!uri)
-      continue;
-
-    const result =
-      await spotifyFetch(
-        "/me/player/play",
-        {
-          method: "PUT",
-          allowDuringQuotaCooldown: true,
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            uris: [uri]
-          })
-        }
-      );
-
-    if (
-      result &&
-      result.__spotifyError
-    ) {
-      priorityNextQueue.unshift(next);
-      return false;
-    }
-
-    setTimeout(
-      updatePlayer,
-      250
-    );
-
-    return true;
-  }
-
-  return false;
-}
 
 function scheduleTrackEndCheck() {
 
@@ -8813,12 +8598,7 @@ function scheduleTrackEndCheck() {
     trackEndTimer =
       setTimeout(
         async () => {
-          const handled =
-            await playPriorityNextIfAvailable();
-
-          if (!handled) {
-            await updatePlayer();
-          }
+          await updatePlayer();
         },
         150
       );
@@ -8885,7 +8665,18 @@ window.addEventListener("focus", () => {
   updatePlayer();
 });
 
+window.addEventListener("online", () => {
+  document.body.classList.remove("connectionRecovering");
+  updatePlayer();
+});
+
+window.addEventListener("offline", () => {
+  document.body.classList.add("connectionRecovering");
+  status.textContent = "Offline";
+});
+
 document.addEventListener("visibilitychange", () => {
+  if (typeof ensureVisualizerLoop === "function") ensureVisualizerLoop();
   if (!document.hidden) updatePlayer();
 });
 
@@ -8912,6 +8703,34 @@ function withDeviceId(endpoint) {
   return endpoint + (endpoint.includes("?") ? "&" : "?") + "device_id=" + encodeURIComponent(currentDeviceId);
 }
 
+let playerCommandInFlight = false;
+let skipCommandCooldownUntil = 0;
+
+function skipCommandBlocked() {
+  const now = Date.now();
+  if (now < skipCommandCooldownUntil) return true;
+  // Covers accidental double-clicks and touch/click duplicate delivery.
+  skipCommandCooldownUntil = now + 750;
+  return false;
+}
+
+async function runPlayerCommand(command) {
+  if (playerCommandInFlight) return null;
+  playerCommandInFlight = true;
+  const buttons = [previousButton, playButton, nextButton].filter(Boolean);
+  buttons.forEach(button => {
+    button.setAttribute("aria-busy", "true");
+  });
+  try {
+    return await command();
+  } finally {
+    playerCommandInFlight = false;
+    buttons.forEach(button => {
+      button.removeAttribute("aria-busy");
+    });
+  }
+}
+
 /* =========================
    PREVIOUS
 ========================= */
@@ -8919,31 +8738,20 @@ function withDeviceId(endpoint) {
 previousButton.addEventListener(
   "click",
   async () => {
-
-    const result =
-      await spotifyFetch(
+    if (skipCommandBlocked()) return;
+    const result = await runPlayerCommand(async () => {
+      if (trackEndTimer) { clearTimeout(trackEndTimer); trackEndTimer = null; }
+      return await spotifyFetch(
         withDeviceId("/me/player/previous"),
-        {
-          method:
-            "POST",
-          allowDuringQuotaCooldown: true
-        }
+        { method: "POST", allowDuringQuotaCooldown: true }
       );
+    });
 
-    if (
-      result &&
-      result.__spotifyError
-    ) {
-
-      return;
-
-    }
-
-    setTimeout(updatePlayer, 400);
-
+    if (result?.__spotifyError) return;
+    setTimeout(updatePlayer, 150);
+    wakeDisplay();
   }
 );
-
 
 /* =========================
    PLAY / PAUSE
@@ -8952,46 +8760,23 @@ previousButton.addEventListener(
 playButton.addEventListener(
   "click",
   async () => {
-
-    const isPlaying =
-      status.classList.contains(
-        "playing"
-      );
-
-    const result =
-      await spotifyFetch(
+    await runPlayerCommand(async () => {
+      const isPlaying = status.classList.contains("playing");
+      const result = await spotifyFetch(
         isPlaying
           ? withDeviceId("/me/player/pause")
           : withDeviceId("/me/player/play"),
-        {
-          method:
-            "PUT",
-          allowDuringQuotaCooldown: true
-        }
+        { method: "PUT", allowDuringQuotaCooldown: true }
       );
 
-    if (
-      result &&
-      result.__spotifyError
-    ) {
-
-      return;
-
-    }
-
-    updateStatus(
-      !isPlaying
-    );
-
-    updatePlayButton(
-      !isPlaying
-    );
-
-    wakeDisplay();
-
+      if (result?.__spotifyError) return;
+      updateStatus(!isPlaying);
+      updatePlayButton(!isPlaying);
+      scheduleTrackEndCheck();
+      wakeDisplay();
+    });
   }
 );
-
 
 /* =========================
    NEXT
@@ -9000,38 +8785,23 @@ playButton.addEventListener(
 nextButton.addEventListener(
   "click",
   async () => {
+    if (skipCommandBlocked()) return;
+    await runPlayerCommand(async () => {
+      if (trackEndTimer) { clearTimeout(trackEndTimer); trackEndTimer = null; }
 
-    if (
-      await playPriorityNextIfAvailable()
-    ) {
-      wakeDisplay();
-      return;
-    }
-
-    const result =
-      await spotifyFetch(
+      const result = await spotifyFetch(
         withDeviceId("/me/player/next"),
-        {
-          method:
-            "POST",
-          allowDuringQuotaCooldown: true
-        }
+        { method: "POST", allowDuringQuotaCooldown: true }
       );
 
-    if (
-      result &&
-      result.__spotifyError
-    ) {
-      console.error("Spotify Next failed:", result);
-      return;
-    }
+      if (result?.__spotifyError) {
+        console.error("Spotify Next failed:", result);
+        return;
+      }
 
-    // Spotify returns 204 on success. Poll immediately so the UI follows
-    // the new track instead of waiting for the normal polling interval.
-    await updatePlayer();
-    setTimeout(updatePlayer, 700);
-    setTimeout(updatePlayer, 1800);
-
+      setTimeout(updatePlayer, 150);
+      wakeDisplay();
+    });
   }
 );
 
@@ -9040,7 +8810,10 @@ nextButton.addEventListener(
    SEEK
 ========================= */
 
+let seekRequestId = 0;
+
 async function seekToPosition(positionMs, options = {}) {
+  const requestId = ++seekRequestId;
   if (!currentDuration) return;
 
   const position = Math.max(0, Math.min(currentDuration, Number(positionMs) || 0));
@@ -9055,6 +8828,7 @@ async function seekToPosition(positionMs, options = {}) {
   );
 
   if (result && result.__spotifyError) return;
+  if (requestId !== seekRequestId) return;
 
   if (options.keepPreview) {
     updateProgressPreview(position);
@@ -9116,6 +8890,10 @@ volumeSlider.addEventListener("input", () => {
 });
 
 volumeSlider.addEventListener("pointerup", () => {
+  volumeDragging = false;
+  volumeSlider.classList.remove("isAdjusting");
+});
+volumeSlider.addEventListener("pointercancel", () => {
   volumeDragging = false;
   volumeSlider.classList.remove("isAdjusting");
 });
@@ -9259,8 +9037,6 @@ function logout() {
   closeQueue();
 
   sessionQueueItems = [];
-  priorityNextQueue = [];
-  queueRemovedIds.clear();
   queueLoaded = false;
 
   lyricsRequestId++;
@@ -9421,7 +9197,9 @@ updateSessionTime();
       deviceName.title = 'Spotify device: ' + deviceName.textContent;
     }
   };
-  setInterval(refreshConnectionLabel, 2000);
+  window.addEventListener('online', refreshConnectionLabel, {passive:true});
+  window.addEventListener('offline', refreshConnectionLabel, {passive:true});
+  refreshConnectionLabel();
 
   // Prevent accidental page scrolling while dragging the progress bar on touch.
   if (progressBar) progressBar.style.touchAction = 'none';
@@ -9730,20 +9508,6 @@ updateSessionTime();
     window.addEventListener("blur", hide);
   }
 
-  // Drag affordance for any existing queue implementation.
-  document.addEventListener("dragstart", event => {
-    const row = event.target.closest(
-      ".queue-item, [data-queue-item], #queueList li"
-    );
-    row?.classList.add("dragging", "is-dragging");
-  });
-
-  document.addEventListener("dragend", event => {
-    const row = event.target.closest(
-      ".queue-item, [data-queue-item], #queueList li"
-    );
-    row?.classList.remove("dragging", "is-dragging");
-  });
 
   // Keep theme transitions deterministic and avoid polling.
   const themeObserver = new MutationObserver(() => {
@@ -9785,11 +9549,9 @@ updateSessionTime();
   // Remove stuck interaction states when the page loses focus.
   window.addEventListener("blur", () => {
     document.querySelectorAll(
-      ".dragging, .is-dragging, .pressed, .is-pressed, .isSeeking, .progress-active"
+      ".pressed, .is-pressed, .isSeeking, .progress-active"
     ).forEach(el => {
       el.classList.remove(
-        "dragging",
-        "is-dragging",
         "pressed",
         "is-pressed",
         "isSeeking",
@@ -9824,7 +9586,6 @@ updateSessionTime();
 .queueItem.isCurrent .queueTrack{font-weight:800}
 .queueItem.isCurrent .queueArtist::before{content:'NOW PLAYING · ';font-size:8px;letter-spacing:.08em;color:rgba(255,255,255,.58)}
 .queueItem.queueDropTarget{box-shadow:inset 0 2px 0 rgba(255,255,255,.7)}
-.queueItem.dragging .queueActions{pointer-events:none}
 @media (max-width:700px){
   #trackName{font-size:clamp(20px,6.5vw,30px);line-height:1.08}
   #albumName.now-playing-album{font-size:13px}
@@ -9844,12 +9605,10 @@ updateSessionTime();
   'use strict';
   const root=document.getElementById('playing');
   const controls=[document.getElementById('previousButton'),document.getElementById('playButton'),document.getElementById('nextButton')].filter(Boolean);
-  let actionBusy=false, actionTimer=null;
-  const setBusy=(busy)=>{ actionBusy=busy; if(root) root.dataset.actionBusy=busy?'1':'0'; clearTimeout(actionTimer); if(busy) actionTimer=setTimeout(()=>{actionBusy=false;if(root)root.dataset.actionBusy='0'},3500); };
   controls.forEach(btn=>{
     btn.addEventListener('pointerdown',()=>btn.classList.add('isPressed'),{passive:true});
     ['pointerup','pointercancel','pointerleave'].forEach(t=>btn.addEventListener(t,()=>btn.classList.remove('isPressed'),{passive:true}));
-    btn.addEventListener('click',()=>{ if(actionBusy && btn!==document.getElementById('playButton')) return; if(btn!==document.getElementById('playButton')) setBusy(true); wakeDisplay?.(); });
+    btn.addEventListener('click',()=>wakeDisplay?.());
   });
 
   /* Never let a failed artwork request leave the player looking broken. */
@@ -9879,8 +9638,9 @@ updateSessionTime();
   window.addEventListener('pagehide',clearSeek,{passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)clearSeek();},{passive:true});
 
-  /* Queue polish: current-track state + drag safety. */
+  /* Queue polish: current-track state. */
   const queue=document.getElementById('queueList');
+  if(queue) queue.setAttribute('role','list');
   const refreshQueueCurrent=()=>{
     if(!queue) return;
     const id=typeof currentTrackId!=='undefined'?currentTrackId:null;
@@ -9897,7 +9657,6 @@ updateSessionTime();
   if(queue){
     new MutationObserver(refreshQueueCurrent).observe(queue,{childList:true,subtree:true});
     refreshQueueCurrent();
-    queue.addEventListener('dragstart',e=>{ if(e.target.closest('button')) e.preventDefault(); },true);
   }
   const originalRenderQueue=window.renderQueue;
   if(typeof originalRenderQueue==='function'){
@@ -9922,3 +9681,4 @@ updateSessionTime();
 
 </body>
 </html>
+
