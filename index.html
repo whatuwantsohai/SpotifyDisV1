@@ -5399,6 +5399,44 @@ body.premium-night #trackName{
 
     </div>
 
+    <div class="settingRow">
+
+      <div>
+        Presentation Mode
+        <div class="settingDescription">
+          Show a cleaner music-display view with fewer distractions
+        </div>
+      </div>
+
+      <label class="toggle">
+        <input
+          id="presentationModeToggle"
+          type="checkbox"
+        >
+        <span class="toggleSlider"></span>
+      </label>
+
+    </div>
+
+    <div class="settingRow">
+
+      <div>
+        OLED Night Mode
+        <div class="settingDescription">
+          Use a much darker, low-glow presentation for dark rooms
+        </div>
+      </div>
+
+      <label class="toggle">
+        <input
+          id="premiumNightToggle"
+          type="checkbox"
+        >
+        <span class="toggleSlider"></span>
+      </label>
+
+    </div>
+
   </div>
 
   <div class="settingsSection">
@@ -5709,6 +5747,12 @@ const screensaverDate =
 
 const dayNightToggle =
   document.getElementById("dayNightToggle");
+
+const presentationModeToggle =
+  document.getElementById("presentationModeToggle");
+
+const premiumNightToggle =
+  document.getElementById("premiumNightToggle");
 
 const batterySaverToggle =
   document.getElementById("batterySaverToggle");
@@ -7750,6 +7794,12 @@ const defaultSettings = {
   dayNight:
     true,
 
+  presentationMode:
+    false,
+
+  premiumNight:
+    false,
+
   batterySaver:
     false
 
@@ -7959,6 +8009,22 @@ displayModeOptions.forEach(
 
   dayNightToggle.checked =
     appSettings.dayNight;
+
+  presentationModeToggle.checked =
+    !!appSettings.presentationMode;
+
+  premiumNightToggle.checked =
+    !!appSettings.premiumNight;
+
+  document.body.classList.toggle(
+    "v12-mini",
+    !!appSettings.presentationMode
+  );
+
+  document.body.classList.toggle(
+    "premium-night",
+    !!appSettings.premiumNight
+  );
 
   batterySaverToggle.checked =
     appSettings.batterySaver;
@@ -8711,6 +8777,46 @@ dayNightToggle.addEventListener(
 
   }
 );
+
+if (presentationModeToggle) {
+  presentationModeToggle.addEventListener(
+    "change",
+    () => {
+      appSettings.presentationMode =
+        presentationModeToggle.checked;
+      document.body.classList.toggle(
+        "v12-mini",
+        presentationModeToggle.checked
+      );
+      if (window.spotifyDisSetMiniPlayer) {
+        window.spotifyDisSetMiniPlayer(
+          presentationModeToggle.checked
+        );
+      }
+      saveSettings();
+    }
+  );
+}
+
+if (premiumNightToggle) {
+  premiumNightToggle.addEventListener(
+    "change",
+    () => {
+      appSettings.premiumNight =
+        premiumNightToggle.checked;
+      document.body.classList.toggle(
+        "premium-night",
+        premiumNightToggle.checked
+      );
+      if (window.spotifyDisSetNightMode) {
+        window.spotifyDisSetNightMode(
+          premiumNightToggle.checked
+        );
+      }
+      saveSettings();
+    }
+  );
+}
 
 batterySaverToggle.addEventListener(
   "change",
@@ -11182,6 +11288,8 @@ body.v12-spacious #trackInfo{transform:translateY(-2px);}
   /* Mini Now Playing: user-facing presentation mode API, plus double-tap artwork shortcut. */
   window.spotifyDisSetMiniPlayer=enabled=>{
     body.classList.toggle('v12-mini',!!enabled);
+    const toggle=document.getElementById('presentationModeToggle');
+    if(toggle) toggle.checked=!!enabled;
     if(enabled) body.classList.remove('premium-idle');
   };
   let lastTap=0,longTimer=0,longTriggered=false;
@@ -12535,7 +12643,11 @@ body.premium-night .headerButton{background:rgba(255,255,255,.045) !important;}
   },{passive:true});
 
   /* Optional night mode: only when explicitly enabled by the app/user via this API. */
-  window.spotifyDisSetNightMode = enabled => body.classList.toggle('premium-night',!!enabled);
+  window.spotifyDisSetNightMode = enabled => {
+    body.classList.toggle('premium-night',!!enabled);
+    const toggle=document.getElementById('premiumNightToggle');
+    if(toggle) toggle.checked=!!enabled;
+  };
   window.spotifyDisSetFocusMode = enabled => {
     body.classList.toggle('premium-focus',!!enabled);
     if(enabled) clearTimeout(idleTimer); else wake();
@@ -12556,4 +12668,22 @@ body.uiHidden #header{
 .vinylLabel{
   display:none !important;
 }
+</style>
+
+<style id="v15-strong-night-mode">
+/* V15: stronger OLED Night Mode. Album artwork itself is untouched. */
+body.premium-night #background{background:#000 !important;}
+body.premium-night #backgroundImage,
+body.premium-night #backgroundImageNext{filter:blur(22px) brightness(.08) saturate(.20) !important;}
+body.premium-night #backgroundOverlay{background:linear-gradient(90deg,rgba(0,0,0,1) 0%,rgba(0,0,0,.99) 55%,rgba(0,0,0,.96) 100%) !important;}
+body.premium-night #background::after{opacity:.015 !important;}
+body.premium-night #header,
+body.premium-night #trackInfo,
+body.premium-night #controls,
+body.premium-night #progressContainer,
+body.premium-night #volumeContainer,
+body.premium-night #sessionControls,
+body.premium-night #fullscreenButton{filter:brightness(.80) !important;}
+body.premium-night #artistName,
+body.premium-night #albumName{opacity:.42 !important;}
 </style>
