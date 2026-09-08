@@ -11263,3 +11263,89 @@ body.smart-tablet #header{
   }
 })();
 </script>
+
+
+<style id="smart-display-control-safe-area-v1">
+/* Targeted display-size safety patch: reserve real space for the bottom UI dock. */
+:root{
+  --smart-ui-bottom: max(14px, calc(10px + env(safe-area-inset-bottom)));
+  --smart-ui-clearance: 54px;
+}
+
+#sessionControls{
+  bottom:var(--smart-ui-bottom) !important;
+}
+
+#fullscreenButton{
+  bottom:var(--smart-ui-bottom) !important;
+}
+
+/* Keep the player/volume area above the fixed Hide UI dock. */
+#content{
+  padding-bottom:calc(var(--adaptive-bottom, 34px) + var(--smart-ui-clearance)) !important;
+}
+
+/* Use actual viewport height for compact landscape displays. */
+body.smart-landscape #content{
+  min-height:100svh !important;
+}
+
+@media (orientation:landscape) and (max-height:600px){
+  :root{ --smart-ui-clearance:58px; }
+}
+
+@media (orientation:landscape) and (max-height:480px){
+  :root{ --smart-ui-clearance:64px; }
+}
+
+@media (max-width:600px){
+  :root{ --smart-ui-clearance:58px; }
+}
+</style>
+
+<script id="smart-display-control-safe-area-v1">
+(() => {
+  const root = document.documentElement;
+  const body = document.body;
+  const content = document.getElementById('content');
+  const sessionControls = document.getElementById('sessionControls');
+  const fullscreen = document.getElementById('fullscreenButton');
+  if (!body || !content || !sessionControls || !fullscreen) return;
+
+  let raf = 0;
+
+  function updateSmartControlSpace(){
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const vv = window.visualViewport;
+      const width = Math.max(1, Math.round(vv?.width || window.innerWidth));
+      const height = Math.max(1, Math.round(vv?.height || window.innerHeight));
+      const landscape = width > height;
+      const dockHeight = Math.ceil(sessionControls.getBoundingClientRect().height || 30);
+      const gap = landscape && height <= 480 ? 18 : landscape && height <= 600 ? 14 : 12;
+      const clearance = Math.max(52, dockHeight + gap);
+      const bottom = Math.max(14, gap + 2);
+
+      root.style.setProperty('--smart-ui-clearance', `${clearance}px`);
+      root.style.setProperty('--smart-ui-bottom', `${bottom}px`);
+      root.style.setProperty('--smart-vw', `${width}px`);
+      root.style.setProperty('--smart-vh', `${height}px`);
+
+      body.dataset.smartViewport = `${width}x${height}`;
+    });
+  }
+
+  updateSmartControlSpace();
+  window.addEventListener('resize', updateSmartControlSpace, {passive:true});
+  window.addEventListener('orientationchange', updateSmartControlSpace, {passive:true});
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', updateSmartControlSpace, {passive:true});
+  }
+
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(updateSmartControlSpace);
+    ro.observe(sessionControls);
+    ro.observe(content);
+  }
+})();
+</script>
