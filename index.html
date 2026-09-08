@@ -4800,37 +4800,6 @@ body.device-tablet #trackName{
 })();
 </script>
 
-
-<style id="landscape-only-desktop-motion">
-/* LANDSCAPE ONLY: restore the desktop lyrics/vinyl motion. Portrait is untouched. */
-@media (max-width:700px) and (orientation:landscape){
-  #lyricsInner{
-    transform:translate3d(0,var(--lyrics-shift,0px),0) !important;
-    transition:transform 300ms cubic-bezier(.22,.61,.36,1) !important;
-    will-change:transform;
-  }
-  .lyricsLine{
-    transition:color 280ms ease,opacity 280ms ease,transform 300ms cubic-bezier(.22,.61,.36,1),filter 280ms ease !important;
-    will-change:transform,opacity,filter;
-  }
-  .lyricsLine.active{transform:scale(1) !important;filter:blur(0) !important;}
-  .lyricsLine[data-distance="1"]{opacity:.48 !important;transform:scale(.96) !important;filter:blur(1px) !important;}
-  .lyricsLine[data-distance="2"]{opacity:.30 !important;transform:scale(.93) !important;filter:blur(2px) !important;}
-  .lyricsLine[data-distance="3"]{opacity:.20 !important;transform:scale(.90) !important;filter:blur(3px) !important;}
-  .lyricsLine[data-distance="4"]{opacity:.12 !important;transform:scale(.87) !important;filter:blur(4px) !important;}
-  .lyricsLine[data-distance="5"]{opacity:.07 !important;transform:scale(.84) !important;filter:blur(5px) !important;}
-
-  .vinylRecord{
-    animation:vinylSpin 7s linear infinite !important;
-    animation-play-state:paused !important;
-    will-change:transform;
-    backface-visibility:hidden;
-    -webkit-backface-visibility:hidden;
-  }
-  body.isPlaying .vinylRecord{animation-play-state:running !important;}
-}
-</style>
-
 </head>
 
 <body>
@@ -10935,3 +10904,52 @@ updateSessionTime();
 
 </body>
 </html>
+
+<style id="landscape-display-motion-fix-v2">
+/* LANDSCAPE ONLY: restore the normal lyrics/vinyl display motion.
+   Portrait is intentionally untouched. */
+@media (orientation: landscape) and (max-height: 600px){
+  /* Lyrics: use the same transform/scale/focus behavior as the normal display. */
+  #lyricsInner{
+    transform:translate3d(0,var(--lyrics-shift,0px),0) !important;
+    transition:transform 520ms cubic-bezier(.22,.61,.36,1) !important;
+    will-change:transform;
+  }
+  .lyricsLine{
+    max-width:920px !important;
+    width:auto !important;
+    padding:18px 0 !important;
+    transition:
+      color 520ms ease,
+      opacity 520ms ease,
+      transform 520ms cubic-bezier(.22,.61,.36,1),
+      filter 520ms ease !important;
+    will-change:transform,opacity,filter,color;
+  }
+  .lyricsLine.active{
+    transform:scale(1) !important;
+    filter:blur(0) !important;
+  }
+  .lyricsLine[data-distance="1"]{opacity:.48 !important;transform:scale(.96) !important;filter:blur(1px) !important;}
+  .lyricsLine[data-distance="2"]{opacity:.30 !important;transform:scale(.93) !important;filter:blur(2px) !important;}
+  .lyricsLine[data-distance="3"]{opacity:.20 !important;transform:scale(.90) !important;filter:blur(3px) !important;}
+  .lyricsLine[data-distance="4"]{opacity:.12 !important;transform:scale(.87) !important;filter:blur(4px) !important;}
+  .lyricsLine[data-distance="5"]{opacity:.07 !important;transform:scale(.84) !important;filter:blur(5px) !important;}
+
+  /* Vinyl: explicitly restore the normal continuous CSS animation. */
+  .vinylRecord{
+    animation-name:vinylSpin !important;
+    animation-duration:7s !important;
+    animation-timing-function:linear !important;
+    animation-iteration-count:infinite !important;
+    animation-fill-mode:both !important;
+    transform-origin:50% 50% !important;
+    will-change:transform !important;
+    backface-visibility:hidden !important;
+    -webkit-backface-visibility:hidden !important;
+  }
+  body.isPlaying .vinylRecord{
+    animation-play-state:running !important;
+  }
+}
+</style>
