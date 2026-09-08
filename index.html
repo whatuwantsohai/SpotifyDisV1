@@ -10953,3 +10953,27 @@ updateSessionTime();
   }
 }
 </style>
+
+<style id="landscape-smart-proportions-fix">
+/* Landscape short-screen proportion fix: scale clock mode from viewport height,
+   and keep track metadata clear of the clock. Portrait is untouched. */
+@media (orientation:landscape) and (max-height:700px){
+  body.modeClock #clock{
+    font-size:clamp(72px, 31vh, 190px) !important;
+    letter-spacing:clamp(-6px, -0.55vh, -3px) !important;
+    line-height:.86 !important;
+    transform:translate(-50%, -62%) !important;
+  }
+  body.modeClock #trackInfo{
+    top:76% !important;
+    width:min(620px,72vw) !important;
+  }
+  body.modeClock #trackName{
+    font-size:clamp(20px, 4.2vh, 30px) !important;
+    line-height:1.05 !important;
+  }
+  body.modeClock #artistName{
+    font-size:clamp(12px, 2.5vh, 16px) !important;
+  }
+}
+</style>
