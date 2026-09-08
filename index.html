@@ -11444,3 +11444,72 @@ body.smart-tablet #header{
   }
 })();
 </script>
+
+
+<style id="smart-album-self-sizing-v2">
+/* Targeted only: make the visible vinyl/album art size itself from the real
+   available viewport space, so it cannot collide with the player column. */
+:root{--smart-vinyl-size:560px;}
+body.modeVinyl .vinylRecord{
+  width:var(--smart-vinyl-size) !important;
+  max-width:var(--smart-vinyl-size) !important;
+}
+</style>
+<script id="smart-album-self-sizing-v2">
+(() => {
+  const root = document.documentElement;
+  const body = document.body;
+  const playing = document.getElementById("playing");
+  const vinylMode = document.getElementById("vinylMode");
+  const record = document.querySelector(".vinylRecord");
+  if (!body || !playing || !vinylMode || !record) return;
+
+  let frame = 0;
+
+  function updateSmartAlbumSize(){
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      if (!body.classList.contains("modeVinyl")) return;
+
+      const vv = window.visualViewport;
+      const vw = Math.max(1, vv?.width || window.innerWidth);
+      const vh = Math.max(1, vv?.height || window.innerHeight);
+      const playingRect = playing.getBoundingClientRect();
+      const modeRect = vinylMode.getBoundingClientRect();
+      const cs = getComputedStyle(vinylMode);
+      const padRight = parseFloat(cs.paddingRight) || 0;
+      const padTop = parseFloat(cs.paddingTop) || 0;
+      const padBottom = parseFloat(cs.paddingBottom) || 0;
+
+      /* Keep a real gap between the progress/player column and the record. */
+      const horizontalGap = vw <= 1000 ? 20 : 28;
+      const rightEdge = Math.min(vw, modeRect.right) - padRight;
+      const availableWidth = rightEdge - playingRect.right - horizontalGap;
+
+      /* Prefer the original visual size, but never exceed the free space. */
+      const preferred = Math.min(560, vw * 0.48, vh * 0.58);
+      const verticalSpace = Math.max(120, vh - padTop - padBottom);
+      const size = Math.max(
+        170,
+        Math.min(preferred, availableWidth, verticalSpace)
+      );
+
+      root.style.setProperty("--smart-vinyl-size", `${Math.round(size)}px`);
+    });
+  }
+
+  window.spotifyDisUpdateSmartAlbumSize = updateSmartAlbumSize;
+  window.addEventListener("resize", updateSmartAlbumSize, {passive:true});
+  window.addEventListener("orientationchange", updateSmartAlbumSize, {passive:true});
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", updateSmartAlbumSize, {passive:true});
+  }
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(updateSmartAlbumSize);
+    ro.observe(playing);
+    ro.observe(vinylMode);
+  }
+
+  updateSmartAlbumSize();
+})();
+</script>
