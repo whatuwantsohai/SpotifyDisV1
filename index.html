@@ -11555,3 +11555,123 @@ body.modeVinyl #playing{
   updateSmartAlbumSize();
 })();
 </script>
+
+
+<style id="smart-layout-guard-v1">
+/* Final targeted layout guard: enlarge the vinyl when possible, but reserve a
+   measured left-side lane so progress, controls and volume can never run into it. */
+@media (orientation:landscape){
+  body.modeVinyl #playing{
+    box-sizing:border-box !important;
+    min-width:0 !important;
+    max-width:var(--smart-guard-playing,650px) !important;
+    width:var(--smart-guard-playing,650px) !important;
+    flex:0 0 var(--smart-guard-playing,650px) !important;
+  }
+  body.modeVinyl #progressContainer,
+  body.modeVinyl #volumeContainer{
+    box-sizing:border-box !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+  }
+  body.modeVinyl #progressBar{
+    max-width:100% !important;
+  }
+  body.modeVinyl .vinylRecord{
+    width:var(--smart-guard-vinyl,440px) !important;
+    max-width:var(--smart-guard-vinyl,440px) !important;
+  }
+}
+</style>
+<script id="smart-layout-guard-v1">
+(() => {
+  const root = document.documentElement;
+  const body = document.body;
+  const content = document.getElementById('content');
+  const playing = document.getElementById('playing');
+  const vinylMode = document.getElementById('vinylMode');
+  const record = document.querySelector('.vinylRecord');
+  const progress = document.getElementById('progressContainer');
+  const volume = document.getElementById('volumeContainer');
+  if (!body || !content || !playing || !vinylMode || !record) return;
+
+  let raf = 0;
+
+  const px = value => {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  function updateSmartLayoutGuard(){
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      if (!body.classList.contains('modeVinyl')) return;
+
+      const vv = window.visualViewport;
+      const vw = Math.max(1, vv?.width || window.innerWidth);
+      const vh = Math.max(1, vv?.height || window.innerHeight);
+      if (vw <= vh) return;
+
+      const contentRect = content.getBoundingClientRect();
+      const modeStyle = getComputedStyle(vinylMode);
+      const leftPad = px(modeStyle.paddingLeft) || 24;
+      const rightPad = px(modeStyle.paddingRight) || 24;
+      const topPad = px(modeStyle.paddingTop) || 0;
+      const bottomPad = px(modeStyle.paddingBottom) || 0;
+
+      const leftLane = Math.max(contentRect.left, leftPad);
+      const rightLane = Math.max(leftLane + 1, vw - rightPad);
+      const outerGap = Math.max(28, Math.min(42, vw * 0.028));
+      const playerMin = vw < 900 ? 300 : vw < 1150 ? 360 : 410;
+      const playerMax = vw < 900 ? 430 : vw < 1200 ? 560 : 680;
+
+      /* Give the vinyl a larger aesthetic target first, then shrink only as much
+         as necessary to preserve a complete, readable left-side control lane. */
+      const preferredVinyl = Math.min(
+        vw < 900 ? 380 : 470,
+        vh * (vw < 900 ? 0.70 : 0.76),
+        (rightLane - leftLane) * 0.42
+      );
+
+      const maxVinylByWidth = Math.max(180, rightLane - leftLane - playerMin - outerGap);
+      const maxVinylByHeight = Math.max(180, vh - topPad - bottomPad - 18);
+      const vinylSize = Math.max(180, Math.min(preferredVinyl, maxVinylByWidth, maxVinylByHeight));
+
+      const playerSpace = rightLane - leftLane - vinylSize - outerGap;
+      const playerWidth = Math.max(playerMin, Math.min(playerMax, playerSpace));
+
+      root.style.setProperty('--smart-guard-vinyl', `${Math.round(vinylSize)}px`);
+      root.style.setProperty('--smart-guard-playing', `${Math.round(playerWidth)}px`);
+
+      /* One final measured check against the actual record position. If the
+         record is closer than the intended gap, trim the player lane only. */
+      const recordRect = record.getBoundingClientRect();
+      const actualLeft = recordRect.left;
+      const actualPlayerLeft = Math.max(contentRect.left, playing.getBoundingClientRect().left);
+      const safePlayerWidth = Math.max(playerMin, actualLeft - actualPlayerLeft - outerGap);
+      const guardedWidth = Math.max(playerMin, Math.min(playerWidth, safePlayerWidth));
+      root.style.setProperty('--smart-guard-playing', `${Math.round(guardedWidth)}px`);
+
+      if (progress) progress.style.maxWidth = '100%';
+      if (volume) volume.style.maxWidth = '100%';
+    });
+  }
+
+  window.spotifyDisUpdateSmartLayoutGuard = updateSmartLayoutGuard;
+  window.addEventListener('resize', updateSmartLayoutGuard, {passive:true});
+  window.addEventListener('orientationchange', updateSmartLayoutGuard, {passive:true});
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', updateSmartLayoutGuard, {passive:true});
+  if (window.ResizeObserver){
+    const ro = new ResizeObserver(updateSmartLayoutGuard);
+    ro.observe(content);
+    ro.observe(vinylMode);
+    ro.observe(record);
+  }
+  if (window.MutationObserver){
+    const mo = new MutationObserver(updateSmartLayoutGuard);
+    mo.observe(body, {attributes:true, attributeFilter:['class']});
+  }
+  updateSmartLayoutGuard();
+})();
+</script>
