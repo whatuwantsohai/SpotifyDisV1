@@ -10676,6 +10676,58 @@ updateSessionTime();
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}
 }
+<style id="landscape-motion-final-override">
+/* LANDSCAPE ONLY: restore the desktop lyrics + vinyl presentation.
+   This is intentionally last so the existing phone rules cannot override it. */
+@media (max-width:700px) and (orientation:landscape){
+  #lyricsView{
+    padding-left:30px !important;
+    padding-right:30px !important;
+  }
+  #lyricsInner{
+    width:100% !important;
+    max-width:920px !important;
+    padding-left:0 !important;
+    padding-right:0 !important;
+    transform:translate3d(0,var(--lyrics-shift,0px),0) !important;
+    transition:transform 520ms cubic-bezier(.22,.61,.36,1) !important;
+    will-change:transform;
+  }
+  .lyricsLine{
+    width:auto !important;
+    max-width:920px !important;
+    padding:18px 0 !important;
+    font-size:clamp(32px,4.5vw,52px) !important;
+    line-height:1.12 !important;
+    font-weight:800 !important;
+    letter-spacing:-.025em !important;
+    transform:scale(.90) !important;
+    filter:blur(3px) !important;
+    transition:color 520ms ease,opacity 520ms ease,transform 520ms cubic-bezier(.22,.61,.36,1),filter 520ms ease !important;
+    will-change:transform,opacity,filter;
+  }
+  .lyricsLine.active{
+    opacity:1 !important;
+    transform:scale(1) !important;
+    filter:blur(0) !important;
+  }
+  .lyricsLine[data-distance="1"]{opacity:.48 !important;transform:scale(.96) !important;filter:blur(1px) !important;}
+  .lyricsLine[data-distance="2"]{opacity:.30 !important;transform:scale(.93) !important;filter:blur(2px) !important;}
+  .lyricsLine[data-distance="3"]{opacity:.20 !important;transform:scale(.90) !important;filter:blur(3px) !important;}
+  .lyricsLine[data-distance="4"]{opacity:.12 !important;transform:scale(.87) !important;filter:blur(4px) !important;}
+  .lyricsLine[data-distance="5"]{opacity:.07 !important;transform:scale(.84) !important;filter:blur(5px) !important;}
+
+  .vinylRecord{
+    animation:vinylSpin 7s linear infinite !important;
+    animation-play-state:paused !important;
+    transform:translateZ(0) !important;
+    will-change:transform !important;
+    backface-visibility:hidden !important;
+    -webkit-backface-visibility:hidden !important;
+  }
+  body.isPlaying .vinylRecord{animation-play-state:running !important;}
+}
+</style>
 </style>
 <script id="final-stability-behaviour">
 (function(){
