@@ -12700,3 +12700,26 @@ body.premium-night #fullscreenButton{filter:brightness(.80) !important;}
 body.premium-night #artistName,
 body.premium-night #albumName{opacity:.42 !important;}
 </style>
+
+<style id="v17-oled-pc-visual-restoration">
+/* V17: Night Mode visual correction only. No dimensions/layout changes. */
+body.premium-night #header{
+  filter:none !important;
+}
+
+/* Desktop only: keep the existing clock appearance/brightness. */
+@media (min-width:701px){
+  body.premium-night #clock{
+    filter:none !important;
+    opacity:.9 !important;
+  }
+
+  /* Desktop only: keep album artwork itself visually unchanged by Night Mode. */
+  body.premium-night #albumArtContainer{
+    filter:none !important;
+    box-shadow:
+      0 26px 70px rgba(0,0,0,.30),
+      0 0 55px var(--premium-glow) !important;
+  }
+}
+</style>
