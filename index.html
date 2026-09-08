@@ -12507,3 +12507,18 @@ body.premium-night .headerButton{background:rgba(255,255,255,.045) !important;}
   };
 })();
 </script>
+
+<style id="v13-targeted-fixes">
+/* V13: Hide the full interface in hidden-UI state, including the logout control. */
+body.uiHidden #headerActions,
+body.uiHidden #logoutButton,
+body.uiHidden #header{
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+
+/* V13.1: Remove only the external session bubble while in Vinyl mode; keep the center vinyl label. */
+body.modeVinyl #sessionBadge{
+  display:none !important;
+}
+</style>
