@@ -11924,3 +11924,212 @@ body.modeArtwork #albumArtContainer{
   updateBalancedArtwork();
 })();
 </script>
+
+
+<style id="spotifydis-aesthetic-v10">
+/* V10 AESTHETIC LAYER — visual polish only. Does not alter Spotify/auth/playback. */
+:root{
+  --aesthetic-density:1;
+  --aesthetic-glow:0.16;
+  --aesthetic-gap:1;
+}
+
+/* Smart density gently tunes visual breathing room instead of using fixed device sizes. */
+body.aesthetic-dense{
+  --aesthetic-density:.92;
+  --aesthetic-glow:.12;
+  --aesthetic-gap:.88;
+}
+body.aesthetic-balanced{
+  --aesthetic-density:1;
+  --aesthetic-glow:.16;
+  --aesthetic-gap:1;
+}
+body.aesthetic-airy{
+  --aesthetic-density:1.06;
+  --aesthetic-glow:.20;
+  --aesthetic-gap:1.08;
+}
+
+/* Artwork: premium depth with a restrained halo that follows the existing ambient colour. */
+#albumArtContainer{
+  isolation:isolate;
+  box-shadow:
+    0 24px 60px rgba(0,0,0,.26),
+    0 0 42px rgba(255,255,255,var(--aesthetic-glow));
+  transition:box-shadow .8s ease, filter .7s ease;
+}
+#albumArtContainer::after{
+  content:"";
+  position:absolute;
+  inset:-7%;
+  z-index:-1;
+  border-radius:inherit;
+  background:var(--ambient1,rgba(255,255,255,.12));
+  filter:blur(28px);
+  opacity:calc(var(--aesthetic-glow) * .72);
+  transform:scale(.92);
+  pointer-events:none;
+}
+
+/* Vinyl keeps its motion but gets a little more physical depth. */
+.vinylRecord{
+  filter:drop-shadow(0 22px 34px rgba(0,0,0,.28));
+}
+
+/* Cleaner metadata hierarchy. */
+#trackName{
+  text-wrap:balance !important;
+  letter-spacing:-.028em !important;
+  text-shadow:0 3px 24px rgba(0,0,0,.18);
+}
+#artistName{
+  opacity:.74 !important;
+  letter-spacing:.012em !important;
+  transition:opacity .45s ease;
+}
+#albumName.now-playing-album{
+  opacity:.72;
+  letter-spacing:.02em;
+}
+
+/* Refined timeline: slightly softer and more premium without changing its geometry. */
+#progressContainer{
+  box-shadow:0 2px 14px rgba(0,0,0,.10);
+}
+#progressBar{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10);
+}
+
+/* Glass controls: restrained so the play button remains the visual anchor. */
+#controls .control,
+#sessionControls button,
+#fullscreenButton,
+.headerButton{
+  border-color:rgba(255,255,255,.13) !important;
+  background:rgba(255,255,255,.075) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.075),
+    0 10px 28px rgba(0,0,0,.14);
+  -webkit-backdrop-filter:blur(14px) saturate(1.08);
+  backdrop-filter:blur(14px) saturate(1.08);
+  transition:
+    transform .18s cubic-bezier(.22,.61,.36,1),
+    background-color .22s ease,
+    border-color .22s ease,
+    box-shadow .22s ease,
+    filter .22s ease;
+}
+#controls .control:hover,
+#sessionControls button:hover,
+#fullscreenButton:hover,
+.headerButton:hover{
+  background:rgba(255,255,255,.105) !important;
+  border-color:rgba(255,255,255,.18) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    0 14px 34px rgba(0,0,0,.18);
+}
+#playButton{
+  box-shadow:
+    0 14px 34px rgba(0,0,0,.24),
+    0 0 0 1px rgba(255,255,255,.10);
+}
+@media (hover:none){
+  #controls .control:hover,
+  #sessionControls button:hover,
+  #fullscreenButton:hover,
+  .headerButton:hover{
+    background:rgba(255,255,255,.075) !important;
+    border-color:rgba(255,255,255,.13) !important;
+  }
+}
+
+/* Cinematic arrival: polish the existing transition rather than replacing it. */
+body.trackTransitionIn #albumArtContainer{
+  filter:drop-shadow(0 24px 44px rgba(0,0,0,.28));
+}
+body.trackTransitionIn #trackInfo{
+  text-shadow:0 5px 30px rgba(0,0,0,.22);
+}
+
+/* Smart UI density: only tiny visual spacing adjustments, never layout ownership. */
+body.aesthetic-dense #controls{gap:clamp(10px,1.8vw,16px) !important;}
+body.aesthetic-airy #controls{gap:clamp(14px,2.2vw,22px) !important;}
+body.aesthetic-dense #volumeContainer{margin-top:clamp(8px,1.4vh,14px) !important;}
+body.aesthetic-airy #volumeContainer{margin-top:clamp(12px,2vh,20px) !important;}
+
+@media (prefers-reduced-motion:reduce){
+  #albumArtContainer,#artistName,#controls .control,#sessionControls button,#fullscreenButton,.headerButton{
+    transition:none !important;
+  }
+}
+</style>
+
+<script id="spotifydis-aesthetic-density-v10">
+(() => {
+  const body = document.body;
+  const root = document.documentElement;
+  const layout = document.getElementById("nowPlayingLayout");
+  const playing = document.getElementById("playing");
+  const art = document.getElementById("albumArtContainer");
+  const content = document.getElementById("content");
+  if (!body || !root || !layout || !playing || !art || !content) return;
+
+  let raf = 0;
+  let last = "";
+
+  function updateDensity(){
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const vv = window.visualViewport;
+      const vw = Math.max(1, vv?.width || window.innerWidth);
+      const vh = Math.max(1, vv?.height || window.innerHeight);
+      const lr = layout.getBoundingClientRect();
+      const pr = playing.getBoundingClientRect();
+      const ar = art.getBoundingClientRect();
+      const cr = content.getBoundingClientRect();
+      const landscape = vw > vh;
+
+      const usableWidth = Math.max(1, Math.min(vw, cr.width || vw));
+      const usableHeight = Math.max(1, Math.min(vh, cr.height || vh));
+      const sideSpace = landscape
+        ? Math.max(0, usableWidth - Math.max(0, pr.width) - Math.max(0, ar.width))
+        : usableWidth;
+      const heightRatio = usableHeight / Math.max(1, ar.height || 1);
+      const widthRatio = usableWidth / Math.max(1, ar.width || 1);
+
+      let density = 1;
+      if (landscape) {
+        if (usableHeight < 560 || sideSpace < 36) density = .92;
+        else if (usableHeight > 820 && sideSpace > 120) density = 1.06;
+      } else {
+        if (usableHeight < 680) density = .92;
+        else if (usableHeight > 900 && widthRatio > 1.7) density = 1.06;
+      }
+
+      const key = [Math.round(vw/4),Math.round(vh/4),density].join("|");
+      if (key === last) return;
+      last = key;
+
+      body.classList.toggle("aesthetic-dense", density < .98);
+      body.classList.toggle("aesthetic-balanced", density >= .98 && density <= 1.03);
+      body.classList.toggle("aesthetic-airy", density > 1.03);
+      root.style.setProperty("--aesthetic-density", density.toFixed(2));
+      root.style.setProperty("--aesthetic-gap", density.toFixed(2));
+    });
+  }
+
+  updateDensity();
+  window.addEventListener("resize", updateDensity, {passive:true});
+  window.addEventListener("orientationchange", updateDensity, {passive:true});
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", updateDensity, {passive:true});
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(updateDensity);
+    ro.observe(layout);
+    ro.observe(playing);
+    ro.observe(art);
+    ro.observe(content);
+  }
+})();
+</script>
