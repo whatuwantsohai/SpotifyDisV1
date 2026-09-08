@@ -11446,23 +11446,31 @@ body.smart-tablet #header{
 </script>
 
 
-<style id="smart-album-self-sizing-v2">
-/* Targeted only: make the visible vinyl/album art size itself from the real
-   available viewport space, so it cannot collide with the player column. */
-:root{--smart-vinyl-size:560px;}
+<style id="smart-album-self-sizing-v3">
+/* Targeted vinyl sizing only: make the artwork larger when there is room, while
+   reserving a real horizontal/vertical safety zone around the player controls. */
+:root{--smart-vinyl-size:560px;--smart-vinyl-playing-width:650px;}
 body.modeVinyl .vinylRecord{
   width:var(--smart-vinyl-size) !important;
   max-width:var(--smart-vinyl-size) !important;
 }
+body.modeVinyl #playing{
+  width:var(--smart-vinyl-playing-width) !important;
+  max-width:var(--smart-vinyl-playing-width) !important;
+}
 </style>
-<script id="smart-album-self-sizing-v2">
+<script id="smart-album-self-sizing-v3">
 (() => {
   const root = document.documentElement;
   const body = document.body;
+  const content = document.getElementById("content");
   const playing = document.getElementById("playing");
   const vinylMode = document.getElementById("vinylMode");
   const record = document.querySelector(".vinylRecord");
-  if (!body || !playing || !vinylMode || !record) return;
+  const progress = document.getElementById("progressContainer");
+  const controls = document.getElementById("controls");
+  const volume = document.getElementById("volumeContainer");
+  if (!body || !content || !playing || !vinylMode || !record) return;
 
   let frame = 0;
 
@@ -11474,40 +11482,74 @@ body.modeVinyl .vinylRecord{
       const vv = window.visualViewport;
       const vw = Math.max(1, vv?.width || window.innerWidth);
       const vh = Math.max(1, vv?.height || window.innerHeight);
+      const landscape = vw > vh;
+      if (!landscape) return;
+
+      const contentRect = content.getBoundingClientRect();
       const playingRect = playing.getBoundingClientRect();
       const modeRect = vinylMode.getBoundingClientRect();
+      const progressRect = progress?.getBoundingClientRect() || null;
+      const controlsRect = controls?.getBoundingClientRect() || null;
+      const volumeRect = volume?.getBoundingClientRect() || null;
+
       const cs = getComputedStyle(vinylMode);
-      const padRight = parseFloat(cs.paddingRight) || 0;
+      const padRight = parseFloat(cs.paddingRight) || 24;
+      const padLeft = parseFloat(cs.paddingLeft) || 24;
       const padTop = parseFloat(cs.paddingTop) || 0;
       const padBottom = parseFloat(cs.paddingBottom) || 0;
 
-      /* Keep a real gap between the progress/player column and the record. */
-      const horizontalGap = vw <= 1000 ? 20 : 28;
-      const rightEdge = Math.min(vw, modeRect.right) - padRight;
-      const availableWidth = rightEdge - playingRect.right - horizontalGap;
+      const leftEdge = Math.max(contentRect.left, playingRect.left);
+      const rightEdge = Math.min(vw - padRight, modeRect.right - padRight);
+      const rightMargin = Math.max(22, Math.min(42, vw * 0.028));
+      const gap = Math.max(24, Math.min(36, vw * 0.026));
+      const availableRow = Math.max(420, rightEdge - leftEdge - rightMargin);
 
-      /* Prefer the original visual size, but never exceed the free space. */
-      const preferred = Math.min(560, vw * 0.48, vh * 0.58);
-      const verticalSpace = Math.max(120, vh - padTop - padBottom);
-      const size = Math.max(
-        170,
-        Math.min(preferred, availableWidth, verticalSpace)
+      /* Keep enough width for readable title/progress controls. */
+      const minPlayer = vw < 1000 ? 340 : 430;
+      const maxPlayer = Math.min(650, Math.max(minPlayer, vw * 0.50));
+
+      /* Larger than before, but still bounded by both height and the free right zone. */
+      const preferred = Math.min(560, vw * 0.46, vh * 0.72);
+      const maxVinylByPlayer = Math.max(180, availableRow - minPlayer - gap);
+      const size = Math.max(180, Math.min(preferred, maxVinylByPlayer));
+
+      /* Rebalance the left player column so the bigger artwork gets its own space. */
+      const targetPlayer = Math.max(
+        minPlayer,
+        Math.min(maxPlayer, availableRow - size - gap)
       );
 
       root.style.setProperty("--smart-vinyl-size", `${Math.round(size)}px`);
+      root.style.setProperty("--smart-vinyl-playing-width", `${Math.round(targetPlayer)}px`);
+
+      /* Vertical guard uses the actual vinyl overlay's safe area, not the
+         left-side controls, so the artwork can stay large beside them. */
+      const verticalLimit = Math.max(180, vh - padTop - padBottom - 18);
+      const finalSize = Math.max(180, Math.min(size, verticalLimit));
+      if (finalSize !== size) {
+        const finalPlayer = Math.max(minPlayer, Math.min(maxPlayer, availableRow - finalSize - gap));
+        root.style.setProperty("--smart-vinyl-size", `${Math.round(finalSize)}px`);
+        root.style.setProperty("--smart-vinyl-playing-width", `${Math.round(finalPlayer)}px`);
+      }
+
+      /* Keep the progress bar inside the player column; this is only a safety
+         constraint and does not change its styling or behavior. */
+      if (progressRect && progressRect.right > playingRect.left + targetPlayer + 1) {
+        progress.style.width = "100%";
+      }
     });
   }
 
   window.spotifyDisUpdateSmartAlbumSize = updateSmartAlbumSize;
   window.addEventListener("resize", updateSmartAlbumSize, {passive:true});
   window.addEventListener("orientationchange", updateSmartAlbumSize, {passive:true});
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", updateSmartAlbumSize, {passive:true});
-  }
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", updateSmartAlbumSize, {passive:true});
   if (window.ResizeObserver) {
     const ro = new ResizeObserver(updateSmartAlbumSize);
+    ro.observe(content);
     ro.observe(playing);
     ro.observe(vinylMode);
+    ro.observe(record);
   }
 
   updateSmartAlbumSize();
