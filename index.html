@@ -11711,3 +11711,216 @@ body.modeVinyl #playing{
   updateSmartLayoutGuard();
 })();
 </script>
+
+<style id="smart-balanced-artwork-v1">
+/* Targeted final artwork balance: size the visible artwork from the actual
+   viewport and the space left by the player. This only adjusts artwork, gap,
+   and the player lane so the composition stays balanced without collisions. */
+:root{
+  --smart-balanced-art:320px;
+  --smart-balanced-gap:44px;
+  --smart-balanced-playing:560px;
+}
+
+#albumArtContainer{
+  width:var(--smart-balanced-art) !important;
+  max-width:var(--smart-balanced-art) !important;
+  flex:0 0 var(--smart-balanced-art) !important;
+}
+
+@media (orientation:landscape){
+  body.modeNormal #nowPlayingLayout,
+  body.modeVisualizer #nowPlayingLayout{
+    gap:var(--smart-balanced-gap) !important;
+  }
+  body.modeNormal #playing,
+  body.modeVisualizer #playing{
+    width:var(--smart-balanced-playing) !important;
+    max-width:var(--smart-balanced-playing) !important;
+    flex:0 1 var(--smart-balanced-playing) !important;
+    min-width:0 !important;
+  }
+}
+
+body.modeArtwork #albumArtContainer{
+  width:var(--smart-balanced-art) !important;
+  max-width:var(--smart-balanced-art) !important;
+}
+
+@media (orientation:portrait){
+  body.modeNormal #albumArtContainer,
+  body.modeVisualizer #albumArtContainer{
+    width:var(--smart-balanced-art) !important;
+    max-width:var(--smart-balanced-art) !important;
+    flex-basis:var(--smart-balanced-art) !important;
+  }
+}
+</style>
+
+<script id="smart-balanced-artwork-v1">
+(() => {
+  const root = document.documentElement;
+  const body = document.body;
+  const content = document.getElementById("content");
+  const layout = document.getElementById("nowPlayingLayout");
+  const art = document.getElementById("albumArtContainer");
+  const playing = document.getElementById("playing");
+  const trackInfo = document.getElementById("trackInfo");
+  if (!body || !content || !layout || !art || !playing) return;
+
+  let raf = 0;
+
+  const px = v => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  function updateBalancedArtwork(){
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const vv = window.visualViewport;
+      const vw = Math.max(1, vv?.width || window.innerWidth);
+      const vh = Math.max(1, vv?.height || window.innerHeight);
+      const landscape = vw > vh;
+      const isClock = body.classList.contains("modeClock");
+      const isVinyl = body.classList.contains("modeVinyl");
+      const isArtwork = body.classList.contains("modeArtwork");
+      const isVisible = getComputedStyle(art).display !== "none";
+
+      if (!isVisible || isClock || isVinyl) return;
+
+      const contentRect = content.getBoundingClientRect();
+      const layoutRect = layout.getBoundingClientRect();
+      const playRect = playing.getBoundingClientRect();
+      const artRect = art.getBoundingClientRect();
+      const modeStyle = getComputedStyle(layout);
+      const layoutGap = px(modeStyle.gap);
+      const safeLeft = px(getComputedStyle(root).getPropertyValue("--smart-safe-left"));
+      const safeRight = px(getComputedStyle(root).getPropertyValue("--smart-safe-right"));
+      const safeTop = px(getComputedStyle(root).getPropertyValue("--smart-safe-top"));
+      const safeBottom = px(getComputedStyle(root).getPropertyValue("--smart-safe-bottom"));
+
+      if (isArtwork) {
+        const infoRect = trackInfo?.getBoundingClientRect();
+        const topLimit = Math.max(
+          contentRect.top + 18,
+          safeTop + 18,
+          76
+        );
+        const bottomLimit = infoRect
+          ? Math.min(vh - safeBottom - 18, infoRect.top - 24)
+          : vh - safeBottom - 110;
+        const usableHeight = Math.max(160, bottomLimit - topLimit);
+        const usableWidth = Math.max(160, vw - safeLeft - safeRight - 28);
+
+        const size = Math.round(Math.max(
+          170,
+          Math.min(
+            560,
+            usableWidth * 0.78,
+            usableHeight * 0.92
+          )
+        ));
+
+        root.style.setProperty("--smart-balanced-art", `${size}px`);
+        root.style.setProperty("--smart-balanced-gap", `0px`);
+        root.style.setProperty("--smart-balanced-playing", `${Math.round(Math.min(900, vw * 0.90))}px`);
+        return;
+      }
+
+      if (!landscape) {
+        const top = Math.max(contentRect.top, safeTop + 1);
+        const bottom = vh - Math.min(
+          playRect.bottom || vh,
+          vh - safeBottom
+        );
+        const verticalRoom = Math.max(170, vh - top - safeBottom - Math.max(18, bottom * 0.10));
+        const horizontalRoom = Math.max(180, Math.min(layoutRect.width, vw - 28));
+        const gap = Math.max(14, Math.min(28, verticalRoom * 0.032));
+
+        const size = Math.round(Math.max(
+          170,
+          Math.min(
+            430,
+            horizontalRoom * 0.78,
+            verticalRoom * 0.43
+          )
+        ));
+
+        root.style.setProperty("--smart-balanced-art", `${size}px`);
+        root.style.setProperty("--smart-balanced-gap", `${Math.round(gap)}px`);
+        root.style.setProperty("--smart-balanced-playing", `${Math.round(horizontalRoom)}px`);
+        return;
+      }
+
+      /* Landscape normal/visualizer: reserve a readable left lane first,
+         then use the remaining space for the largest aesthetically balanced
+         square artwork. */
+      const outerLeft = Math.max(contentRect.left + safeLeft, 18);
+      const outerRight = Math.min(vw - safeRight - 18, contentRect.right || vw);
+      const totalWidth = Math.max(360, outerRight - outerLeft);
+
+      const minPlayer = vw <= 900 ? 320 : vw <= 1150 ? 430 : 500;
+      const maxPlayer = Math.min(680, Math.max(minPlayer, totalWidth * 0.56));
+      const desiredGap = Math.max(28, Math.min(52, totalWidth * 0.035));
+
+      const heightLimit = Math.max(
+        180,
+        vh - Math.max(58, layoutRect.top - contentRect.top) - 72
+      );
+
+      const widthBasedArt = totalWidth * 0.29;
+      const heightBasedArt = heightLimit * 0.70;
+      const artMax = Math.min(390, widthBasedArt, heightBasedArt);
+
+      const size = Math.round(Math.max(
+        190,
+        Math.min(artMax, totalWidth - minPlayer - desiredGap)
+      ));
+
+      const remainingForPlayer = Math.max(280, totalWidth - size - desiredGap);
+      const playerWidth = Math.round(
+        Math.max(minPlayer, Math.min(maxPlayer, remainingForPlayer))
+      );
+
+      /* If the measured layout is already using more width than the safe
+         composition, tighten the gap before shrinking the artwork. */
+      const measuredGap = Math.max(
+        24,
+        Math.min(
+          56,
+          (artRect.left || outerRight) - (playRect.right || outerLeft)
+        )
+      );
+      const finalGap = Math.round(
+        Math.min(desiredGap, Math.max(24, measuredGap))
+      );
+
+      root.style.setProperty("--smart-balanced-art", `${size}px`);
+      root.style.setProperty("--smart-balanced-gap", `${finalGap}px`);
+      root.style.setProperty("--smart-balanced-playing", `${playerWidth}px`);
+    });
+  }
+
+  window.spotifyDisUpdateBalancedArtwork = updateBalancedArtwork;
+  window.addEventListener("resize", updateBalancedArtwork, {passive:true});
+  window.addEventListener("orientationchange", updateBalancedArtwork, {passive:true});
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", updateBalancedArtwork, {passive:true});
+  }
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(updateBalancedArtwork);
+    ro.observe(content);
+    ro.observe(layout);
+    ro.observe(playing);
+    ro.observe(art);
+    if (trackInfo) ro.observe(trackInfo);
+  }
+  if (window.MutationObserver) {
+    const mo = new MutationObserver(updateBalancedArtwork);
+    mo.observe(body, {attributes:true, attributeFilter:["class"]});
+  }
+
+  updateBalancedArtwork();
+})();
+</script>
