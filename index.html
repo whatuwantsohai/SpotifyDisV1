@@ -10977,3 +10977,265 @@ updateSessionTime();
   }
 }
 </style>
+
+<style id="smart-device-proportions-v1">
+/* Smart device proportions: detection/layout only. Existing lyrics, vinyl,
+   visualizer, background, auth and playback behavior are intentionally untouched. */
+:root{
+  --smart-safe-top: env(safe-area-inset-top, 0px);
+  --smart-safe-right: env(safe-area-inset-right, 0px);
+  --smart-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --smart-safe-left: env(safe-area-inset-left, 0px);
+}
+
+/* Small phones in portrait: use height as well as width so short devices don't
+   inherit proportions intended for taller phones. */
+body.smart-phone-small.smart-portrait #content{
+  padding-top:max(76px,calc(62px + var(--smart-safe-top))) !important;
+  padding-bottom:max(66px,calc(48px + var(--smart-safe-bottom))) !important;
+}
+body.smart-phone-small.smart-portrait #albumArtContainer{
+  width:min(68vw,280px,42svh) !important;
+}
+body.smart-phone-small.smart-portrait #playing{
+  width:min(100%,calc(100vw - 28px)) !important;
+}
+body.smart-phone-small.smart-portrait #trackName{
+  font-size:clamp(21px,7.4vw,36px) !important;
+}
+
+/* Large phones / narrow tablets in portrait. */
+body.smart-phone-large.smart-portrait #albumArtContainer{
+  width:min(72vw,330px,43svh) !important;
+}
+body.smart-phone-large.smart-portrait #trackName{
+  font-size:clamp(24px,6.8vw,42px) !important;
+}
+
+/* Tablets: keep a little more scale than phones without jumping to desktop density. */
+body.smart-tablet.smart-portrait #albumArtContainer{
+  width:min(48vw,430px,55svh) !important;
+}
+body.smart-tablet.smart-portrait #trackName{
+  font-size:clamp(30px,4.8vw,54px) !important;
+}
+
+/* Landscape is governed primarily by HEIGHT. Width alone must never make an
+   iPhone landscape viewport behave like a desktop. */
+body.smart-landscape.smart-short #content{
+  padding-top:max(54px,calc(40px + var(--smart-safe-top))) !important;
+  padding-bottom:max(22px,calc(16px + var(--smart-safe-bottom))) !important;
+}
+body.smart-landscape.smart-short #nowPlayingLayout{
+  gap:clamp(14px,3vw,34px) !important;
+  max-height:calc(100svh - 70px - var(--smart-safe-top) - var(--smart-safe-bottom));
+}
+body.smart-landscape.smart-short #albumArtContainer{
+  width:min(40svh,34vw,230px) !important;
+  max-width:230px !important;
+}
+body.smart-landscape.smart-short #playing{
+  width:min(58vw,650px) !important;
+}
+body.smart-landscape.smart-short #trackName{
+  font-size:clamp(24px,6svh,48px) !important;
+}
+body.smart-landscape.smart-short #artistName{
+  margin-top:6px !important;
+  font-size:clamp(14px,2.7svh,20px) !important;
+}
+body.smart-landscape.smart-short #progressContainer{
+  margin-top:clamp(14px,2.8svh,24px) !important;
+}
+body.smart-landscape.smart-short #controls{
+  margin-top:clamp(12px,2.5svh,20px) !important;
+  gap:clamp(12px,2.5vw,18px) !important;
+}
+body.smart-landscape.smart-short .control{
+  width:clamp(42px,7svh,48px) !important;
+  height:clamp(42px,7svh,48px) !important;
+}
+body.smart-landscape.smart-short #playButton{
+  width:clamp(52px,9svh,62px) !important;
+  height:clamp(52px,9svh,62px) !important;
+}
+body.smart-landscape.smart-short #volumeContainer{
+  margin-top:clamp(10px,2svh,18px) !important;
+}
+
+/* Extra-short landscape: reduce density further while preserving the normal
+   moving vinyl and lyrics styles. */
+body.smart-landscape.smart-extra-short #albumArtContainer{
+  width:min(34svh,31vw,190px) !important;
+}
+body.smart-landscape.smart-extra-short #trackName{
+  font-size:clamp(22px,5.2svh,38px) !important;
+}
+body.smart-landscape.smart-extra-short #progressContainer{
+  margin-top:12px !important;
+}
+body.smart-landscape.smart-extra-short #controls{
+  margin-top:10px !important;
+}
+body.smart-landscape.smart-extra-short #volumeContainer{
+  margin-top:8px !important;
+}
+
+/* Taller landscape devices can breathe without allowing the desktop layout to
+   become oversized. */
+body.smart-landscape.smart-tall #albumArtContainer{
+  width:min(44svh,36vw,360px) !important;
+}
+body.smart-landscape.smart-tall #trackName{
+  font-size:clamp(30px,7.2svh,60px) !important;
+}
+
+/* Ultrawide desktop: cap the visual mass so the UI does not stretch across the
+   entire screen. */
+body.smart-ultrawide #nowPlayingLayout{
+  max-width:1500px !important;
+}
+body.smart-ultrawide #albumArtContainer{
+  width:min(30vw,440px,72svh) !important;
+}
+
+/* Touch targets: only increase controls when the device actually has touch. */
+body.smart-touch .control,
+body.smart-touch .headerButton{
+  touch-action:manipulation;
+}
+body.smart-touch .control{
+  min-width:46px;
+  min-height:46px;
+}
+
+/* Hybrid laptops/tablets keep pointer-friendly hover while retaining touch-safe
+   hit areas. */
+body.smart-hybrid .control{
+  min-width:46px;
+  min-height:46px;
+}
+
+/* Never let safe-area padding alter the established portrait background. */
+body.smart-landscape #header{
+  padding-left:max(7px,var(--smart-safe-left));
+  padding-right:max(7px,var(--smart-safe-right));
+}
+
+/* Device tiers for the header only; no playback/status logic is changed. */
+body.smart-phone #header{
+  max-width:none;
+}
+body.smart-tablet #header{
+  max-width:none;
+}
+
+@media (orientation:landscape){
+  body.smart-phone #header,
+  body.smart-tablet #header{
+    top:max(8px,var(--smart-safe-top)) !important;
+  }
+}
+</style>
+
+<script id="smart-device-detection-v2">
+(() => {
+  const root = document.documentElement;
+  const body = document.body;
+  if (!body) return;
+
+  let frame = 0;
+  let lastKey = "";
+
+  function detect() {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      const vv = window.visualViewport;
+      const width = Math.max(1, Math.round(vv?.width || window.innerWidth));
+      const height = Math.max(1, Math.round(vv?.height || window.innerHeight));
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const landscape = width > height;
+      const shortSide = Math.min(width, height);
+      const longSide = Math.max(width, height);
+      const aspect = longSide / Math.max(1, shortSide);
+      const touchPoints = Number(navigator.maxTouchPoints || 0);
+      const coarse = !!window.matchMedia?.("(pointer: coarse)").matches;
+      const fine = !!window.matchMedia?.("(pointer: fine)").matches;
+      const touch = touchPoints > 0 || coarse;
+      const hybrid = touch && fine;
+
+      /* Width + height + input method, deliberately avoiding UA sniffing. */
+      const phone = shortSide <= 700 && (touch || width <= 600);
+      const tablet = !phone && shortSide <= 1100 && (touch || coarse);
+      const largeScreen = !phone && !tablet;
+      const smallPhone = phone && shortSide <= 390;
+      const largePhone = phone && shortSide > 390;
+      const extraShort = landscape && height <= 480;
+      const short = landscape && height <= 600;
+      const tall = landscape && height >= 760;
+      const ultrawide = largeScreen && aspect >= 2.0;
+
+      const orientation = landscape ? "landscape" : "portrait";
+      const tier = phone ? (smallPhone ? "phone-small" : "phone-large")
+        : tablet ? "tablet" : (ultrawide ? "ultrawide" : "large");
+      const key = [width,height,dpr,orientation,tier,touch,hybrid].join("|");
+
+      if (key === lastKey) return;
+      lastKey = key;
+
+      const classes = [
+        "smart-phone", "smart-phone-small", "smart-phone-large",
+        "smart-tablet", "smart-large-screen", "smart-ultrawide",
+        "smart-portrait", "smart-landscape", "smart-touch", "smart-hybrid",
+        "smart-short", "smart-extra-short", "smart-tall"
+      ];
+      classes.forEach(c => body.classList.remove(c));
+
+      if (phone) body.classList.add("smart-phone");
+      if (smallPhone) body.classList.add("smart-phone-small");
+      if (largePhone) body.classList.add("smart-phone-large");
+      if (tablet) body.classList.add("smart-tablet");
+      if (largeScreen) body.classList.add("smart-large-screen");
+      if (ultrawide) body.classList.add("smart-ultrawide");
+      body.classList.add(landscape ? "smart-landscape" : "smart-portrait");
+      if (touch) body.classList.add("smart-touch");
+      if (hybrid) body.classList.add("smart-hybrid");
+      if (short) body.classList.add("smart-short");
+      if (extraShort) body.classList.add("smart-extra-short");
+      if (tall) body.classList.add("smart-tall");
+
+      root.style.setProperty("--smart-vw", width + "px");
+      root.style.setProperty("--smart-vh", height + "px");
+      root.style.setProperty("--smart-aspect", aspect.toFixed(3));
+      root.style.setProperty("--smart-dpr", dpr.toFixed(2));
+      root.style.setProperty("--smart-touch", touch ? "1" : "0");
+      root.style.setProperty("--smart-pointer-coarse", coarse ? "1" : "0");
+      root.style.setProperty("--smart-pointer-fine", fine ? "1" : "0");
+      root.style.setProperty("--smart-safe-top", "env(safe-area-inset-top, 0px)");
+      root.style.setProperty("--smart-safe-right", "env(safe-area-inset-right, 0px)");
+      root.style.setProperty("--smart-safe-bottom", "env(safe-area-inset-bottom, 0px)");
+      root.style.setProperty("--smart-safe-left", "env(safe-area-inset-left, 0px)");
+
+      body.dataset.smartDevice = tier;
+      body.dataset.smartOrientation = orientation;
+      body.dataset.smartWidth = String(width);
+      body.dataset.smartHeight = String(height);
+      body.dataset.smartTouch = touch ? "true" : "false";
+      body.dataset.smartHybrid = hybrid ? "true" : "false";
+    });
+  }
+
+  detect();
+  window.addEventListener("resize", detect, {passive:true});
+  window.addEventListener("orientationchange", detect, {passive:true});
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", detect, {passive:true});
+  }
+  if (window.matchMedia) {
+    const coarse = window.matchMedia("(pointer: coarse)");
+    const fine = window.matchMedia("(pointer: fine)");
+    coarse.addEventListener?.("change", detect);
+    fine.addEventListener?.("change", detect);
+  }
+})();
+</script>
