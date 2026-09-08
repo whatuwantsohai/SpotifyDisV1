@@ -5366,6 +5366,67 @@ body.device-tablet #trackName{
 
   </div>
 
+  <div class="settingsSection" id="presentationSettingsSection">
+
+    <div class="settingsSectionTitle">
+      Presentation Mode
+    </div>
+
+    <div class="settingRow">
+
+      <div>
+        Presentation Mode
+        <div class="settingDescription">
+          Choose when the clean music display should appear
+        </div>
+      </div>
+
+      <select id="presentationModeSelect" class="settingSelect" aria-label="Presentation mode">
+        <option value="off">Off</option>
+        <option value="inactivity">After inactivity</option>
+        <option value="schedule">Scheduled</option>
+      </select>
+
+    </div>
+
+    <div class="settingRow presentationSubSetting" id="presentationDelayRow">
+
+      <div>
+        Start After
+        <div class="settingDescription">
+          Time without interaction before Presentation Mode starts
+        </div>
+      </div>
+
+      <select id="presentationDelaySelect" class="settingSelect" aria-label="Presentation mode inactivity delay">
+        <option value="15">15 sec</option>
+        <option value="30">30 sec</option>
+        <option value="60">1 min</option>
+        <option value="120">2 min</option>
+        <option value="300">5 min</option>
+      </select>
+
+    </div>
+
+    <div class="settingRow presentationSubSetting" id="presentationScheduleRow">
+
+      <div>
+        Schedule
+        <div class="settingDescription">
+          Automatically use Presentation Mode during these hours
+        </div>
+      </div>
+
+      <div class="presentationTimeGroup">
+        <input id="presentationStartTime" class="settingsTime" type="time" aria-label="Presentation start time" value="23:00">
+        <span>to</span>
+        <input id="presentationEndTime" class="settingsTime" type="time" aria-label="Presentation end time" value="07:00">
+      </div>
+
+    </div>
+
+  </div>
+
   <div class="settingsSection">
 
     <div class="settingsSectionTitle">
@@ -5479,6 +5540,14 @@ body.device-tablet #trackName{
 
 </div>
 
+
+<style id="spotifydis-presentation-settings-v16-stable">
+.presentationSubSetting{display:none;}
+.presentationTimeGroup{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+.settingsTime{width:112px;box-sizing:border-box;padding:8px 9px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:white;font-family:inherit;font-size:11px;outline:none;}
+.settingsTime::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.7;}
+@media (max-width:520px){.presentationTimeGroup{max-width:150px;}.settingsTime{width:108px;}}
+</style>
 <script>
 
 /* =========================
@@ -5665,6 +5734,24 @@ const screensaverToggle =
 
 const screensaverTimeoutSelect =
   document.getElementById("screensaverTimeoutSelect");
+
+const presentationModeSelect =
+  document.getElementById("presentationModeSelect");
+
+const presentationDelaySelect =
+  document.getElementById("presentationDelaySelect");
+
+const presentationStartTime =
+  document.getElementById("presentationStartTime");
+
+const presentationEndTime =
+  document.getElementById("presentationEndTime");
+
+const presentationDelayRow =
+  document.getElementById("presentationDelayRow");
+
+const presentationScheduleRow =
+  document.getElementById("presentationScheduleRow");
 
 const screensaverClock =
   document.getElementById("screensaverClock");
@@ -7751,7 +7838,19 @@ const defaultSettings = {
     true,
 
   batterySaver:
-    false
+    false,
+
+  presentationMode:
+    "off",
+
+  presentationDelay:
+    30,
+
+  presentationStart:
+    "23:00",
+
+  presentationEnd:
+    "07:00"
 
 };
 
@@ -7962,6 +8061,44 @@ displayModeOptions.forEach(
 
   batterySaverToggle.checked =
     appSettings.batterySaver;
+
+  if (presentationModeSelect) {
+    presentationModeSelect.value =
+      ["off", "inactivity", "schedule"].includes(appSettings.presentationMode)
+        ? appSettings.presentationMode
+        : "off";
+  }
+
+  if (presentationDelaySelect) {
+    presentationDelaySelect.value =
+      String([15,30,60,120,300].includes(Number(appSettings.presentationDelay))
+        ? Number(appSettings.presentationDelay)
+        : 30);
+  }
+
+  if (presentationStartTime) {
+    presentationStartTime.value =
+      /^\d{2}:\d{2}$/.test(String(appSettings.presentationStart || ""))
+        ? String(appSettings.presentationStart)
+        : "23:00";
+  }
+
+  if (presentationEndTime) {
+    presentationEndTime.value =
+      /^\d{2}:\d{2}$/.test(String(appSettings.presentationEnd || ""))
+        ? String(appSettings.presentationEnd)
+        : "07:00";
+  }
+
+  if (presentationDelayRow) {
+    presentationDelayRow.style.display =
+      appSettings.presentationMode === "inactivity" ? "flex" : "none";
+  }
+
+  if (presentationScheduleRow) {
+    presentationScheduleRow.style.display =
+      appSettings.presentationMode === "schedule" ? "flex" : "none";
+  }
 
   document.body.classList.toggle(
     "batterySaver",
@@ -8728,6 +8865,62 @@ batterySaverToggle.addEventListener(
 
 
 /* =========================
+   PRESENTATION MODE SETTINGS
+========================= */
+
+function refreshPresentationSettingsUI() {
+  if (presentationDelayRow) {
+    presentationDelayRow.style.display =
+      appSettings.presentationMode === "inactivity" ? "flex" : "none";
+  }
+
+  if (presentationScheduleRow) {
+    presentationScheduleRow.style.display =
+      appSettings.presentationMode === "schedule" ? "flex" : "none";
+  }
+}
+
+if (presentationModeSelect) {
+  presentationModeSelect.addEventListener("change", () => {
+    appSettings.presentationMode = presentationModeSelect.value;
+    document.body.classList.remove("premium-idle");
+    lastInteraction = Date.now();
+    saveSettings();
+    refreshPresentationSettingsUI();
+  });
+}
+
+if (presentationDelaySelect) {
+  presentationDelaySelect.addEventListener("change", () => {
+    const value = Number(presentationDelaySelect.value);
+    appSettings.presentationDelay = [15,30,60,120,300].includes(value) ? value : 30;
+    document.body.classList.remove("premium-idle");
+    lastInteraction = Date.now();
+    saveSettings();
+  });
+}
+
+if (presentationStartTime) {
+  presentationStartTime.addEventListener("change", () => {
+    appSettings.presentationStart = presentationStartTime.value || "23:00";
+    document.body.classList.remove("premium-idle");
+    lastInteraction = Date.now();
+    saveSettings();
+  });
+}
+
+if (presentationEndTime) {
+  presentationEndTime.addEventListener("change", () => {
+    appSettings.presentationEnd = presentationEndTime.value || "07:00";
+    document.body.classList.remove("premium-idle");
+    lastInteraction = Date.now();
+    saveSettings();
+  });
+}
+
+refreshPresentationSettingsUI();
+
+/* =========================
    DAY / NIGHT
 ========================= */
 
@@ -8844,6 +9037,38 @@ setInterval(() => {
     document.body.classList.remove("ambientScreensaver");
   } else if (!document.body.classList.contains("ambientScreensaver")) {
     document.body.classList.remove("autoDim");
+  }
+
+  /* Presentation Mode uses this existing 1-second scheduler. No extra
+     timers, animation loops, observers, or polling are introduced. */
+  if (!document.body.classList.contains("uiHidden") && !document.body.classList.contains("premium-focus")) {
+    const mode = appSettings.presentationMode || "off";
+    const playing = document.body.classList.contains("isPlaying") || status.classList.contains("playing");
+    let scheduled = false;
+
+    if (mode === "schedule") {
+      const start = String(appSettings.presentationStart || "23:00");
+      const end = String(appSettings.presentationEnd || "07:00");
+      const now = new Date();
+      const minutes = now.getHours() * 60 + now.getMinutes();
+      const toMinutes = value => {
+        const parts = value.split(":");
+        return (Number(parts[0]) || 0) * 60 + (Number(parts[1]) || 0);
+      };
+      const a = toMinutes(start);
+      const b = toMinutes(end);
+      scheduled = a === b ? true : (a < b ? minutes >= a && minutes < b : minutes >= a || minutes < b);
+    }
+
+    const inactivity =
+      mode === "inactivity" &&
+      idle >= Math.max(15, Number(appSettings.presentationDelay) || 30) * 1000;
+
+    if (playing && (inactivity || (mode === "schedule" && scheduled))) {
+      document.body.classList.add("premium-idle");
+    } else {
+      document.body.classList.remove("premium-idle");
+    }
   }
 }, 1000);
 
@@ -12418,11 +12643,6 @@ body.premium-night .headerButton{background:rgba(255,255,255,.045) !important;}
   function wake(){
     body.classList.remove('premium-idle');
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => {
-      if (!body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
-        body.classList.add('premium-idle');
-      }
-    }, 30000);
   }
 
   ['pointerdown','touchstart','mousemove','keydown','wheel'].forEach(type =>
