@@ -11054,6 +11054,129 @@ updateSessionTime();
   #controls .control:hover{transform:none;}
 }
 </style>
+
+
+<style id="spotifydis-premium-v12">
+/* v12 premium finish: additive only; existing layout/auth/playback/lyrics/vinyl behavior remains intact. */
+:root{
+  --v12-theme:rgba(255,255,255,.92);
+  --v12-theme-soft:rgba(255,255,255,.16);
+  --v12-theme-glow:rgba(255,255,255,.14);
+}
+#progressBar{
+  background:linear-gradient(90deg,var(--v12-theme-soft),var(--v12-theme),var(--v12-theme-soft)) !important;
+  box-shadow:0 0 18px var(--v12-theme-glow), inset 0 1px 0 rgba(255,255,255,.12) !important;
+  transition:background .9s ease,box-shadow .9s ease !important;
+}
+#playButton{color:var(--v12-theme) !important;}
+.v12-track-out #trackName,.v12-track-out #artistName,.v12-track-out #albumName{
+  opacity:.15 !important;
+  transform:translateY(8px) !important;
+  filter:blur(3px) !important;
+}
+.v12-track-in #trackName,.v12-track-in #artistName,.v12-track-in #albumName{
+  animation:v12TrackIn .48s cubic-bezier(.22,.61,.36,1) both;
+}
+@keyframes v12TrackIn{from{opacity:.1;transform:translateY(-8px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+.v12-vinyl-polish .vinylRecord{
+  filter:drop-shadow(0 24px 38px rgba(0,0,0,.34)) drop-shadow(0 0 20px var(--v12-theme-glow)) !important;
+}
+.v12-vinyl-polish .vinylRecord::after{
+  content:"";position:absolute;inset:5%;border-radius:50%;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.16),transparent 24%,transparent 70%,rgba(255,255,255,.055));
+  mix-blend-mode:screen;opacity:.65;
+}
+body.v12-mini #playing{opacity:1 !important;}
+body.v12-mini #albumArtContainer{transform:scale(1.02) !important;}
+body.v12-mini #trackInfo{opacity:.9 !important;}
+body.v12-mini #controls{opacity:.92 !important;}
+body.v12-dense #controls .control{transform:scale(.94);}
+body.v12-dense #volumeContainer{transform:scale(.94);transform-origin:right center;}
+body.v12-spacious #trackInfo{transform:translateY(-2px);}
+@media (prefers-reduced-motion:reduce){
+  .v12-track-in #trackName,.v12-track-in #artistName,.v12-track-in #albumName{animation:none !important;}
+}
+</style>
+
+<script id="spotifydis-premium-v12-script">
+(() => {
+  const body=document.body, root=document.documentElement, art=document.getElementById('albumArtContainer');
+  if(!body||!root) return;
+  const setThemeFromPremium=()=>{
+    const g=getComputedStyle(root).getPropertyValue('--premium-glow').trim();
+    if(g) root.style.setProperty('--v12-theme',g.replace(/\.20\)/,'.94)').replace(/\.12\)/,'.92)'));
+    const g2=getComputedStyle(root).getPropertyValue('--premium-glow2').trim();
+    if(g2) root.style.setProperty('--v12-theme-soft',g2);
+    if(g) root.style.setProperty('--v12-theme-glow',g);
+  };
+  setThemeFromPremium();
+  new MutationObserver(setThemeFromPremium).observe(root,{attributes:true,attributeFilter:['style']});
+
+  /* Deliberate track transition: visual only, never delays Spotify commands. */
+  let lastTrack=''; let transitionTimer=0;
+  const trackObserver=new MutationObserver(()=>{
+    const name=document.getElementById('trackName');
+    const key=(name?.textContent||'').trim();
+    if(!key||key===lastTrack) return;
+    lastTrack=key;
+    clearTimeout(transitionTimer);
+    body.classList.remove('v12-track-in');
+    body.classList.add('v12-track-out');
+    transitionTimer=setTimeout(()=>{
+      body.classList.remove('v12-track-out');
+      void document.body.offsetWidth;
+      body.classList.add('v12-track-in');
+      setTimeout(()=>body.classList.remove('v12-track-in'),560);
+    },70);
+  });
+  const ti=document.getElementById('trackInfo');
+  if(ti) trackObserver.observe(ti,{subtree:true,childList:true,characterData:true});
+
+  /* Vinyl polish layer; rotation remains owned by the existing vinyl CSS. */
+  body.classList.add('v12-vinyl-polish');
+
+  /* Smart density/composition: additive classes based on real usable viewport. */
+  const fit=()=>{
+    const vv=window.visualViewport, w=vv?.width||innerWidth, h=vv?.height||innerHeight;
+    const short=Math.min(w,h);
+    body.classList.toggle('v12-dense',short<560 || (w>h&&h<620));
+    body.classList.toggle('v12-spacious',w>1200&&h>760);
+  };
+  addEventListener('resize',fit,{passive:true}); addEventListener('orientationchange',fit,{passive:true}); fit();
+
+  /* Mini Now Playing: user-facing presentation mode API, plus double-tap artwork shortcut. */
+  window.spotifyDisSetMiniPlayer=enabled=>{
+    body.classList.toggle('v12-mini',!!enabled);
+    if(enabled) body.classList.remove('premium-idle');
+  };
+  let lastTap=0,longTimer=0,longTriggered=false;
+  if(art){
+    art.addEventListener('pointerdown',()=>{
+      longTriggered=false; clearTimeout(longTimer);
+      longTimer=setTimeout(()=>{longTriggered=true;window.spotifyDisSetMiniPlayer?.(!body.classList.contains('v12-mini'));},650);
+    },{passive:true});
+    art.addEventListener('pointerup',()=>{
+      clearTimeout(longTimer);
+      if(longTriggered) return;
+      const now=performance.now();
+      if(now-lastTap<330){
+        const play=document.getElementById('playButton');
+        if(play&&!play.disabled) play.click();
+        lastTap=0;
+      }else lastTap=now;
+    },{passive:true});
+    art.addEventListener('pointercancel',()=>clearTimeout(longTimer),{passive:true});
+  }
+
+  /* Keep mini mode and explicit focus mode from fighting each other. */
+  const oldFocus=window.spotifyDisSetFocusMode;
+  window.spotifyDisSetFocusMode=enabled=>{
+    if(typeof oldFocus==='function') oldFocus(enabled);
+    body.classList.toggle('v12-mini',!!enabled);
+  };
+})();
+</script>
+
 </body>
 </html>
 
