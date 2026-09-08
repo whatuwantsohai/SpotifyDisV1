@@ -4717,47 +4717,7 @@ body.device-tablet #trackName{
 }
 </style>
 
-<style id="phone-smoothness-fix">
-/* Phone/tablet motion: keep lyrics and vinyl fluid without changing large-screen UI. */
-@media (max-width: 700px) {
-  #lyricsView {
-    padding-left: max(30px, calc(26px + env(safe-area-inset-left))) !important;
-    padding-right: max(22px, calc(18px + env(safe-area-inset-right))) !important;
-  }
 
-  #lyricsInner {
-    transform: translate3d(0, var(--lyrics-shift, 0px), 0);
-    transition: transform 300ms cubic-bezier(.22,.61,.36,1) !important;
-    will-change: transform;
-  }
-
-  .lyricsLine {
-    transition:
-      color 280ms ease,
-      opacity 280ms ease,
-      transform 300ms cubic-bezier(.22,.61,.36,1),
-      filter 280ms ease !important;
-    will-change: transform, opacity, filter;
-  }
-
-  .vinylRecord {
-    animation-duration: 7s !important;
-    animation-timing-function: linear !important;
-    will-change: transform;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-  }
-
-  /* Put the fullscreen control a little lower on phones, while respecting the home indicator. */
-  #fullscreenButton {
-    bottom: max(8px, calc(6px + env(safe-area-inset-bottom))) !important;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  /* Accessibility preference still wins; don't override OS-level reduced motion. */
-}
-</style>
 
 <script id="device-ui-detector">
 (() => {
@@ -4801,45 +4761,55 @@ body.device-tablet #trackName{
 </script>
 
 
-<style id="iphone-pwa-native-motion-final">
+<style id="pwa-desktop-motion-and-portrait-background">
+/* PWA: keep the desktop lyrics/vinyl rendering and motion model on phones too. */
 @media (max-width:700px){
-  #lyricsView{
-    overflow-y:auto !important;
-    overflow-x:hidden !important;
-    overscroll-behavior:contain !important;
-    -webkit-overflow-scrolling:touch !important;
-    touch-action:pan-y !important;
-  }
   #lyricsInner{
-    transform:none !important;
-    transition:none !important;
-    will-change:auto !important;
-    padding-top:45vh !important;
-    padding-bottom:45vh !important;
-    -webkit-mask-image:none !important;
-    mask-image:none !important;
+    transform:translate3d(0,var(--lyrics-shift,0px),0) !important;
+    transition:transform 300ms cubic-bezier(.22,.61,.36,1) !important;
+    will-change:transform;
   }
-  .lyricsLine,.lyricsLine.active,.lyricsLine.past,
-  .lyricsLine[data-distance="1"],.lyricsLine[data-distance="2"],
-  .lyricsLine[data-distance="3"],.lyricsLine[data-distance="4"],
-  .lyricsLine[data-distance="5"]{
-    transform:none !important;
-    filter:none !important;
-    transition:color 180ms ease,opacity 180ms ease !important;
-    will-change:auto !important;
+  .lyricsLine{
+    transition:color 280ms ease,opacity 280ms ease,transform 300ms cubic-bezier(.22,.61,.36,1),filter 280ms ease !important;
+    will-change:transform,opacity,filter;
   }
   .vinylRecord{
-    animation:none !important;
-    transition:none !important;
-    will-change:transform !important;
-    backface-visibility:hidden !important;
-    -webkit-backface-visibility:hidden !important;
+    animation:vinylSpin 7s linear infinite !important;
+    animation-play-state:paused !important;
+    will-change:transform;
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
   }
-  #visualizerCanvas{display:none !important;}
-  #ambientGlow{animation:none !important;filter:none !important;opacity:.30 !important;}
+  body.isPlaying .vinylRecord{animation-play-state:running !important;}
+}
+
+/* Portrait iPhone: the desktop left-to-right overlay is wrong for a centered phone layout.
+   Keep the artwork full-bleed, centered, and use a soft vertical vignette instead. */
+@media (max-width:700px) and (orientation:portrait){
+  #backgroundImage,
+  #backgroundImageNext{
+    inset:-8%;
+    width:116%;
+    height:116%;
+    object-fit:cover;
+    object-position:center center;
+    transform:scale(1.08) translateZ(0);
+  }
+  #backgroundOverlay{
+    background:
+      linear-gradient(180deg,
+        rgba(8,8,8,.78) 0%,
+        rgba(8,8,8,.38) 24%,
+        rgba(8,8,8,.20) 50%,
+        rgba(8,8,8,.44) 76%,
+        rgba(8,8,8,.86) 100%
+      ) !important;
+  }
+  #ambientGlow{
+    opacity:.72;
+  }
 }
 </style>
-
 </head>
 
 <body>
@@ -7542,11 +7512,6 @@ function drawVisualizer(
   timestamp
 ) {
 
-  if (window.matchMedia && window.matchMedia("(max-width:700px)").matches) {
-    visualizerAnimation = null;
-    return;
-  }
-
   const playing =
     status.classList.contains(
       "playing"
@@ -8342,27 +8307,16 @@ function updateLyricsPosition(elapsed) {
   if (index >= 0) {
     const active = elements[index];
     if (active) {
-      const mobile = window.matchMedia && window.matchMedia("(max-width:700px)").matches;
-      if (mobile) {
-        // iPhone/PWA: let WebKit perform one native scroll instead of
-        // animating every lyric line and a translated parent at once.
-        active.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "nearest"
-        });
-      } else {
-        requestAnimationFrame(() => {
-          const activeCenter =
-            active.offsetTop + active.offsetHeight / 2;
-          const targetCenter =
-            window.innerHeight / 2;
-          lyricsInner.style.setProperty(
-            "--lyrics-shift",
-            `${Math.round(targetCenter - activeCenter)}px`
-          );
-        });
-      }
+      requestAnimationFrame(() => {
+        const activeCenter =
+          active.offsetTop + active.offsetHeight / 2;
+        const targetCenter =
+          window.innerHeight / 2;
+        lyricsInner.style.setProperty(
+          "--lyrics-shift",
+          `${Math.round(targetCenter - activeCenter)}px`
+        );
+      });
     }
   }
 }
@@ -10955,33 +10909,6 @@ updateSessionTime();
   const observer = new MutationObserver(fitTitleToTwoRows);
   observer.observe(title, {childList:true, characterData:true, subtree:true});
   fitTitleToTwoRows();
-})();
-</script>
-
-
-<script id="iphone-pwa-vinyl-compositor">
-(function(){
-  const mq=window.matchMedia('(max-width:700px)');
-  let frame=0, last=0, angle=0;
-  function stop(){ if(frame){cancelAnimationFrame(frame);frame=0;} last=0; }
-  function tick(t){
-    if(!mq.matches || !document.body.classList.contains('isPlaying')){ stop(); return; }
-    const el=document.querySelector('.vinylRecord');
-    if(!el){ stop(); return; }
-    const dt=last ? Math.min(80,t-last) : 16.67;
-    last=t;
-    angle=(angle + dt*(360/7000))%360;
-    el.style.transform='translate3d(0,0,0) rotate('+angle.toFixed(2)+'deg)';
-    frame=requestAnimationFrame(tick);
-  }
-  function sync(){
-    if(mq.matches && document.body.classList.contains('isPlaying')){
-      if(!frame){last=0;frame=requestAnimationFrame(tick);}
-    }else stop();
-  }
-  new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['class']});
-  window.addEventListener('resize',sync,{passive:true});
-  setTimeout(sync,0);
 })();
 </script>
 
