@@ -12133,3 +12133,254 @@ body.aesthetic-airy #volumeContainer{margin-top:clamp(12px,2vh,20px) !important;
   }
 })();
 </script>
+
+
+<style id="spotifydis-premium-experience-v11">
+:root{
+  --premium-accent:rgba(255,255,255,.92);
+  --premium-accent-soft:rgba(255,255,255,.18);
+  --premium-glow:rgba(255,255,255,.12);
+  --premium-glow2:rgba(255,255,255,.06);
+}
+
+/* Ambient album atmosphere: follows sampled artwork colour without replacing the existing background. */
+#background::after{
+  content:"";
+  position:absolute;
+  inset:-12%;
+  z-index:1;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 72% 44%, var(--premium-glow), transparent 38%),
+    radial-gradient(circle at 28% 72%, var(--premium-glow2), transparent 42%);
+  filter:blur(34px) saturate(1.15);
+  opacity:.82;
+  transition:background 1.4s ease,opacity 1.2s ease;
+}
+
+/* Premium depth while keeping the existing artwork geometry. */
+#albumArtContainer{
+  box-shadow:
+    0 26px 70px rgba(0,0,0,.30),
+    0 0 55px var(--premium-glow) !important;
+  transition:box-shadow .9s ease,transform .7s cubic-bezier(.22,.61,.36,1),filter .7s ease !important;
+}
+body.premium-playing #albumArtContainer{
+  filter:saturate(1.035) contrast(1.01) !important;
+}
+.vinylRecord{
+  filter:drop-shadow(0 24px 38px rgba(0,0,0,.34)) !important;
+}
+
+/* Refined control hierarchy. */
+#controls .control,
+#sessionControls button,
+#fullscreenButton,
+.headerButton{
+  border-color:rgba(255,255,255,.14) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 12px 30px rgba(0,0,0,.16) !important;
+}
+#controls .control:active,
+#sessionControls button:active,
+#fullscreenButton:active,
+.headerButton:active{
+  transform:scale(.96) !important;
+}
+#playButton{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 16px 38px rgba(0,0,0,.27),0 0 0 1px rgba(255,255,255,.11) !important;
+}
+
+/* Smart idle / presentation state. */
+body.premium-idle #header,
+body.premium-idle #controls,
+body.premium-idle #progressContainer,
+body.premium-idle #volumeContainer,
+body.premium-idle #sessionControls,
+body.premium-idle #fullscreenButton{
+  opacity:0 !important;
+  pointer-events:none !important;
+  transition:opacity .65s ease !important;
+}
+body.premium-idle #trackInfo{
+  opacity:.92;
+  transition:opacity .65s ease,transform .65s ease !important;
+}
+body.premium-focus #header,
+body.premium-focus #controls,
+body.premium-focus #progressContainer,
+body.premium-focus #volumeContainer,
+body.premium-focus #sessionControls,
+body.premium-focus #fullscreenButton{
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+body.premium-focus #albumArtContainer{
+  transform:scale(1.045) !important;
+  box-shadow:0 34px 90px rgba(0,0,0,.42),0 0 80px var(--premium-glow) !important;
+}
+body.premium-focus #trackInfo{opacity:.94 !important;}
+
+/* Tiny playback-reactive pulse: uses Spotify's known playing state, not audio capture. */
+body.premium-pulse #albumArtContainer{
+  animation:premiumArtworkPulse 2.8s ease-in-out infinite;
+}
+@keyframes premiumArtworkPulse{
+  0%,100%{box-shadow:0 26px 70px rgba(0,0,0,.30),0 0 48px var(--premium-glow);}
+  50%{box-shadow:0 30px 78px rgba(0,0,0,.34),0 0 64px var(--premium-glow);}
+}
+
+/* Night/OLED option. */
+body.premium-night #background::after{opacity:.42;}
+body.premium-night #albumArtContainer{box-shadow:0 24px 66px rgba(0,0,0,.42),0 0 34px var(--premium-glow) !important;}
+body.premium-night #controls .control,
+body.premium-night #sessionControls button,
+body.premium-night #fullscreenButton,
+body.premium-night .headerButton{background:rgba(255,255,255,.045) !important;}
+
+@media (prefers-reduced-motion:reduce){
+  body.premium-pulse #albumArtContainer{animation:none !important;}
+}
+</style>
+
+<script id="spotifydis-premium-experience-v11">
+(() => {
+  const body = document.body;
+  const root = document.documentElement;
+  const art = document.getElementById('albumArtContainer');
+  const background = document.getElementById('background');
+  if (!body || !root || !art) return;
+
+  let idleTimer = 0;
+  let raf = 0;
+  let lastLayoutKey = '';
+  let colorTimer = 0;
+
+  const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
+
+  function wake(){
+    body.classList.remove('premium-idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      if (!body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
+        body.classList.add('premium-idle');
+      }
+    }, 30000);
+  }
+
+  ['pointerdown','touchstart','mousemove','keydown','wheel'].forEach(type =>
+    window.addEventListener(type, wake, {passive:true})
+  );
+  wake();
+
+  art.addEventListener('click', () => {
+    if (body.classList.contains('premium-focus')) {
+      body.classList.remove('premium-focus');
+      wake();
+    } else {
+      body.classList.add('premium-focus');
+      clearTimeout(idleTimer);
+      setTimeout(() => body.classList.remove('premium-focus'), 12000);
+    }
+  });
+
+  function getArtImage(){
+    return art.querySelector('img');
+  }
+
+  function sampleArtwork(){
+    clearTimeout(colorTimer);
+    colorTimer = setTimeout(() => {
+      const img = getArtImage();
+      if (!img || !img.complete || !img.naturalWidth || !img.naturalHeight) return;
+      try{
+        const canvas = document.createElement('canvas');
+        const size = 24;
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d',{willReadFrequently:true});
+        if (!ctx) return;
+        ctx.drawImage(img,0,0,size,size);
+        const data = ctx.getImageData(0,0,size,size).data;
+        let r=0,g=0,b=0,count=0;
+        for(let i=0;i<data.length;i+=4){
+          const a=data[i+3]/255;
+          if(a<.5) continue;
+          r += data[i]*a; g += data[i+1]*a; b += data[i+2]*a; count += a;
+        }
+        if(!count) return;
+        r=Math.round(r/count); g=Math.round(g/count); b=Math.round(b/count);
+        const boost = .78;
+        const rr=Math.round(clamp(r*boost,0,255));
+        const gg=Math.round(clamp(g*boost,0,255));
+        const bb=Math.round(clamp(b*boost,0,255));
+        root.style.setProperty('--premium-glow',`rgba(${rr},${gg},${bb},.20)`);
+        root.style.setProperty('--premium-glow2',`rgba(${rr},${gg},${bb},.08)`);
+        root.style.setProperty('--premium-accent',`rgba(${rr},${gg},${bb},.94)`);
+      }catch(e){ /* Cross-origin artwork may block pixel sampling; retain existing ambient colours. */ }
+    },180);
+  }
+
+  const artObserver = new MutationObserver(sampleArtwork);
+  artObserver.observe(art,{subtree:true,attributes:true,attributeFilter:['src','style','class']});
+  art.addEventListener('load',sampleArtwork,true);
+  sampleArtwork();
+
+  function smartComposition(){
+    cancelAnimationFrame(raf);
+    raf=requestAnimationFrame(() => {
+      const vv=window.visualViewport;
+      const vw=Math.max(1,vv?.width||window.innerWidth);
+      const vh=Math.max(1,vv?.height||window.innerHeight);
+      const ar=art.getBoundingClientRect();
+      const portrait=vw<=vh;
+      const short=Math.min(vw,vh);
+      const ratio=Math.max(vw,vh)/Math.max(1,short);
+      const cramped = vh < 560 || (vw>vh && ar.height > vh*.62);
+      const spacious = vh > 820 && vw > 1100;
+      const key=[Math.round(vw/40),Math.round(vh/40),portrait,cramped,spacious].join('|');
+      if(key===lastLayoutKey) return;
+      lastLayoutKey=key;
+      body.classList.toggle('premium-cramped',cramped);
+      body.classList.toggle('premium-spacious',spacious);
+      root.style.setProperty('--premium-screen-ratio',ratio.toFixed(3));
+    });
+  }
+  window.addEventListener('resize',smartComposition,{passive:true});
+  window.addEventListener('orientationchange',smartComposition,{passive:true});
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',smartComposition,{passive:true});
+  smartComposition();
+
+  function playbackVisualState(){
+    const playing = body.classList.contains('isPlaying') || document.getElementById('status')?.classList.contains('playing');
+    body.classList.toggle('premium-playing',!!playing);
+    body.classList.toggle('premium-pulse',!!playing && !body.classList.contains('premium-idle') && !body.classList.contains('premium-focus'));
+  }
+  const stateObserver=new MutationObserver(playbackVisualState);
+  stateObserver.observe(body,{attributes:true,attributeFilter:['class']});
+  playbackVisualState();
+
+  /* Safe gestures: only act on deliberate horizontal swipes and never while lyrics are visible. */
+  let sx=0,sy=0,st=0;
+  window.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1) return;
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=performance.now();
+  },{passive:true});
+  window.addEventListener('touchend',e=>{
+    if(e.changedTouches.length!==1 || body.classList.contains('lyrics-open')) return;
+    const dx=e.changedTouches[0].clientX-sx;
+    const dy=e.changedTouches[0].clientY-sy;
+    const dt=performance.now()-st;
+    if(dt>700 || Math.abs(dx)<90 || Math.abs(dx)<Math.abs(dy)*1.35) return;
+    const target=dx<0 ? '#nextButton' : '#previousButton';
+    const btn=document.querySelector(target);
+    if(btn && !btn.disabled) btn.click();
+    wake();
+  },{passive:true});
+
+  /* Optional night mode: only when explicitly enabled by the app/user via this API. */
+  window.spotifyDisSetNightMode = enabled => body.classList.toggle('premium-night',!!enabled);
+  window.spotifyDisSetFocusMode = enabled => {
+    body.classList.toggle('premium-focus',!!enabled);
+    if(enabled) clearTimeout(idleTimer); else wake();
+  };
+})();
+</script>
