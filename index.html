@@ -10609,6 +10609,91 @@ updateSessionTime();
 }
 </style>
 
+
+<style id="iphone-pwa-motion-fix">
+/* iPhone Home Screen / standalone mode only.
+   Keep normal Safari + desktop behavior untouched. */
+@media (display-mode: standalone) and (max-width: 700px){
+  #lyricsInner{
+    transition:transform 360ms cubic-bezier(.22,.61,.36,1) !important;
+    will-change:transform !important;
+  }
+
+  .lyricsLine{
+    transition:
+      color 300ms ease,
+      opacity 300ms ease,
+      transform 320ms cubic-bezier(.22,.61,.36,1),
+      filter 300ms ease !important;
+    will-change:transform,opacity,filter !important;
+  }
+
+  .lyricsLine.active{
+    transition:
+      color 300ms ease,
+      opacity 300ms ease,
+      transform 320ms cubic-bezier(.22,.61,.36,1),
+      filter 300ms ease !important;
+  }
+
+  .vinylRecord{
+    animation-name:vinylSpin !important;
+    animation-duration:7s !important;
+    animation-timing-function:linear !important;
+    animation-iteration-count:infinite !important;
+    animation-fill-mode:both !important;
+    animation-play-state:paused !important;
+    transform:translate3d(0,0,0) !important;
+    will-change:transform !important;
+    backface-visibility:hidden !important;
+    -webkit-backface-visibility:hidden !important;
+  }
+
+  body.isPlaying .vinylRecord{
+    animation-play-state:running !important;
+  }
+}
+
+/* iOS Safari's legacy standalone detector (older Home Screen mode). */
+@media (max-width:700px){
+  html.ios-standalone #lyricsInner{
+    transition:transform 360ms cubic-bezier(.22,.61,.36,1) !important;
+    will-change:transform !important;
+  }
+  html.ios-standalone .lyricsLine{
+    transition:color 300ms ease,opacity 300ms ease,transform 320ms cubic-bezier(.22,.61,.36,1),filter 300ms ease !important;
+    will-change:transform,opacity,filter !important;
+  }
+  html.ios-standalone .vinylRecord{
+    animation-name:vinylSpin !important;
+    animation-duration:7s !important;
+    animation-timing-function:linear !important;
+    animation-iteration-count:infinite !important;
+    animation-fill-mode:both !important;
+    animation-play-state:paused !important;
+    transform:translate3d(0,0,0) !important;
+    will-change:transform !important;
+    backface-visibility:hidden !important;
+    -webkit-backface-visibility:hidden !important;
+  }
+  html.ios-standalone body.isPlaying .vinylRecord{
+    animation-play-state:running !important;
+  }
+}
+</style>
+<script id="ios-standalone-motion-detector">
+(() => {
+  try {
+    const isIOSStandalone =
+      window.navigator.standalone === true ||
+      window.matchMedia('(display-mode: standalone)').matches;
+    if (isIOSStandalone) {
+      document.documentElement.classList.add('ios-standalone');
+    }
+  } catch (_) {}
+})();
+</script>
+
 <style id="final-stability-polish">
 /* FINAL STABILITY + FINISHING PASS */
 #trackInfo{min-width:0;overflow:visible}
