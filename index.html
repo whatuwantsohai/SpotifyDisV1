@@ -4835,6 +4835,19 @@ body.premium-night #trackName{
   text-shadow:0 3px 28px rgba(0,0,0,.55) !important;
 }
 </style>
+
+<style id="v16-oled-fullscreen-fix">
+/* V16: keep fullscreen control neutral in OLED Night Mode. */
+body.premium-night #fullscreenButton{
+  color:#fff !important;
+  background:rgba(255,255,255,.025) !important;
+  border-color:rgba(255,255,255,.075) !important;
+  filter:brightness(.80) !important;
+}
+body.premium-night #fullscreenButton #fullscreenIcon{
+  color:#fff !important;
+}
+</style>
 </head>
 
 <body>
