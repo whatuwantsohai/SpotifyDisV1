@@ -5186,6 +5186,58 @@ body.device-tablet #trackName{
   <div class="settingsSection">
 
     <div class="settingsSectionTitle">
+      Presentation Mode
+    </div>
+
+    <div class="settingRow">
+      <div>
+        Presentation Mode
+        <div class="settingDescription">
+          Choose when the clean music display takes over
+        </div>
+      </div>
+      <select id="presentationModeSelect" class="settingSelect" aria-label="Presentation mode">
+        <option value="off">Off</option>
+        <option value="auto">After inactivity</option>
+        <option value="scheduled">Scheduled</option>
+      </select>
+    </div>
+
+    <div class="settingRow" id="presentationAfterRow">
+      <div>
+        Start After
+        <div class="settingDescription">
+          Enter presentation mode after inactivity
+        </div>
+      </div>
+      <select id="presentationAfterSelect" class="settingSelect" aria-label="Presentation start delay">
+        <option value="15">15 sec</option>
+        <option value="30">30 sec</option>
+        <option value="60">1 min</option>
+        <option value="120">2 min</option>
+        <option value="300">5 min</option>
+      </select>
+    </div>
+
+    <div class="settingRow" id="presentationScheduleRow">
+      <div>
+        Schedule
+        <div class="settingDescription">
+          Run presentation mode between these times
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+        <input id="presentationStartTime" class="settingSelect" type="time" aria-label="Presentation start time" value="23:00">
+        <span style="opacity:.55">to</span>
+        <input id="presentationEndTime" class="settingSelect" type="time" aria-label="Presentation end time" value="07:00">
+      </div>
+    </div>
+
+  </div>
+
+  <div class="settingsSection">
+
+    <div class="settingsSectionTitle">
       Effects
     </div>
 
@@ -11213,6 +11265,137 @@ body.v12-spacious #trackInfo{transform:translateY(-2px);}
 </script>
 
 </body>
+
+<style id="spotifydis-presentation-v16">
+#presentationModeSelect,#presentationAfterSelect,#presentationStartTime,#presentationEndTime{
+  min-width:112px;
+}
+#presentationAfterRow,#presentationScheduleRow{
+  display:grid;
+}
+</style>
+
+<script id="spotifydis-presentation-v16-script">
+(() => {
+  const body = document.body;
+  const modeEl = document.getElementById('presentationModeSelect');
+  const afterEl = document.getElementById('presentationAfterSelect');
+  const startEl = document.getElementById('presentationStartTime');
+  const endEl = document.getElementById('presentationEndTime');
+  const afterRow = document.getElementById('presentationAfterRow');
+  const scheduleRow = document.getElementById('presentationScheduleRow');
+  if (!body || !modeEl || !afterEl || !startEl || !endEl) return;
+
+  let idleTimer = 0;
+  let scheduleTimer = 0;
+  let lastInteraction = performance.now();
+  let cfg = { mode:'off', after:30, start:'23:00', end:'07:00' };
+
+  const readCfg = () => ({
+    mode: appSettings?.presentationMode || 'off',
+    after: Number(appSettings?.presentationAfter) || 30,
+    start: appSettings?.presentationStart || '23:00',
+    end: appSettings?.presentationEnd || '07:00'
+  });
+
+  const updateRows = () => {
+    afterRow.style.display = cfg.mode === 'auto' ? 'grid' : 'none';
+    scheduleRow.style.display = cfg.mode === 'scheduled' ? 'grid' : 'none';
+  };
+
+  const inWindow = () => {
+    if (cfg.mode !== 'scheduled') return false;
+    const now = new Date();
+    const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    if (cfg.start === cfg.end) return true;
+    return cfg.start < cfg.end ? t >= cfg.start && t < cfg.end : t >= cfg.start || t < cfg.end;
+  };
+
+  const clearTimers = () => {
+    clearTimeout(idleTimer);
+    clearTimeout(scheduleTimer);
+  };
+
+  const removePresentation = () => body.classList.remove('premium-idle');
+
+  const arm = () => {
+    clearTimeout(idleTimer);
+    if (cfg.mode !== 'auto') return;
+    const delay = Math.max(1, cfg.after) * 1000;
+    idleTimer = setTimeout(() => {
+      if (!body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
+        body.classList.add('premium-idle');
+      }
+    }, delay);
+  };
+
+  const scheduleTick = () => {
+    if (cfg.mode !== 'scheduled') return;
+    if (inWindow() && !body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
+      body.classList.add('premium-idle');
+    } else {
+      body.classList.remove('premium-idle');
+    }
+    scheduleTimer = setTimeout(scheduleTick, 15000);
+  };
+
+  const configure = () => {
+    cfg = readCfg();
+    updateRows();
+    clearTimers();
+    removePresentation();
+    if (cfg.mode === 'auto') arm();
+    if (cfg.mode === 'scheduled') scheduleTick();
+  };
+
+  window.spotifyDisConfigurePresentationMode = configure;
+
+  const wake = () => {
+    lastInteraction = performance.now();
+    removePresentation();
+    if (cfg.mode === 'auto') arm();
+  };
+  ['pointerdown','touchstart','mousemove','keydown','wheel'].forEach(type =>
+    window.addEventListener(type, wake, {passive:true})
+  );
+
+  modeEl.value = cfg.mode;
+  afterEl.value = String(cfg.after);
+  startEl.value = cfg.start;
+  endEl.value = cfg.end;
+  updateRows();
+
+  modeEl.addEventListener('change', () => {
+    appSettings.presentationMode = modeEl.value;
+    saveSettings();
+    configure();
+  });
+  afterEl.addEventListener('change', () => {
+    appSettings.presentationAfter = Math.max(1, Number(afterEl.value) || 30);
+    saveSettings();
+    configure();
+  });
+  startEl.addEventListener('change', () => {
+    appSettings.presentationStart = startEl.value || '23:00';
+    saveSettings();
+    configure();
+  });
+  endEl.addEventListener('change', () => {
+    appSettings.presentationEnd = endEl.value || '07:00';
+    saveSettings();
+    configure();
+  });
+
+  const idleObserver = new MutationObserver(() => {
+    if (cfg.mode === 'off') removePresentation();
+    else if (cfg.mode === 'scheduled' && !inWindow()) removePresentation();
+    else if (cfg.mode === 'auto' && performance.now() - lastInteraction < cfg.after * 1000) removePresentation();
+  });
+  idleObserver.observe(body, {attributes:true, attributeFilter:['class']});
+
+  configure();
+})();
+</script>
 </html>
 
 <style id="landscape-display-motion-fix-v2">
