@@ -10609,91 +10609,6 @@ updateSessionTime();
 }
 </style>
 
-
-<style id="iphone-pwa-motion-fix">
-/* iPhone Home Screen / standalone mode only.
-   Keep normal Safari + desktop behavior untouched. */
-@media (display-mode: standalone) and (max-width: 700px){
-  #lyricsInner{
-    transition:transform 360ms cubic-bezier(.22,.61,.36,1) !important;
-    will-change:transform !important;
-  }
-
-  .lyricsLine{
-    transition:
-      color 300ms ease,
-      opacity 300ms ease,
-      transform 320ms cubic-bezier(.22,.61,.36,1),
-      filter 300ms ease !important;
-    will-change:transform,opacity,filter !important;
-  }
-
-  .lyricsLine.active{
-    transition:
-      color 300ms ease,
-      opacity 300ms ease,
-      transform 320ms cubic-bezier(.22,.61,.36,1),
-      filter 300ms ease !important;
-  }
-
-  .vinylRecord{
-    animation-name:vinylSpin !important;
-    animation-duration:7s !important;
-    animation-timing-function:linear !important;
-    animation-iteration-count:infinite !important;
-    animation-fill-mode:both !important;
-    animation-play-state:paused !important;
-    transform:translate3d(0,0,0) !important;
-    will-change:transform !important;
-    backface-visibility:hidden !important;
-    -webkit-backface-visibility:hidden !important;
-  }
-
-  body.isPlaying .vinylRecord{
-    animation-play-state:running !important;
-  }
-}
-
-/* iOS Safari's legacy standalone detector (older Home Screen mode). */
-@media (max-width:700px){
-  html.ios-standalone #lyricsInner{
-    transition:transform 360ms cubic-bezier(.22,.61,.36,1) !important;
-    will-change:transform !important;
-  }
-  html.ios-standalone .lyricsLine{
-    transition:color 300ms ease,opacity 300ms ease,transform 320ms cubic-bezier(.22,.61,.36,1),filter 300ms ease !important;
-    will-change:transform,opacity,filter !important;
-  }
-  html.ios-standalone .vinylRecord{
-    animation-name:vinylSpin !important;
-    animation-duration:7s !important;
-    animation-timing-function:linear !important;
-    animation-iteration-count:infinite !important;
-    animation-fill-mode:both !important;
-    animation-play-state:paused !important;
-    transform:translate3d(0,0,0) !important;
-    will-change:transform !important;
-    backface-visibility:hidden !important;
-    -webkit-backface-visibility:hidden !important;
-  }
-  html.ios-standalone body.isPlaying .vinylRecord{
-    animation-play-state:running !important;
-  }
-}
-</style>
-<script id="ios-standalone-motion-detector">
-(() => {
-  try {
-    const isIOSStandalone =
-      window.navigator.standalone === true ||
-      window.matchMedia('(display-mode: standalone)').matches;
-    if (isIOSStandalone) {
-      document.documentElement.classList.add('ios-standalone');
-    }
-  } catch (_) {}
-})();
-</script>
-
 <style id="final-stability-polish">
 /* FINAL STABILITY + FINISHING PASS */
 #trackInfo{min-width:0;overflow:visible}
@@ -10984,6 +10899,119 @@ updateSessionTime();
   const observer = new MutationObserver(fitTitleToTwoRows);
   observer.observe(title, {childList:true, characterData:true, subtree:true});
   fitTitleToTwoRows();
+})();
+</script>
+
+
+<style id="iphone-pwa-stable-performance">
+/* iPhone Home Screen / PWA stability pass.
+   Keep the V4 UI and Spotify logic intact; only remove expensive mobile-only effects. */
+@media (max-width:700px){
+  /* Static background on phones: blur + large animated layers are expensive in standalone Safari. */
+  #backgroundImage,
+  #backgroundImageNext{
+    filter:none !important;
+    transform:none !important;
+    transition:none !important;
+  }
+  #backgroundImageNext{display:none !important;}
+  #ambientGlow{
+    animation:none !important;
+    filter:none !important;
+    transform:none !important;
+    transition:none !important;
+    opacity:.45 !important;
+  }
+
+  /* One compositor-friendly motion layer for lyrics. */
+  #lyricsInner{
+    transform:translate3d(0,var(--lyrics-shift,0px),0) !important;
+    transition:transform 360ms cubic-bezier(.22,.61,.36,1) !important;
+    will-change:transform;
+  }
+  .lyricsLine,
+  .lyricsLine.active,
+  .lyricsLine[data-distance="1"],
+  .lyricsLine[data-distance="2"],
+  .lyricsLine[data-distance="3"],
+  .lyricsLine[data-distance="4"],
+  .lyricsLine[data-distance="5"]{
+    transform:none !important;
+    filter:none !important;
+    will-change:auto !important;
+    transition:color 220ms ease,opacity 220ms ease !important;
+  }
+
+  /* Keep the record moving continuously while playing. */
+  .vinylRecord,
+  body.batterySaver .vinylRecord{
+    animation:vinylSpin 8s linear infinite !important;
+    animation-play-state:paused !important;
+    animation-iteration-count:infinite !important;
+    animation-fill-mode:both !important;
+    transform-origin:50% 50% !important;
+    backface-visibility:hidden !important;
+    -webkit-backface-visibility:hidden !important;
+  }
+  body.isPlaying .vinylRecord{
+    animation-play-state:running !important;
+  }
+
+  /* Avoid animated layout/filter effects on the player itself. */
+  #content,
+  #nowPlayingLayout,
+  #albumArtContainer,
+  #albumArtDisplay,
+  #trackName,
+  #artistName{
+    transition:none !important;
+  }
+}
+
+/* OS reduced-motion must not accidentally freeze the physical record in the player. */
+@media (max-width:700px) and (prefers-reduced-motion:reduce){
+  .vinylRecord,
+  body.batterySaver .vinylRecord{
+    animation:vinylSpin 8s linear infinite !important;
+    animation-duration:8s !important;
+    animation-iteration-count:infinite !important;
+  }
+  body.isPlaying .vinylRecord{animation-play-state:running !important;}
+}
+</style>
+<script id="iphone-pwa-stable-performance-js">
+(function(){
+  'use strict';
+  const isPhone = () => window.matchMedia('(max-width:700px)').matches;
+  if (!isPhone()) return;
+
+  /* The visualizer's full-screen DPR canvas + RAF loop is the biggest avoidable
+     continuous workload in iOS standalone Safari. Disable only that decorative
+     canvas loop on phones; Spotify playback and all player controls remain intact. */
+  try {
+    const canvas = document.getElementById('visualizerCanvas');
+    if (canvas) {
+      canvas.style.display = 'none';
+      canvas.setAttribute('aria-hidden','true');
+    }
+    if (typeof visualizerAnimation !== 'undefined' && visualizerAnimation) {
+      cancelAnimationFrame(visualizerAnimation);
+      visualizerAnimation = null;
+    }
+  } catch (_) {}
+
+  /* Prevent the visualizer loop from being restarted by later mode/theme changes. */
+  try {
+    const originalRAF = window.requestAnimationFrame;
+    const originalCancel = window.cancelAnimationFrame;
+    window.requestAnimationFrame = function(cb){
+      if (typeof cb === 'function' && cb.name === 'drawVisualizer') return 0;
+      return originalRAF.apply(this, arguments);
+    };
+    window.cancelAnimationFrame = function(id){
+      if (id) return originalCancel.call(this,id);
+    };
+  } catch (_) {}
 })();
 </script>
 
