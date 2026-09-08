@@ -5186,58 +5186,6 @@ body.device-tablet #trackName{
   <div class="settingsSection">
 
     <div class="settingsSectionTitle">
-      Presentation Mode
-    </div>
-
-    <div class="settingRow">
-      <div>
-        Presentation Mode
-        <div class="settingDescription">
-          Choose when the clean music display takes over
-        </div>
-      </div>
-      <select id="presentationModeSelect" class="settingSelect" aria-label="Presentation mode">
-        <option value="off">Off</option>
-        <option value="auto">After inactivity</option>
-        <option value="scheduled">Scheduled</option>
-      </select>
-    </div>
-
-    <div class="settingRow" id="presentationAfterRow">
-      <div>
-        Start After
-        <div class="settingDescription">
-          Enter presentation mode after inactivity
-        </div>
-      </div>
-      <select id="presentationAfterSelect" class="settingSelect" aria-label="Presentation start delay">
-        <option value="15">15 sec</option>
-        <option value="30">30 sec</option>
-        <option value="60">1 min</option>
-        <option value="120">2 min</option>
-        <option value="300">5 min</option>
-      </select>
-    </div>
-
-    <div class="settingRow" id="presentationScheduleRow">
-      <div>
-        Schedule
-        <div class="settingDescription">
-          Run presentation mode between these times
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-        <input id="presentationStartTime" class="settingSelect" type="time" aria-label="Presentation start time" value="23:00">
-        <span style="opacity:.55">to</span>
-        <input id="presentationEndTime" class="settingSelect" type="time" aria-label="Presentation end time" value="07:00">
-      </div>
-    </div>
-
-  </div>
-
-  <div class="settingsSection">
-
-    <div class="settingsSectionTitle">
       Effects
     </div>
 
@@ -5414,6 +5362,61 @@ body.device-tablet #trackName{
         <span class="toggleSlider"></span>
       </label>
 
+    </div>
+
+  </div>
+
+  <div class="settingsSection" id="presentationSettingsSection">
+
+    <div class="settingsSectionTitle">
+      Presentation Mode
+    </div>
+
+    <div class="settingRow">
+
+      <div>
+        Presentation Mode
+        <div class="settingDescription">
+          Choose when the clean presentation display should appear
+        </div>
+      </div>
+
+      <select id="presentationModeSelect" class="settingsSelect" aria-label="Presentation mode">
+        <option value="off">Off</option>
+        <option value="inactivity">After inactivity</option>
+        <option value="schedule">Scheduled</option>
+      </select>
+
+    </div>
+
+    <div class="settingRow presentationSubSetting" id="presentationDelayRow">
+      <div>
+        Start After
+        <div class="settingDescription">
+          Time without interaction before Presentation Mode starts
+        </div>
+      </div>
+      <select id="presentationDelaySelect" class="settingsSelect" aria-label="Presentation mode inactivity delay">
+        <option value="15">15 sec</option>
+        <option value="30">30 sec</option>
+        <option value="60">1 min</option>
+        <option value="120">2 min</option>
+        <option value="300">5 min</option>
+      </select>
+    </div>
+
+    <div class="settingRow presentationSubSetting" id="presentationScheduleRow">
+      <div>
+        Schedule
+        <div class="settingDescription">
+          Automatically use Presentation Mode during these hours
+        </div>
+      </div>
+      <div class="presentationTimeGroup">
+        <input id="presentationStartTime" class="settingsTime" type="time" aria-label="Presentation start time" value="23:00">
+        <span>to</span>
+        <input id="presentationEndTime" class="settingsTime" type="time" aria-label="Presentation end time" value="07:00">
+      </div>
     </div>
 
   </div>
@@ -5729,6 +5732,19 @@ const dayNightToggle =
 
 const batterySaverToggle =
   document.getElementById("batterySaverToggle");
+
+const presentationModeSelect =
+  document.getElementById("presentationModeSelect");
+const presentationDelaySelect =
+  document.getElementById("presentationDelaySelect");
+const presentationStartTime =
+  document.getElementById("presentationStartTime");
+const presentationEndTime =
+  document.getElementById("presentationEndTime");
+const presentationDelayRow =
+  document.getElementById("presentationDelayRow");
+const presentationScheduleRow =
+  document.getElementById("presentationScheduleRow");
 
 const clearHistoryButton =
   document.getElementById("clearHistoryButton");
@@ -7803,7 +7819,19 @@ const defaultSettings = {
     true,
 
   batterySaver:
-    false
+    false,
+
+  presentationMode:
+    "off",
+
+  presentationDelay:
+    30,
+
+  presentationStart:
+    "23:00",
+
+  presentationEnd:
+    "07:00"
 
 };
 
@@ -8014,6 +8042,24 @@ displayModeOptions.forEach(
 
   batterySaverToggle.checked =
     appSettings.batterySaver;
+
+  presentationModeSelect.value =
+    appSettings.presentationMode;
+  presentationDelaySelect.value =
+    String(appSettings.presentationDelay);
+  presentationStartTime.value =
+    appSettings.presentationStart;
+  presentationEndTime.value =
+    appSettings.presentationEnd;
+
+  if (presentationDelayRow) {
+    presentationDelayRow.style.display =
+      appSettings.presentationMode === "inactivity" ? "grid" : "none";
+  }
+  if (presentationScheduleRow) {
+    presentationScheduleRow.style.display =
+      appSettings.presentationMode === "schedule" ? "grid" : "none";
+  }
 
   document.body.classList.toggle(
     "batterySaver",
@@ -8631,6 +8677,47 @@ window.addEventListener(
     if (appSettings.displayMode === "auto") {
       applySettings();
     }
+  }
+);
+
+presentationModeSelect.addEventListener(
+  "change",
+  () => {
+    appSettings.presentationMode =
+      presentationModeSelect.value;
+    saveSettings();
+    applySettings();
+    window.spotifyDisPresentationWake?.();
+  }
+);
+
+presentationDelaySelect.addEventListener(
+  "change",
+  () => {
+    appSettings.presentationDelay =
+      Number(presentationDelaySelect.value) || 30;
+    saveSettings();
+    window.spotifyDisPresentationWake?.();
+  }
+);
+
+presentationStartTime.addEventListener(
+  "change",
+  () => {
+    appSettings.presentationStart =
+      presentationStartTime.value || "23:00";
+    saveSettings();
+    window.spotifyDisPresentationWake?.();
+  }
+);
+
+presentationEndTime.addEventListener(
+  "change",
+  () => {
+    appSettings.presentationEnd =
+      presentationEndTime.value || "07:00";
+    saveSettings();
+    window.spotifyDisPresentationWake?.();
   }
 );
 
@@ -11266,137 +11353,95 @@ body.v12-spacious #trackInfo{transform:translateY(-2px);}
 
 </body>
 
-<style id="spotifydis-presentation-v16">
-#presentationModeSelect,#presentationAfterSelect,#presentationStartTime,#presentationEndTime{
-  min-width:112px;
-}
-#presentationAfterRow,#presentationScheduleRow{
-  display:grid;
-}
-</style>
-
-<script id="spotifydis-presentation-v16-script">
+<script id="spotifydis-presentation-controller-v16">
 (() => {
   const body = document.body;
-  const modeEl = document.getElementById('presentationModeSelect');
-  const afterEl = document.getElementById('presentationAfterSelect');
-  const startEl = document.getElementById('presentationStartTime');
-  const endEl = document.getElementById('presentationEndTime');
-  const afterRow = document.getElementById('presentationAfterRow');
-  const scheduleRow = document.getElementById('presentationScheduleRow');
-  if (!body || !modeEl || !afterEl || !startEl || !endEl) return;
+  if (!body) return;
 
-  let idleTimer = 0;
-  let scheduleTimer = 0;
-  let lastInteraction = performance.now();
-  let cfg = { mode:'off', after:30, start:'23:00', end:'07:00' };
-
-  const readCfg = () => ({
-    mode: appSettings?.presentationMode || 'off',
-    after: Number(appSettings?.presentationAfter) || 30,
-    start: appSettings?.presentationStart || '23:00',
-    end: appSettings?.presentationEnd || '07:00'
-  });
-
-  const updateRows = () => {
-    afterRow.style.display = cfg.mode === 'auto' ? 'grid' : 'none';
-    scheduleRow.style.display = cfg.mode === 'scheduled' ? 'grid' : 'none';
-  };
-
-  const inWindow = () => {
-    if (cfg.mode !== 'scheduled') return false;
+  const inSchedule = () => {
+    const mode = appSettings?.presentationMode;
+    if (mode !== "schedule") return false;
+    const start = String(appSettings.presentationStart || "23:00");
+    const end = String(appSettings.presentationEnd || "07:00");
     const now = new Date();
-    const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    if (cfg.start === cfg.end) return true;
-    return cfg.start < cfg.end ? t >= cfg.start && t < cfg.end : t >= cfg.start || t < cfg.end;
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    const toMinutes = value => {
+      const parts = value.split(":");
+      return (Number(parts[0]) || 0) * 60 + (Number(parts[1]) || 0);
+    };
+    const a = toMinutes(start);
+    const b = toMinutes(end);
+    if (a === b) return true;
+    return a < b ? minutes >= a && minutes < b : minutes >= a || minutes < b;
   };
 
-  const clearTimers = () => {
-    clearTimeout(idleTimer);
-    clearTimeout(scheduleTimer);
+  window.spotifyDisPresentationShouldStart = () => {
+    const mode = appSettings?.presentationMode;
+    if (mode === "inactivity") return true;
+    if (mode === "schedule") return inSchedule();
+    return false;
   };
 
-  const removePresentation = () => body.classList.remove('premium-idle');
-
-  const arm = () => {
-    clearTimeout(idleTimer);
-    if (cfg.mode !== 'auto') return;
-    const delay = Math.max(1, cfg.after) * 1000;
-    idleTimer = setTimeout(() => {
-      if (!body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
-        body.classList.add('premium-idle');
-      }
-    }, delay);
+  window.spotifyDisPresentationDelayMs = () => {
+    const mode = appSettings?.presentationMode;
+    if (mode === "inactivity") return Math.max(15, Number(appSettings.presentationDelay) || 30) * 1000;
+    if (mode === "schedule") return 1000;
+    return 2147483647;
   };
-
-  const scheduleTick = () => {
-    if (cfg.mode !== 'scheduled') return;
-    if (inWindow() && !body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
-      body.classList.add('premium-idle');
-    } else {
-      body.classList.remove('premium-idle');
-    }
-    scheduleTimer = setTimeout(scheduleTick, 15000);
-  };
-
-  const configure = () => {
-    cfg = readCfg();
-    updateRows();
-    clearTimers();
-    removePresentation();
-    if (cfg.mode === 'auto') arm();
-    if (cfg.mode === 'scheduled') scheduleTick();
-  };
-
-  window.spotifyDisConfigurePresentationMode = configure;
 
   const wake = () => {
-    lastInteraction = performance.now();
-    removePresentation();
-    if (cfg.mode === 'auto') arm();
+    body.classList.remove("premium-idle");
+    window.spotifyDisPresentationWake?.();
   };
-  ['pointerdown','touchstart','mousemove','keydown','wheel'].forEach(type =>
-    window.addEventListener(type, wake, {passive:true})
-  );
 
-  modeEl.value = cfg.mode;
-  afterEl.value = String(cfg.after);
-  startEl.value = cfg.start;
-  endEl.value = cfg.end;
-  updateRows();
+  window.spotifyDisPresentationWake = () => {
+    body.classList.remove("premium-idle");
+    if (appSettings?.presentationMode === "schedule" && !inSchedule()) return;
+  };
 
-  modeEl.addEventListener('change', () => {
-    appSettings.presentationMode = modeEl.value;
-    saveSettings();
-    configure();
-  });
-  afterEl.addEventListener('change', () => {
-    appSettings.presentationAfter = Math.max(1, Number(afterEl.value) || 30);
-    saveSettings();
-    configure();
-  });
-  startEl.addEventListener('change', () => {
-    appSettings.presentationStart = startEl.value || '23:00';
-    saveSettings();
-    configure();
-  });
-  endEl.addEventListener('change', () => {
-    appSettings.presentationEnd = endEl.value || '07:00';
-    saveSettings();
-    configure();
+  ["pointerdown","touchstart","mousemove","keydown","wheel"].forEach(type => {
+    window.addEventListener(type, () => {
+      if (body.classList.contains("premium-idle")) body.classList.remove("premium-idle");
+    }, {passive:true});
   });
 
-  const idleObserver = new MutationObserver(() => {
-    if (cfg.mode === 'off') removePresentation();
-    else if (cfg.mode === 'scheduled' && !inWindow()) removePresentation();
-    else if (cfg.mode === 'auto' && performance.now() - lastInteraction < cfg.after * 1000) removePresentation();
-  });
-  idleObserver.observe(body, {attributes:true, attributeFilter:['class']});
+  let scheduleTimer = 0;
+  const syncSchedule = () => {
+    clearTimeout(scheduleTimer);
+    if (appSettings?.presentationMode !== "schedule") {
+      body.classList.remove("premium-idle");
+      return;
+    }
+    const active = inSchedule();
+    body.classList.toggle("premium-idle", active);
+    scheduleTimer = setTimeout(syncSchedule, 60000);
+  };
 
-  configure();
+  const originalApply = window.applySettings;
+  // Settings changes already call applySettings; schedule state is kept on a low-frequency timer only.
+  syncSchedule();
 })();
 </script>
 </html>
+
+<style id="spotifydis-presentation-settings-v16">
+.presentationSubSetting{display:none;}
+.presentationTimeGroup{display:flex;align-items:center;gap:8px;}
+.settingsTime{
+  width:92px;
+  box-sizing:border-box;
+  padding:9px 10px;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:10px;
+  background:rgba(255,255,255,.07);
+  color:inherit;
+  font:inherit;
+}
+@media (max-width:520px){
+  .presentationTimeGroup{gap:5px;}
+  .settingsTime{width:82px;}
+}
+</style>
 
 <style id="landscape-display-motion-fix-v2">
 /* LANDSCAPE ONLY: restore the normal lyrics/vinyl display motion.
@@ -12602,10 +12647,10 @@ body.premium-night .headerButton{background:rgba(255,255,255,.045) !important;}
     body.classList.remove('premium-idle');
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
-      if (!body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
+      if (window.spotifyDisPresentationShouldStart?.() && !body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
         body.classList.add('premium-idle');
       }
-    }, 30000);
+    }, window.spotifyDisPresentationDelayMs?.() || 30000);
   }
 
   ['pointerdown','touchstart','mousemove','keydown','wheel'].forEach(type =>
