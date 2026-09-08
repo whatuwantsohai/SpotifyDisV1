@@ -10926,6 +10926,98 @@ updateSessionTime();
 })();
 </script>
 
+
+<style id="smart-album-self-sizing-v1">
+/* Targeted album-art self-sizing: measure the real viewport/player space so the
+   artwork never forces the progress/controls into the fixed bottom UI. */
+#albumArtContainer{
+  width:var(--smart-album-size, var(--adaptive-art, 440px)) !important;
+  max-width:100% !important;
+  flex:0 1 auto !important;
+}
+@media (orientation:portrait){
+  body.smart-phone #albumArtContainer,
+  body.smart-tablet #albumArtContainer{
+    width:var(--smart-album-size, var(--adaptive-art, 320px)) !important;
+  }
+}
+</style>
+<script id="smart-album-self-sizing-v1">
+(() => {
+  const root = document.documentElement;
+  const body = document.body;
+  const content = document.getElementById("content");
+  const layout = document.getElementById("nowPlayingLayout");
+  const art = document.getElementById("albumArtContainer");
+  const playing = document.getElementById("playing");
+  if (!body || !content || !layout || !art || !playing) return;
+
+  let frame = 0;
+  function updateSmartAlbumSize(){
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      const vv = window.visualViewport;
+      const vw = Math.max(1, vv?.width || window.innerWidth);
+      const vh = Math.max(1, vv?.height || window.innerHeight);
+      const visible = getComputedStyle(art).display !== "none";
+      const mode = body.className || "";
+      if (!visible || mode.includes("modeClock") || mode.includes("modeVinyl") || mode.includes("modeArtwork")) {
+        root.style.removeProperty("--smart-album-size");
+        return;
+      }
+
+      const landscape = vw > vh;
+      const contentRect = content.getBoundingClientRect();
+      const layoutRect = layout.getBoundingClientRect();
+      const playingRect = playing.getBoundingClientRect();
+      const controls = document.getElementById("controls");
+      const volume = document.getElementById("volumeContainer");
+      const controlsRect = controls ? controls.getBoundingClientRect() : null;
+      const volumeRect = volume ? volume.getBoundingClientRect() : null;
+
+      const sideGap = landscape ? 22 : 0;
+      const horizontalBudget = landscape
+        ? Math.max(160, (layoutRect.width - sideGap) * 0.48)
+        : Math.max(160, Math.min(layoutRect.width, vw - 28));
+
+      const bottomUi = Math.max(0, vh - Math.min(
+        controlsRect?.top || vh,
+        volumeRect?.top || vh
+      ));
+      const topUsed = Math.max(0, layoutRect.top - contentRect.top);
+      const bottomUsed = Math.max(0, vh - Math.max(
+        playingRect.bottom,
+        contentRect.top
+      ));
+      const safeBottom = Math.max(0, parseFloat(getComputedStyle(root).getPropertyValue("--smart-ui-clearance")) || 42);
+      const verticalBudget = landscape
+        ? Math.max(150, vh - Math.max(56, layoutRect.top) - safeBottom - bottomUi * 0.18)
+        : Math.max(150, vh - topUsed - safeBottom - bottomUsed * 0.10);
+
+      const current = art.getBoundingClientRect().width || 320;
+      const preferred = landscape
+        ? Math.min(440, vw * 0.34, verticalBudget * 0.88, horizontalBudget)
+        : Math.min(430, vw * 0.76, verticalBudget * 0.72, horizontalBudget);
+      const minSize = landscape ? 170 : 180;
+      const size = Math.max(minSize, Math.round(preferred));
+
+      if (Math.abs(size - current) > 2) {
+        root.style.setProperty("--smart-album-size", size + "px");
+      }
+    });
+  }
+
+  window.spotifyDisUpdateSmartAlbumSize = updateSmartAlbumSize;
+  window.addEventListener("resize", updateSmartAlbumSize, {passive:true});
+  window.addEventListener("orientationchange", updateSmartAlbumSize, {passive:true});
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", updateSmartAlbumSize, {passive:true});
+  const ro = new ResizeObserver(updateSmartAlbumSize);
+  ro.observe(content);
+  ro.observe(layout);
+  ro.observe(playing);
+  updateSmartAlbumSize();
+})();
+</script>
 </body>
 </html>
 
