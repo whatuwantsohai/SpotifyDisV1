@@ -4800,6 +4800,41 @@ body.device-tablet #trackName{
 })();
 </script>
 
+
+<style id="spotifydis-night-v14">
+/* V14: stronger, genuinely visible Night Mode. Artwork itself remains unchanged. */
+body.premium-night #background{
+  background:#000 !important;
+}
+body.premium-night #backgroundImage,
+body.premium-night #backgroundImageNext{
+  filter:blur(18px) brightness(.24) saturate(.72) !important;
+}
+body.premium-night #background::after{
+  opacity:.12 !important;
+}
+body.premium-night #backgroundOverlay{
+  background:linear-gradient(90deg,rgba(0,0,0,.995) 0%,rgba(0,0,0,.97) 45%,rgba(0,0,0,.88) 100%) !important;
+}
+body.premium-night #albumArtContainer{
+  box-shadow:0 28px 76px rgba(0,0,0,.62),0 0 18px rgba(255,255,255,.035) !important;
+}
+body.premium-night #controls .control,
+body.premium-night #sessionControls button,
+body.premium-night #fullscreenButton,
+body.premium-night .headerButton{
+  background:rgba(255,255,255,.025) !important;
+  border-color:rgba(255,255,255,.075) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 8px 24px rgba(0,0,0,.34) !important;
+}
+body.premium-night #artistName,
+body.premium-night #albumName{
+  opacity:.58 !important;
+}
+body.premium-night #trackName{
+  text-shadow:0 3px 28px rgba(0,0,0,.55) !important;
+}
+</style>
 </head>
 
 <body>
@@ -5366,67 +5401,6 @@ body.device-tablet #trackName{
 
   </div>
 
-  <div class="settingsSection" id="presentationSettingsSection">
-
-    <div class="settingsSectionTitle">
-      Presentation Mode
-    </div>
-
-    <div class="settingRow">
-
-      <div>
-        Presentation Mode
-        <div class="settingDescription">
-          Choose when the clean music display should appear
-        </div>
-      </div>
-
-      <select id="presentationModeSelect" class="settingSelect" aria-label="Presentation mode">
-        <option value="off">Off</option>
-        <option value="inactivity">After inactivity</option>
-        <option value="schedule">Scheduled</option>
-      </select>
-
-    </div>
-
-    <div class="settingRow presentationSubSetting" id="presentationDelayRow">
-
-      <div>
-        Start After
-        <div class="settingDescription">
-          Time without interaction before Presentation Mode starts
-        </div>
-      </div>
-
-      <select id="presentationDelaySelect" class="settingSelect" aria-label="Presentation mode inactivity delay">
-        <option value="15">15 sec</option>
-        <option value="30">30 sec</option>
-        <option value="60">1 min</option>
-        <option value="120">2 min</option>
-        <option value="300">5 min</option>
-      </select>
-
-    </div>
-
-    <div class="settingRow presentationSubSetting" id="presentationScheduleRow">
-
-      <div>
-        Schedule
-        <div class="settingDescription">
-          Automatically use Presentation Mode during these hours
-        </div>
-      </div>
-
-      <div class="presentationTimeGroup">
-        <input id="presentationStartTime" class="settingsTime" type="time" aria-label="Presentation start time" value="23:00">
-        <span>to</span>
-        <input id="presentationEndTime" class="settingsTime" type="time" aria-label="Presentation end time" value="07:00">
-      </div>
-
-    </div>
-
-  </div>
-
   <div class="settingsSection">
 
     <div class="settingsSectionTitle">
@@ -5540,14 +5514,6 @@ body.device-tablet #trackName{
 
 </div>
 
-
-<style id="spotifydis-presentation-settings-v16-stable">
-.presentationSubSetting{display:none;}
-.presentationTimeGroup{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
-.settingsTime{width:112px;box-sizing:border-box;padding:8px 9px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:white;font-family:inherit;font-size:11px;outline:none;}
-.settingsTime::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.7;}
-@media (max-width:520px){.presentationTimeGroup{max-width:150px;}.settingsTime{width:108px;}}
-</style>
 <script>
 
 /* =========================
@@ -5734,24 +5700,6 @@ const screensaverToggle =
 
 const screensaverTimeoutSelect =
   document.getElementById("screensaverTimeoutSelect");
-
-const presentationModeSelect =
-  document.getElementById("presentationModeSelect");
-
-const presentationDelaySelect =
-  document.getElementById("presentationDelaySelect");
-
-const presentationStartTime =
-  document.getElementById("presentationStartTime");
-
-const presentationEndTime =
-  document.getElementById("presentationEndTime");
-
-const presentationDelayRow =
-  document.getElementById("presentationDelayRow");
-
-const presentationScheduleRow =
-  document.getElementById("presentationScheduleRow");
 
 const screensaverClock =
   document.getElementById("screensaverClock");
@@ -7633,41 +7581,6 @@ function drawVisualizer(
     height
   );
 
-  /* Final full-canvas visualizer atmosphere: keep the visualizer behind the
-     player content while spreading the album colour across the whole scene. */
-  const atmosphere = visualizerContext.createRadialGradient(
-    width * 0.72,
-    height * 0.48,
-    0,
-    width * 0.72,
-    height * 0.48,
-    Math.max(width, height) * 0.78
-  );
-  const atmosphereAlpha = playing ? 0.22 : 0.08;
-  atmosphere.addColorStop(
-    0,
-    `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},${atmosphereAlpha})`
-  );
-  atmosphere.addColorStop(
-    0.48,
-    `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},${atmosphereAlpha * 0.42})`
-  );
-  atmosphere.addColorStop(
-    1,
-    `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},0)`
-  );
-  visualizerContext.fillStyle = atmosphere;
-  visualizerContext.fillRect(0, 0, width, height);
-
-  // A second broad wash keeps the effect visible across the left side too,
-  // without obscuring artwork, text, lyrics, or controls above this canvas.
-  const sideWash = visualizerContext.createLinearGradient(0, 0, width, 0);
-  sideWash.addColorStop(0, `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},${playing ? 0.055 : 0.022})`);
-  sideWash.addColorStop(0.5, `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},0.018)`);
-  sideWash.addColorStop(1, `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},0)`);
-  visualizerContext.fillStyle = sideWash;
-  visualizerContext.fillRect(0, 0, width, height);
-
   // Feature 33: drive the visualizer from Spotify's actual
   // playback clock rather than an independent animation clock.
   const elapsed =
@@ -7683,8 +7596,8 @@ function drawVisualizer(
 
   const baseAlpha =
     playing
-      ? 0.20
-      : 0.10;
+      ? 0.30
+      : 0.12;
 
   const bars =
     appSettings.batterySaver
@@ -7692,12 +7605,12 @@ function drawVisualizer(
       : 42;
 
   const centerY =
-    height * 0.50;
+    height * 0.72;
 
   const maxHeight =
     Math.min(
-      height * 0.82,
-      width * 0.62
+      180,
+      height * 0.25
     );
 
   for (
@@ -7838,19 +7751,7 @@ const defaultSettings = {
     true,
 
   batterySaver:
-    false,
-
-  presentationMode:
-    "off",
-
-  presentationDelay:
-    30,
-
-  presentationStart:
-    "23:00",
-
-  presentationEnd:
-    "07:00"
+    false
 
 };
 
@@ -8061,44 +7962,6 @@ displayModeOptions.forEach(
 
   batterySaverToggle.checked =
     appSettings.batterySaver;
-
-  if (presentationModeSelect) {
-    presentationModeSelect.value =
-      ["off", "inactivity", "schedule"].includes(appSettings.presentationMode)
-        ? appSettings.presentationMode
-        : "off";
-  }
-
-  if (presentationDelaySelect) {
-    presentationDelaySelect.value =
-      String([15,30,60,120,300].includes(Number(appSettings.presentationDelay))
-        ? Number(appSettings.presentationDelay)
-        : 30);
-  }
-
-  if (presentationStartTime) {
-    presentationStartTime.value =
-      /^\d{2}:\d{2}$/.test(String(appSettings.presentationStart || ""))
-        ? String(appSettings.presentationStart)
-        : "23:00";
-  }
-
-  if (presentationEndTime) {
-    presentationEndTime.value =
-      /^\d{2}:\d{2}$/.test(String(appSettings.presentationEnd || ""))
-        ? String(appSettings.presentationEnd)
-        : "07:00";
-  }
-
-  if (presentationDelayRow) {
-    presentationDelayRow.style.display =
-      appSettings.presentationMode === "inactivity" ? "flex" : "none";
-  }
-
-  if (presentationScheduleRow) {
-    presentationScheduleRow.style.display =
-      appSettings.presentationMode === "schedule" ? "flex" : "none";
-  }
 
   document.body.classList.toggle(
     "batterySaver",
@@ -8865,62 +8728,6 @@ batterySaverToggle.addEventListener(
 
 
 /* =========================
-   PRESENTATION MODE SETTINGS
-========================= */
-
-function refreshPresentationSettingsUI() {
-  if (presentationDelayRow) {
-    presentationDelayRow.style.display =
-      appSettings.presentationMode === "inactivity" ? "flex" : "none";
-  }
-
-  if (presentationScheduleRow) {
-    presentationScheduleRow.style.display =
-      appSettings.presentationMode === "schedule" ? "flex" : "none";
-  }
-}
-
-if (presentationModeSelect) {
-  presentationModeSelect.addEventListener("change", () => {
-    appSettings.presentationMode = presentationModeSelect.value;
-    document.body.classList.remove("premium-idle");
-    lastInteraction = Date.now();
-    saveSettings();
-    refreshPresentationSettingsUI();
-  });
-}
-
-if (presentationDelaySelect) {
-  presentationDelaySelect.addEventListener("change", () => {
-    const value = Number(presentationDelaySelect.value);
-    appSettings.presentationDelay = [15,30,60,120,300].includes(value) ? value : 30;
-    document.body.classList.remove("premium-idle");
-    lastInteraction = Date.now();
-    saveSettings();
-  });
-}
-
-if (presentationStartTime) {
-  presentationStartTime.addEventListener("change", () => {
-    appSettings.presentationStart = presentationStartTime.value || "23:00";
-    document.body.classList.remove("premium-idle");
-    lastInteraction = Date.now();
-    saveSettings();
-  });
-}
-
-if (presentationEndTime) {
-  presentationEndTime.addEventListener("change", () => {
-    appSettings.presentationEnd = presentationEndTime.value || "07:00";
-    document.body.classList.remove("premium-idle");
-    lastInteraction = Date.now();
-    saveSettings();
-  });
-}
-
-refreshPresentationSettingsUI();
-
-/* =========================
    DAY / NIGHT
 ========================= */
 
@@ -9037,38 +8844,6 @@ setInterval(() => {
     document.body.classList.remove("ambientScreensaver");
   } else if (!document.body.classList.contains("ambientScreensaver")) {
     document.body.classList.remove("autoDim");
-  }
-
-  /* Presentation Mode uses this existing 1-second scheduler. No extra
-     timers, animation loops, observers, or polling are introduced. */
-  if (!document.body.classList.contains("uiHidden") && !document.body.classList.contains("premium-focus")) {
-    const mode = appSettings.presentationMode || "off";
-    const playing = document.body.classList.contains("isPlaying") || status.classList.contains("playing");
-    let scheduled = false;
-
-    if (mode === "schedule") {
-      const start = String(appSettings.presentationStart || "23:00");
-      const end = String(appSettings.presentationEnd || "07:00");
-      const now = new Date();
-      const minutes = now.getHours() * 60 + now.getMinutes();
-      const toMinutes = value => {
-        const parts = value.split(":");
-        return (Number(parts[0]) || 0) * 60 + (Number(parts[1]) || 0);
-      };
-      const a = toMinutes(start);
-      const b = toMinutes(end);
-      scheduled = a === b ? true : (a < b ? minutes >= a && minutes < b : minutes >= a || minutes < b);
-    }
-
-    const inactivity =
-      mode === "inactivity" &&
-      idle >= Math.max(15, Number(appSettings.presentationDelay) || 30) * 1000;
-
-    if (playing && (inactivity || (mode === "schedule" && scheduled))) {
-      document.body.classList.add("premium-idle");
-    } else {
-      document.body.classList.remove("premium-idle");
-    }
   }
 }, 1000);
 
@@ -12643,6 +12418,11 @@ body.premium-night .headerButton{background:rgba(255,255,255,.045) !important;}
   function wake(){
     body.classList.remove('premium-idle');
     clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      if (!body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
+        body.classList.add('premium-idle');
+      }
+    }, 30000);
   }
 
   ['pointerdown','touchstart','mousemove','keydown','wheel'].forEach(type =>
@@ -12772,8 +12552,8 @@ body.uiHidden #header{
   pointer-events:none !important;
 }
 
-/* V13.1: Remove only the external session bubble while in Vinyl mode; keep the center vinyl label. */
-body.modeVinyl #sessionBadge{
+/* V13: Remove the small center vinyl-label bubble while keeping the record, artwork, and hole. */
+.vinylLabel{
   display:none !important;
 }
 </style>
