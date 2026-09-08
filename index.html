@@ -7546,6 +7546,41 @@ function drawVisualizer(
     height
   );
 
+  /* Final full-canvas visualizer atmosphere: keep the visualizer behind the
+     player content while spreading the album colour across the whole scene. */
+  const atmosphere = visualizerContext.createRadialGradient(
+    width * 0.72,
+    height * 0.48,
+    0,
+    width * 0.72,
+    height * 0.48,
+    Math.max(width, height) * 0.78
+  );
+  const atmosphereAlpha = playing ? 0.16 : 0.07;
+  atmosphere.addColorStop(
+    0,
+    `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},${atmosphereAlpha})`
+  );
+  atmosphere.addColorStop(
+    0.48,
+    `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},${atmosphereAlpha * 0.42})`
+  );
+  atmosphere.addColorStop(
+    1,
+    `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},0)`
+  );
+  visualizerContext.fillStyle = atmosphere;
+  visualizerContext.fillRect(0, 0, width, height);
+
+  // A second broad wash keeps the effect visible across the left side too,
+  // without obscuring artwork, text, lyrics, or controls above this canvas.
+  const sideWash = visualizerContext.createLinearGradient(0, 0, width, 0);
+  sideWash.addColorStop(0, `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},${playing ? 0.055 : 0.022})`);
+  sideWash.addColorStop(0.5, `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},0.018)`);
+  sideWash.addColorStop(1, `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},0)`);
+  visualizerContext.fillStyle = sideWash;
+  visualizerContext.fillRect(0, 0, width, height);
+
   // Feature 33: drive the visualizer from Spotify's actual
   // playback clock rather than an independent animation clock.
   const elapsed =
