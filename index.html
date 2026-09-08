@@ -7643,7 +7643,7 @@ function drawVisualizer(
     height * 0.48,
     Math.max(width, height) * 0.78
   );
-  const atmosphereAlpha = playing ? 0.16 : 0.07;
+  const atmosphereAlpha = playing ? 0.22 : 0.08;
   atmosphere.addColorStop(
     0,
     `rgba(${visualizerColour.r},${visualizerColour.g},${visualizerColour.b},${atmosphereAlpha})`
@@ -7683,8 +7683,8 @@ function drawVisualizer(
 
   const baseAlpha =
     playing
-      ? 0.30
-      : 0.12;
+      ? 0.20
+      : 0.10;
 
   const bars =
     appSettings.batterySaver
@@ -7692,12 +7692,12 @@ function drawVisualizer(
       : 42;
 
   const centerY =
-    height * 0.72;
+    height * 0.50;
 
   const maxHeight =
     Math.min(
-      180,
-      height * 0.25
+      height * 0.82,
+      width * 0.62
     );
 
   for (
