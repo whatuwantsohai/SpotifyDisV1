@@ -4717,7 +4717,47 @@ body.device-tablet #trackName{
 }
 </style>
 
+<style id="phone-smoothness-fix">
+/* Phone/tablet motion: keep lyrics and vinyl fluid without changing large-screen UI. */
+@media (max-width: 700px) {
+  #lyricsView {
+    padding-left: max(30px, calc(26px + env(safe-area-inset-left))) !important;
+    padding-right: max(22px, calc(18px + env(safe-area-inset-right))) !important;
+  }
 
+  #lyricsInner {
+    transform: translate3d(0, var(--lyrics-shift, 0px), 0);
+    transition: transform 300ms cubic-bezier(.22,.61,.36,1) !important;
+    will-change: transform;
+  }
+
+  .lyricsLine {
+    transition:
+      color 280ms ease,
+      opacity 280ms ease,
+      transform 300ms cubic-bezier(.22,.61,.36,1),
+      filter 280ms ease !important;
+    will-change: transform, opacity, filter;
+  }
+
+  .vinylRecord {
+    animation-duration: 7s !important;
+    animation-timing-function: linear !important;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* Put the fullscreen control a little lower on phones, while respecting the home indicator. */
+  #fullscreenButton {
+    bottom: max(8px, calc(6px + env(safe-area-inset-bottom))) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Accessibility preference still wins; don't override OS-level reduced motion. */
+}
+</style>
 
 <script id="device-ui-detector">
 (() => {
@@ -4761,9 +4801,9 @@ body.device-tablet #trackName{
 </script>
 
 
-<style id="pwa-desktop-motion-and-portrait-background">
-/* PWA: keep the desktop lyrics/vinyl rendering and motion model on phones too. */
-@media (max-width:700px){
+<style id="landscape-only-desktop-motion">
+/* LANDSCAPE ONLY: restore the desktop lyrics/vinyl motion. Portrait is untouched. */
+@media (max-width:700px) and (orientation:landscape){
   #lyricsInner{
     transform:translate3d(0,var(--lyrics-shift,0px),0) !important;
     transition:transform 300ms cubic-bezier(.22,.61,.36,1) !important;
@@ -4773,6 +4813,13 @@ body.device-tablet #trackName{
     transition:color 280ms ease,opacity 280ms ease,transform 300ms cubic-bezier(.22,.61,.36,1),filter 280ms ease !important;
     will-change:transform,opacity,filter;
   }
+  .lyricsLine.active{transform:scale(1) !important;filter:blur(0) !important;}
+  .lyricsLine[data-distance="1"]{opacity:.48 !important;transform:scale(.96) !important;filter:blur(1px) !important;}
+  .lyricsLine[data-distance="2"]{opacity:.30 !important;transform:scale(.93) !important;filter:blur(2px) !important;}
+  .lyricsLine[data-distance="3"]{opacity:.20 !important;transform:scale(.90) !important;filter:blur(3px) !important;}
+  .lyricsLine[data-distance="4"]{opacity:.12 !important;transform:scale(.87) !important;filter:blur(4px) !important;}
+  .lyricsLine[data-distance="5"]{opacity:.07 !important;transform:scale(.84) !important;filter:blur(5px) !important;}
+
   .vinylRecord{
     animation:vinylSpin 7s linear infinite !important;
     animation-play-state:paused !important;
@@ -4782,34 +4829,8 @@ body.device-tablet #trackName{
   }
   body.isPlaying .vinylRecord{animation-play-state:running !important;}
 }
-
-/* Portrait iPhone: the desktop left-to-right overlay is wrong for a centered phone layout.
-   Keep the artwork full-bleed, centered, and use a soft vertical vignette instead. */
-@media (max-width:700px) and (orientation:portrait){
-  #backgroundImage,
-  #backgroundImageNext{
-    inset:-8%;
-    width:116%;
-    height:116%;
-    object-fit:cover;
-    object-position:center center;
-    transform:scale(1.08) translateZ(0);
-  }
-  #backgroundOverlay{
-    background:
-      linear-gradient(180deg,
-        rgba(8,8,8,.78) 0%,
-        rgba(8,8,8,.38) 24%,
-        rgba(8,8,8,.20) 50%,
-        rgba(8,8,8,.44) 76%,
-        rgba(8,8,8,.86) 100%
-      ) !important;
-  }
-  #ambientGlow{
-    opacity:.72;
-  }
-}
 </style>
+
 </head>
 
 <body>
