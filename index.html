@@ -7812,6 +7812,18 @@ function resolveDisplayMode() {
   const shortScreen =
     window.innerHeight < 620;
 
+  const aspectRatio =
+    window.innerWidth / Math.max(1, window.innerHeight);
+
+  const phoneLike =
+    compact ||
+    (window.matchMedia && window.matchMedia("(pointer: coarse)").matches && window.innerWidth <= 900);
+
+  const tabletLike =
+    !phoneLike &&
+    window.innerWidth <= 1100 &&
+    ((navigator.maxTouchPoints || 0) > 0 || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches));
+
   const playingNow =
     status?.classList.contains("playing");
 
@@ -7821,25 +7833,37 @@ function resolveDisplayMode() {
   //   compete with controls.
   // - Use Vinyl on larger landscape displays.
   // - Use Visualizer on large landscape displays while playing.
-  if (
-    appSettings.batterySaver ||
-    reducedMotion ||
-    compact
-  ) {
+  if (appSettings.batterySaver || reducedMotion) {
     return "normal";
   }
 
-  if (landscape) {
-    if (shortScreen) {
-      return "visualizer";
-    }
-
-    return playingNow
-      ? "visualizer"
-      : "vinyl";
+  if (!landscape) {
+    return "normal";
   }
 
-  return "normal";
+  // Auto is orientation/viewport aware: phone landscape must not be
+  // forced to Normal just because its CSS width exceeds 700px.
+  const veryShort = window.innerHeight < 500;
+  const immersiveLandscape =
+    aspectRatio >= 1.45 &&
+    window.innerHeight >= 430;
+
+  if (veryShort) {
+    return "normal";
+  }
+
+  if (phoneLike || tabletLike) {
+    if (!immersiveLandscape) {
+      return "normal";
+    }
+    return playingNow ? "visualizer" : "vinyl";
+  }
+
+  if (shortScreen) {
+    return "visualizer";
+  }
+
+  return playingNow ? "visualizer" : "vinyl";
 }
 
 function applySettings() {
