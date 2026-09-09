@@ -8801,6 +8801,7 @@ if (presentationModeToggle) {
         "v12-mini",
         presentationModeToggle.checked
       );
+      document.body.classList.remove("premium-idle");
       if (window.spotifyDisSetMiniPlayer) {
         window.spotifyDisSetMiniPlayer(
           presentationModeToggle.checked
@@ -12540,7 +12541,7 @@ body.premium-night .headerButton{background:rgba(255,255,255,.045) !important;}
     body.classList.remove('premium-idle');
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
-      if (!body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
+      if (appSettings.presentationMode && !body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
         body.classList.add('premium-idle');
       }
     }, 30000);
@@ -12723,3 +12724,66 @@ body.premium-night #header{
   }
 }
 </style>
+
+<style id="v18-pc-artwork-js-fix">
+/* V18: PC artwork positioning correction only. No dimensions are set here. */
+@media (min-width:701px){
+  body.modeNormal #nowPlayingLayout,
+  body.modeVisualizer #nowPlayingLayout{
+    flex-direction:row !important;
+    align-items:center !important;
+    justify-content:center !important;
+  }
+  body.modeNormal #playing,
+  body.modeVisualizer #playing{
+    position:relative !important;
+    left:auto !important;
+    top:auto !important;
+    bottom:auto !important;
+    transform:none !important;
+    text-align:left !important;
+  }
+  body.modeNormal #albumArtContainer,
+  body.modeVisualizer #albumArtContainer{
+    position:relative !important;
+    left:auto !important;
+    top:auto !important;
+    right:auto !important;
+    bottom:auto !important;
+    transform:translateZ(0) !important;
+  }
+}
+</style>
+<script id="spotifydis-v18-pc-artwork-fix">
+(() => {
+  const body=document.body;
+  const layout=document.getElementById('nowPlayingLayout');
+  const playing=document.getElementById('playing');
+  const art=document.getElementById('albumArtContainer');
+  if(!body||!layout||!playing||!art) return;
+  const fix=()=>{
+    if(window.innerWidth<=700) return;
+    const mode=body.classList.contains('modeNormal')||body.classList.contains('modeVisualizer');
+    if(!mode) return;
+    layout.style.flexDirection='row';
+    layout.style.alignItems='center';
+    layout.style.justifyContent='center';
+    playing.style.position='relative';
+    playing.style.left='auto';
+    playing.style.top='auto';
+    playing.style.bottom='auto';
+    playing.style.transform='none';
+    playing.style.textAlign='left';
+    art.style.position='relative';
+    art.style.left='auto';
+    art.style.top='auto';
+    art.style.right='auto';
+    art.style.bottom='auto';
+    art.style.transform='translateZ(0)';
+  };
+  fix();
+  new MutationObserver(fix).observe(body,{attributes:true,attributeFilter:['class']});
+  window.addEventListener('resize',fix,{passive:true});
+  window.addEventListener('orientationchange',fix,{passive:true});
+})();
+</script>
