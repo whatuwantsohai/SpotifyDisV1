@@ -13138,3 +13138,116 @@ body.smart-battery-low .vinylRecord{filter:drop-shadow(0 18px 28px rgba(0,0,0,.2
   },{passive:true});
 })();
 </script>
+
+
+<style id="v21-smart-polish-css">
+/* V21 smart polish: visual-only additions; no geometry or dimensions. */
+:root{--v21-palette-a:var(--premium-glow,rgba(255,255,255,.12));--v21-palette-b:var(--premium-glow2,rgba(255,255,255,.06));}
+#background::after{transition:background 1.35s ease,opacity 1.15s ease,filter 1.15s ease !important;}
+body.v21-playing-calm #background::after{opacity:.55 !important;}
+body.v21-playing-live #background::after{opacity:.92 !important;}
+body.v21-transitioning #albumArtContainer{filter:saturate(1.02) contrast(1.01) !important;}
+body.v21-vinyl-light .vinylRecord::after{content:"";position:absolute;inset:7%;border-radius:50%;background:linear-gradient(118deg,rgba(255,255,255,.16),transparent 24%,transparent 70%,rgba(255,255,255,.035));mix-blend-mode:screen;pointer-events:none;opacity:.55;transform:rotate(0deg);animation:v21VinylLight 5.8s linear infinite;}
+@keyframes v21VinylLight{to{transform:rotate(360deg);}}
+body.v21-low-power .vinylRecord::after{animation:none !important;opacity:.18 !important;}
+.v21-feedback{position:fixed;left:50%;bottom:calc(82px + env(safe-area-inset-bottom));transform:translate(-50%,8px) scale(.96);z-index:50;padding:7px 11px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(10,10,10,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-size:12px;font-weight:700;letter-spacing:.01em;opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;}
+.v21-feedback.show{opacity:.9;transform:translate(-50%,0) scale(1);}
+@media (prefers-reduced-motion:reduce){body.v21-vinyl-light .vinylRecord::after{animation:none !important;}#background::after{transition:none !important;}}
+</style>
+
+<script id="v21-smart-polish-js">
+(() => {
+  const body=document.body, root=document.documentElement;
+  if(!body||!root) return;
+
+  const LS='spotifydis_smart_polish_v21';
+  const prefs={albumPalette:true,vinylLight:true,playbackBreathing:true,haptics:true,trackMemory:true,reducedMotion:true};
+  try{Object.assign(prefs,JSON.parse(localStorage.getItem(LS)||'{}'));}catch(e){}
+  const save=()=>{try{localStorage.setItem(LS,JSON.stringify(prefs));}catch(e){}};
+
+  /* Album palette smoothing + short session memory. Uses existing sampled premium variables. */
+  let lastPalette='', paletteTimer=0;
+  function rememberPalette(){
+    if(!prefs.trackMemory) return;
+    const a=getComputedStyle(root).getPropertyValue('--premium-glow').trim();
+    const b=getComputedStyle(root).getPropertyValue('--premium-glow2').trim();
+    const key=a+'|'+b;
+    if(!a||key===lastPalette)return;
+    lastPalette=key;
+    try{
+      const list=JSON.parse(sessionStorage.getItem('spotifydis_v21_palette_history')||'[]');
+      const next=[key,...list.filter(x=>x!==key)].slice(0,6);
+      sessionStorage.setItem('spotifydis_v21_palette_history',JSON.stringify(next));
+    }catch(e){}
+  }
+  function paletteTick(){
+    if(!prefs.albumPalette){body.classList.remove('v21-palette-on');return;}
+    body.classList.add('v21-palette-on');
+    rememberPalette();
+  }
+  const art=document.getElementById('albumArtContainer');
+  if(art){
+    const obs=new MutationObserver(()=>{clearTimeout(paletteTimer);paletteTimer=setTimeout(paletteTick,220);});
+    obs.observe(art,{subtree:true,attributes:true,attributeFilter:['src','style','class']});
+  }
+
+  /* Playback presence: calm when paused, alive while playing. */
+  function playbackPresence(){
+    const playing=body.classList.contains('isPlaying')||document.getElementById('status')?.classList.contains('playing');
+    body.classList.toggle('v21-playing-live',!!playing&&prefs.playbackBreathing);
+    body.classList.toggle('v21-playing-calm',!playing&&prefs.playbackBreathing);
+    body.classList.toggle('v21-vinyl-light',!!playing&&prefs.vinylLight&&!body.classList.contains('premium-idle')&&!body.classList.contains('premium-focus'));
+  }
+  new MutationObserver(playbackPresence).observe(body,{attributes:true,attributeFilter:['class']});
+  playbackPresence();
+
+  /* Directional micro transition marker. Existing V20 behavior remains intact. */
+  const ti=document.getElementById('trackInfo');
+  let last=(document.getElementById('trackName')?.textContent||'').trim();
+  let direction='';
+  document.getElementById('nextButton')?.addEventListener('click',()=>direction='next',{capture:true,passive:true});
+  document.getElementById('previousButton')?.addEventListener('click',()=>direction='prev',{capture:true,passive:true});
+  if(ti)new MutationObserver(()=>{
+    const now=(document.getElementById('trackName')?.textContent||'').trim();
+    if(!now||now===last)return;
+    last=now;
+    body.classList.add('v21-transitioning');
+    setTimeout(()=>body.classList.remove('v21-transitioning'),420);
+    direction='';
+  }).observe(ti,{subtree:true,childList:true,characterData:true});
+
+  /* Small haptic feedback where supported; never required for functionality. */
+  function haptic(ms=8){if(!prefs.haptics||!navigator.vibrate)return;try{navigator.vibrate(ms);}catch(e){}}
+  ['playButton','nextButton','previousButton','volumeIcon'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('click',()=>haptic(id==='playButton'?6:9),{passive:true});
+  });
+  document.getElementById('progressBar')?.addEventListener('pointerup',()=>haptic(5),{passive:true});
+  document.getElementById('fullscreenButton')?.addEventListener('click',()=>haptic(10),{passive:true});
+
+  /* Seek feedback: reuse the existing progress preview rather than changing geometry. */
+  const preview=document.getElementById('progressPreview');
+  if(preview){
+    const show=()=>{preview.style.opacity='1';};
+    document.getElementById('progressBar')?.addEventListener('pointerdown',show,{passive:true});
+    document.getElementById('progressBar')?.addEventListener('pointerup',()=>{setTimeout(()=>{if(!document.getElementById('progressBar')?.classList.contains('isSeeking'))preview.style.opacity='0';},650);},{passive:true});
+  }
+
+  /* Visible preferences: additive, no changes to existing settings controls. */
+  const panel=document.getElementById('settingsPanel');
+  if(panel&&!document.getElementById('v21SmartPolishSettings')){
+    const section=document.createElement('div'); section.className='settingsSection'; section.id='v21SmartPolishSettings';
+    section.innerHTML='<div class="settingsSectionTitle">Smart Polish</div>'+
+      '<div class="settingRow"><div>Album Palette Smoothing<div class="settingDescription">Smoothly blend album-driven atmosphere changes.</div></div><label class="toggle"><input id="v21AlbumPalette" type="checkbox"><span class="toggleSlider"></span></label></div>'+
+      '<div class="settingRow"><div>Vinyl Lighting<div class="settingDescription">Add a subtle moving light reflection while the vinyl spins.</div></div><label class="toggle"><input id="v21VinylLight" type="checkbox"><span class="toggleSlider"></span></label></div>'+
+      '<div class="settingRow"><div>Playback Breathing<div class="settingDescription">Let the atmosphere feel more alive during playback and settle when paused.</div></div><label class="toggle"><input id="v21PlaybackBreathing" type="checkbox"><span class="toggleSlider"></span></label></div>'+
+      '<div class="settingRow"><div>Haptic Feedback<div class="settingDescription">Use tiny taps on supported touch devices.</div></div><label class="toggle"><input id="v21Haptics" type="checkbox"><span class="toggleSlider"></span></label></div>'+
+      '<div class="settingRow"><div>Track Palette Memory<div class="settingDescription">Keep recent album palettes available during this session.</div></div><label class="toggle"><input id="v21TrackMemory" type="checkbox"><span class="toggleSlider"></span></label></div>';
+    panel.appendChild(section);
+    const map=[['v21AlbumPalette','albumPalette'],['v21VinylLight','vinylLight'],['v21PlaybackBreathing','playbackBreathing'],['v21Haptics','haptics'],['v21TrackMemory','trackMemory']];
+    map.forEach(([id,key])=>{const el=document.getElementById(id);el.checked=!!prefs[key];el.addEventListener('change',()=>{prefs[key]=el.checked;save();paletteTick();playbackPresence();});});
+  }
+
+  paletteTick();
+  playbackPresence();
+})();
+</script>
