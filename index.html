@@ -11333,6 +11333,181 @@ body.v12-spacious #trackInfo{transform:translateY(-2px);}
 })();
 </script>
 
+
+<style id="v20-smart-polish-expansion">
+/* V20: smart + polish expansion only. No dimensions, positioning, or layout changes. */
+body.smart-presence-playing #albumArtContainer{filter:saturate(1.045) contrast(1.012) !important;}
+body.smart-presence-paused #albumArtContainer{filter:saturate(.96) contrast(1) !important;}
+body.smart-transition-next #albumArtContainer{animation:v20ArtNext .42s cubic-bezier(.22,.61,.36,1) both;}
+body.smart-transition-prev #albumArtContainer{animation:v20ArtPrev .42s cubic-bezier(.22,.61,.36,1) both;}
+@keyframes v20ArtNext{from{opacity:.76;transform:translateX(8px)}to{opacity:1;transform:none}}
+@keyframes v20ArtPrev{from{opacity:.76;transform:translateX(-8px)}to{opacity:1;transform:none}}
+body.smart-media-dim #background::after{opacity:.22 !important;}
+@media (prefers-reduced-motion:reduce){
+  body.smart-transition-next #albumArtContainer,
+  body.smart-transition-prev #albumArtContainer{animation:none !important;}
+}
+</style>
+<script id="spotifydis-v20-smart-polish">
+(() => {
+  const body=document.body, root=document.documentElement;
+  if(!body||!root) return;
+
+  const KEY='spotifydis_smart_polish_v20';
+  const defaults={smartPresence:true,smartPalette:true,smartBattery:true,smartTransitions:true,rememberVisuals:true,autoSun:true};
+  let prefs=defaults;
+  try{prefs={...defaults,...JSON.parse(localStorage.getItem(KEY)||'{}')};}catch(e){prefs={...defaults};}
+  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(prefs));}catch(e){}};
+
+  /* 1) Smart playback presence. Visual only. */
+  function presence(){
+    if(!prefs.smartPresence){
+      body.classList.remove('smart-presence-playing','smart-presence-paused');
+      return;
+    }
+    const playing=body.classList.contains('isPlaying') || document.getElementById('status')?.classList.contains('playing');
+    body.classList.toggle('smart-presence-playing',!!playing);
+    body.classList.toggle('smart-presence-paused',!playing);
+  }
+  new MutationObserver(presence).observe(body,{attributes:true,attributeFilter:['class']});
+  presence();
+
+  /* 2) Multi-tone palette: use the existing ambient colors without changing artwork geometry. */
+  function palette(){
+    if(!prefs.smartPalette) return;
+    const glow=getComputedStyle(root).getPropertyValue('--premium-glow').trim();
+    const glow2=getComputedStyle(root).getPropertyValue('--premium-glow2').trim();
+    if(glow) root.style.setProperty('--v20-palette-primary',glow);
+    if(glow2) root.style.setProperty('--v20-palette-secondary',glow2);
+  }
+  const art=document.getElementById('albumArtContainer');
+  if(art){
+    new MutationObserver(palette).observe(art,{subtree:true,attributes:true,attributeFilter:['src','style','class']});
+    palette();
+  }
+
+  /* 4) Advanced battery intelligence: only visual effects. */
+  let battery=null;
+  function batteryVisual(){
+    const low=!!(prefs.smartBattery&&battery&&battery.level<=.20&&!battery.charging);
+    body.classList.toggle('smart-media-dim',low);
+  }
+  async function initBattery(){
+    try{
+      if(!navigator.getBattery) return;
+      battery=await navigator.getBattery();
+      battery.addEventListener('levelchange',batteryVisual,{passive:true});
+      battery.addEventListener('chargingchange',batteryVisual,{passive:true});
+      batteryVisual();
+    }catch(e){}
+  }
+  initBattery();
+
+  /* 5) Playback transition personality. Direction only; no geometry changes. */
+  let direction='';
+  const mark=(d)=>{direction=d;};
+  document.getElementById('nextButton')?.addEventListener('click',()=>mark('next'),{capture:true,passive:true});
+  document.getElementById('previousButton')?.addEventListener('click',()=>mark('prev'),{capture:true,passive:true});
+  const ti=document.getElementById('trackInfo');
+  let last=(document.getElementById('trackName')?.textContent||'').trim();
+  if(ti){
+    new MutationObserver(()=>{
+      const now=(document.getElementById('trackName')?.textContent||'').trim();
+      if(!now||now===last)return;
+      last=now;
+      if(prefs.smartTransitions&&direction){
+        body.classList.remove('smart-transition-next','smart-transition-prev');
+        void body.offsetWidth;
+        body.classList.add(direction==='next'?'smart-transition-next':'smart-transition-prev');
+        setTimeout(()=>body.classList.remove('smart-transition-next','smart-transition-prev'),480);
+      }
+      direction='';
+    }).observe(ti,{subtree:true,childList:true,characterData:true});
+  }
+
+  /* 6) Keyboard + media-key support. Uses existing buttons; no new playback logic. */
+  if(!body.dataset.v20Keys){
+    body.dataset.v20Keys='1';
+    window.addEventListener('keydown',e=>{
+      const tag=(e.target?.tagName||'').toLowerCase();
+      if(tag==='input'||tag==='textarea'||tag==='select'||e.ctrlKey||e.metaKey||e.altKey) return;
+      const key=e.key.toLowerCase();
+      const click=id=>{const b=document.getElementById(id); if(b&&!b.disabled)b.click();};
+      if(key===' '){e.preventDefault();click('playButton');}
+      else if(key==='n'){e.preventDefault();click('nextButton');}
+      else if(key==='p'){e.preventDefault();click('previousButton');}
+      else if(key==='l'){e.preventDefault();
+        const opt=document.querySelector('[data-mode="lyrics"]'); if(opt) opt.click();
+      }
+      else if(key==='f'){e.preventDefault();click('fullscreenButton');}
+      else if(e.key==='ArrowLeft'){e.preventDefault(); const b=document.getElementById('progressBar'); if(b){b.value=Math.max(0,(Number(b.value)||0)-5);b.dispatchEvent(new Event('input',{bubbles:true}));}}
+      else if(e.key==='ArrowRight'){e.preventDefault(); const b=document.getElementById('progressBar'); if(b){b.value=Math.min(Number(b.max)||100,(Number(b.value)||0)+5);b.dispatchEvent(new Event('input',{bubbles:true}));}}
+    },{passive:false});
+  }
+
+  /* 8) Remember the user-selected visual settings already present in appSettings. */
+  if(prefs.rememberVisuals){
+    try{
+      const saved=JSON.parse(localStorage.getItem('spotifydis_smart_polish_v20_visuals')||'null');
+      if(saved&&typeof saved==='object'){
+        if(typeof saved.premiumNight==='boolean' && !appSettings.premiumNight){
+          appSettings.premiumNight=saved.premiumNight;
+          document.getElementById('premiumNightToggle')?.setAttribute('checked',saved.premiumNight?'checked':null);
+          body.classList.toggle('premium-night',saved.premiumNight);
+        }
+        if(typeof saved.presentationMode==='boolean' && !appSettings.presentationMode){
+          appSettings.presentationMode=saved.presentationMode;
+          body.classList.toggle('v12-mini',saved.presentationMode);
+        }
+      }
+    }catch(e){}
+  }
+  const remember=()=>{
+    if(!prefs.rememberVisuals)return;
+    try{localStorage.setItem('spotifydis_smart_polish_v20_visuals',JSON.stringify({premiumNight:!!appSettings.premiumNight,presentationMode:!!appSettings.presentationMode}));}catch(e){}
+  };
+  document.getElementById('premiumNightToggle')?.addEventListener('change',remember,{passive:true});
+  document.getElementById('presentationModeToggle')?.addEventListener('change',remember,{passive:true});
+
+  /* 9) Sunrise/sunset-style intelligence without location permissions: use local clock phases. */
+  function sunPhase(){
+    if(!prefs.autoSun)return;
+    const h=new Date().getHours()+new Date().getMinutes()/60;
+    const phase=h<6.5?'night':h<9?'sunrise':h<17.5?'day':h<20?'sunset':'night';
+    body.dataset.v20SunPhase=phase;
+  }
+  sunPhase();
+  setInterval(sunPhase,60000);
+
+  /* 10) Micro-interaction polish: deterministic press response on existing controls. */
+  document.querySelectorAll('#controls .control,#sessionControls button,#fullscreenButton,.headerButton').forEach(el=>{
+    if(el.dataset.v20Micro)return;
+    el.dataset.v20Micro='1';
+    el.addEventListener('pointerdown',()=>el.classList.add('v20-pressed'),{passive:true});
+    ['pointerup','pointercancel','pointerleave'].forEach(t=>el.addEventListener(t,()=>el.classList.remove('v20-pressed'),{passive:true}));
+  });
+
+  /* Settings toggles for the new smart layer. */
+  const panel=document.getElementById('settingsPanel');
+  const section=[...document.querySelectorAll('#settingsPanel .settingsSection')].find(s=>s.id==='v19SmartSettings');
+  if(section&&!document.getElementById('v20AdvancedSettings')){
+    const sec=document.createElement('div'); sec.className='settingsSection'; sec.id='v20AdvancedSettings';
+    sec.innerHTML='<div class="settingsSectionTitle">Smart Polish Advanced</div>';
+    const make=(id,title,desc,key)=>{
+      const r=document.createElement('div');r.className='settingRow';r.innerHTML=`<div>${title}<div class="settingDescription">${desc}</div></div><label class="toggle"><input id="${id}" type="checkbox" ${prefs[key]?'checked':''}><span class="toggleSlider"></span></label>`;sec.appendChild(r);
+      r.querySelector('input').addEventListener('change',()=>{prefs[key]=r.querySelector('input').checked;save();presence();palette();batteryVisual();});
+    };
+    make('v20Presence','Smart Playback Presence','Subtly change visual intensity between playing and paused states.','smartPresence');
+    make('v20Palette','Advanced Album Palette','Blend existing album colors more smoothly between tracks.','smartPalette');
+    make('v20Battery','Advanced Battery Visuals','Reduce decorative effects at low battery without changing layout.','smartBattery');
+    make('v20Transitions','Smart Transition Personality','Give Next and Previous a subtle directional visual response.','smartTransitions');
+    make('v20Remember','Remember Visual Preferences','Restore visual choices between sessions.','rememberVisuals');
+    make('v20AutoSun','Local Time Light Phases','Use local device time for gentle sunrise/day/sunset/night polish.','autoSun');
+    section.parentNode?.insertBefore(sec,section.nextSibling);
+  }
+})();
+</script>
+
 </body>
 </html>
 
@@ -12540,7 +12715,7 @@ body.premium-night .headerButton{background:rgba(255,255,255,.045) !important;}
     body.classList.remove('premium-idle');
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
-      if (!body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
+      if (appSettings.presentationMode && !body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
         body.classList.add('premium-idle');
       }
     }, 30000);
