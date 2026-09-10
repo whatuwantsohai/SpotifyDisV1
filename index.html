@@ -8801,7 +8801,6 @@ if (presentationModeToggle) {
         "v12-mini",
         presentationModeToggle.checked
       );
-      document.body.classList.remove("premium-idle");
       if (window.spotifyDisSetMiniPlayer) {
         window.spotifyDisSetMiniPlayer(
           presentationModeToggle.checked
@@ -12541,7 +12540,7 @@ body.premium-night .headerButton{background:rgba(255,255,255,.045) !important;}
     body.classList.remove('premium-idle');
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
-      if (appSettings.presentationMode && !body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
+      if (!body.classList.contains('uiHidden') && !body.classList.contains('premium-focus')) {
         body.classList.add('premium-idle');
       }
     }, 30000);
@@ -12785,5 +12784,182 @@ body.premium-night #header{
   new MutationObserver(fix).observe(body,{attributes:true,attributeFilter:['class']});
   window.addEventListener('resize',fix,{passive:true});
   window.addEventListener('orientationchange',fix,{passive:true});
+})();
+</script>
+
+
+<style id="v19-smart-polish-css">
+/* V19: Smart + polish only. No player dimensions, positioning, or layout rules. */
+body.smart-atmo-morning #background::after{opacity:.60;}
+body.smart-atmo-day #background::after{opacity:.82;}
+body.smart-atmo-evening #background::after{opacity:.62;}
+body.smart-atmo-night #background::after{opacity:.34;}
+
+/* Album mood polish uses the existing ambient palette; artwork geometry is untouched. */
+body.smart-album-mood #progress{
+  box-shadow:0 0 16px var(--ambient1,rgba(255,255,255,.18));
+}
+body.smart-album-mood #progress::after{
+  background:var(--dominant-primary,rgba(255,255,255,.92));
+  box-shadow:0 0 0 4px var(--ambient2,rgba(255,255,255,.12)),0 2px 12px rgba(0,0,0,.4);
+}
+body.smart-album-mood #albumArtContainer{
+  box-shadow:0 26px 70px rgba(0,0,0,.30),0 0 48px var(--ambient1,rgba(255,255,255,.12)) !important;
+}
+
+/* Playback polish: visual response only; no geometry changes. */
+body.smart-play-next #trackName{animation:smartTrackNext .44s cubic-bezier(.22,.61,.36,1) both;}
+body.smart-play-prev #trackName{animation:smartTrackPrev .44s cubic-bezier(.22,.61,.36,1) both;}
+body.smart-play-next #artistName,
+body.smart-play-prev #artistName{animation:smartArtistIn .50s cubic-bezier(.22,.61,.36,1) both;}
+@keyframes smartTrackNext{from{opacity:.15;transform:translateX(10px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+@keyframes smartTrackPrev{from{opacity:.15;transform:translateX(-10px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+@keyframes smartArtistIn{from{opacity:.35;transform:translateY(4px);filter:blur(2px)}to{opacity:1;transform:none;filter:none}}
+
+/* Smart low-battery polish: reduce visual work, not layout or playback. */
+body.smart-battery-low #background::after{opacity:.18 !important;}
+body.smart-battery-low #albumArtContainer{box-shadow:0 20px 48px rgba(0,0,0,.24) !important;}
+body.smart-battery-low #progress{box-shadow:none !important;}
+body.smart-battery-low .vinylRecord{filter:drop-shadow(0 18px 28px rgba(0,0,0,.28)) !important;}
+
+/* Respect reduced-motion without changing the existing display geometry. */
+@media (prefers-reduced-motion:reduce){
+  body.smart-play-next #trackName,
+  body.smart-play-prev #trackName,
+  body.smart-play-next #artistName,
+  body.smart-play-prev #artistName{animation:none !important;}
+}
+
+/* Visible smart settings rows. */
+#v19SmartSettings .settingDescription{max-width:520px;}
+</style>
+
+
+<script id="v19-smart-polish-js">
+(() => {
+  const body=document.body;
+  const root=document.documentElement;
+  const settingsPanel=document.getElementById('settingsPanel');
+  const automaticSection=[...document.querySelectorAll('#settingsPanel .settingsSection')].find(s=>s.querySelector('#premiumNightToggle'));
+  const performanceSection=[...document.querySelectorAll('#settingsPanel .settingsSection')].find(s=>s.querySelector('#batterySaverToggle'));
+  if(!body||!root) return;
+
+  const KEY='spotifydis_smart_polish_v19';
+  const defaults={autoOLED:false,smartAtmosphere:true,smartBattery:true,albumMood:true};
+  let prefs=defaults;
+  try{prefs={...defaults,...JSON.parse(localStorage.getItem(KEY)||'{}')};}catch(e){prefs={...defaults};}
+  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(prefs));}catch(e){}};
+
+  function row(id,title,description,checked){
+    const wrap=document.createElement('div');
+    wrap.className='settingRow';
+    wrap.id=id+'Row';
+    wrap.innerHTML=`<div>${title}<div class="settingDescription">${description}</div></div><label class="toggle"><input id="${id}" type="checkbox" ${checked?'checked':''}><span class="toggleSlider"></span></label>`;
+    return wrap;
+  }
+
+  if(settingsPanel){
+    const section=document.createElement('div');
+    section.className='settingsSection';
+    section.id='v19SmartSettings';
+    const title=document.createElement('div');
+    title.className='settingsSectionTitle';
+    title.textContent='Smart & Polish';
+    section.appendChild(title);
+    section.appendChild(row('v19AutoOLED','Auto OLED by Time','Automatically enable OLED Night Mode from 8 PM to 7 AM using the device local clock.',prefs.autoOLED));
+    section.appendChild(row('v19SmartAtmosphere','Smart Atmosphere','Adjust ambient visual intensity through the day without changing the player layout.',prefs.smartAtmosphere));
+    section.appendChild(row('v19SmartBattery','Smart Battery Visuals','Reduce visual effects automatically when the device reports low battery.',prefs.smartBattery));
+    section.appendChild(row('v19AlbumMood','Album Mood Polish','Use the existing album palette for subtle progress and artwork glow accents.',prefs.albumMood));
+    const anchor=automaticSection||performanceSection;
+    if(anchor&&anchor.parentNode) anchor.parentNode.insertBefore(section,anchor.nextSibling); else settingsPanel.appendChild(section);
+  }
+
+  const autoToggle=document.getElementById('v19AutoOLED');
+  const atmosphereToggle=document.getElementById('v19SmartAtmosphere');
+  const batteryToggle=document.getElementById('v19SmartBattery');
+  const moodToggle=document.getElementById('v19AlbumMood');
+  const bind=(el,key,fn)=>{if(!el)return;el.addEventListener('change',()=>{prefs[key]=el.checked;save();fn();});};
+
+  function hourState(){
+    const h=new Date().getHours();
+    if(h>=5&&h<10) return 'morning';
+    if(h>=10&&h<17) return 'day';
+    if(h>=17&&h<20) return 'evening';
+    return 'night';
+  }
+  function applyAtmosphere(){
+    body.classList.remove('smart-atmo-morning','smart-atmo-day','smart-atmo-evening','smart-atmo-night');
+    if(prefs.smartAtmosphere) body.classList.add('smart-atmo-'+hourState());
+  }
+
+  function setOLED(enabled){
+    body.classList.toggle('premium-night',!!enabled);
+    const t=document.getElementById('premiumNightToggle');
+    if(t) t.checked=!!enabled;
+    if(window.spotifyDisSetNightMode) window.spotifyDisSetNightMode(!!enabled);
+  }
+  function applyAutoOLED(){
+    if(!prefs.autoOLED) return;
+    const h=new Date().getHours();
+    setOLED(h>=20||h<7);
+  }
+
+  function applyMood(){body.classList.toggle('smart-album-mood',!!prefs.albumMood);}
+
+  let battery=null;
+  function applyBattery(){
+    const low=!!(prefs.smartBattery&&battery&&battery.level<=.20&&!battery.charging);
+    body.classList.toggle('smart-battery-low',low);
+  }
+  async function setupBattery(){
+    try{
+      if(!navigator.getBattery) return;
+      battery=await navigator.getBattery();
+      ['levelchange','chargingchange'].forEach(e=>battery.addEventListener(e,applyBattery,{passive:true}));
+      applyBattery();
+    }catch(e){}
+  }
+
+  let direction='';
+  const next=document.getElementById('nextButton');
+  const prev=document.getElementById('previousButton');
+  const mark=(dir)=>{direction=dir;};
+  next?.addEventListener('click',()=>mark('next'),{capture:true,passive:true});
+  prev?.addEventListener('click',()=>mark('prev'),{capture:true,passive:true});
+  const ti=document.getElementById('trackInfo');
+  let lastTrack=(document.getElementById('trackName')?.textContent||'').trim();
+  if(ti){
+    const observer=new MutationObserver(()=>{
+      const key=(document.getElementById('trackName')?.textContent||'').trim();
+      if(!key||key===lastTrack)return;
+      lastTrack=key;
+      body.classList.remove('smart-play-next','smart-play-prev');
+      if(direction){
+        void body.offsetWidth;
+        body.classList.add(direction==='next'?'smart-play-next':'smart-play-prev');
+        setTimeout(()=>body.classList.remove('smart-play-next','smart-play-prev'),520);
+      }
+      direction='';
+    });
+    observer.observe(ti,{subtree:true,childList:true,characterData:true});
+  }
+
+  bind(autoToggle,'autoOLED',applyAutoOLED);
+  bind(atmosphereToggle,'smartAtmosphere',applyAtmosphere);
+  bind(batteryToggle,'smartBattery',applyBattery);
+  bind(moodToggle,'albumMood',applyMood);
+
+  applyAtmosphere();
+  applyAutoOLED();
+  applyMood();
+  setupBattery();
+  setInterval(()=>{applyAtmosphere();applyAutoOLED();},60000);
+
+  /* Keep the existing manual OLED setting authoritative when Auto OLED is off. */
+  const premium=document.getElementById('premiumNightToggle');
+  premium?.addEventListener('change',()=>{
+    if(!prefs.autoOLED) return;
+    /* Auto OLED is intentionally time-driven; the next scheduled check restores the correct state. */
+  },{passive:true});
 })();
 </script>
